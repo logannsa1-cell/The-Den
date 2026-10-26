@@ -10,6 +10,8 @@ servers:
 tags:
   - name: health
     description: Health operations
+  - name: study
+    description: Exam preparation tools
 paths:
   /healthz:
     get:
@@ -24,6 +26,48 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+  /study/generate:
+    post:
+      operationId: generateStudyMaterials
+      tags: [study]
+      summary: Generate exam-preparation materials from source notes
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/StudyGenerationInput"
+      responses:
+        "200":
+          description: Generated study materials
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StudyGeneration"
+        "400":
+          description: Invalid or insufficient source material
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "503":
+          description: AI provider is not configured
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "429":
+          description: Too many generation requests
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "502":
+          description: Study materials could not be generated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
 components:
   schemas:
     HealthStatus:
@@ -33,4 +77,96 @@ components:
           type: string
       required:
         - status
+    StudyGenerationInput:
+      type: object
+      required: [sourceName, sourceText, hoursPerDay, questionCount]
+      properties:
+        sourceName:
+          type: string
+          minLength: 1
+          maxLength: 160
+        sourceText:
+          type: string
+          minLength: 120
+          maxLength: 60000
+        examDate:
+          type: string
+          format: date
+        hoursPerDay:
+          type: number
+          minimum: 0.5
+          maximum: 12
+        questionCount:
+          type: integer
+          minimum: 5
+          maximum: 20
+    StudyTerm:
+      type: object
+      required: [term, definition]
+      properties:
+        term:
+          type: string
+        definition:
+          type: string
+    StudyQuestion:
+      type: object
+      required: [prompt, choices, answerIndex, explanation]
+      properties:
+        prompt:
+          type: string
+        choices:
+          type: array
+          minItems: 4
+          maxItems: 4
+          items:
+            type: string
+        answerIndex:
+          type: integer
+          minimum: 0
+          maximum: 3
+        explanation:
+          type: string
+    StudyPlanDay:
+      type: object
+      required: [date, focus, tasks]
+      properties:
+        date:
+          type: string
+          format: date
+        focus:
+          type: string
+        tasks:
+          type: array
+          items:
+            type: string
+    StudyGeneration:
+      type: object
+      required: [title, summary, keyTerms, cramPoints, questions, studyPlan]
+      properties:
+        title:
+          type: string
+        summary:
+          type: string
+        keyTerms:
+          type: array
+          items:
+            $ref: "#/components/schemas/StudyTerm"
+        cramPoints:
+          type: array
+          items:
+            type: string
+        questions:
+          type: array
+          items:
+            $ref: "#/components/schemas/StudyQuestion"
+        studyPlan:
+          type: array
+          items:
+            $ref: "#/components/schemas/StudyPlanDay"
+    ApiError:
+      type: object
+      required: [error]
+      properties:
+        error:
+          type: string
 

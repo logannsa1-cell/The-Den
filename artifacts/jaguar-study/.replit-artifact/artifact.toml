@@ -1,0 +1,28 @@
+kind = "web"
+previewPath = "/"
+title = "Jaguar Study"
+description = "An exam-prep workspace that turns course notes and uploaded documents into focused study guides, cram sheets, practice tests, and day-by-day revision plans."
+version = "1.0.0"
+id = "artifacts/jaguar-study"
+router = "path"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 24663
+
+[services.development]
+run = "pnpm --filter @workspace/jaguar-study run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/jaguar-study", "run", "build" ]
+serve = "static"
+publicDir = "artifacts/jaguar-study/dist/public"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "24663"
+BASE_PATH = "/"

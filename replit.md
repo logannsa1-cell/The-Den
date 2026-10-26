@@ -1,6 +1,6 @@
-# [Project name]
+# Jaguar Study
 
-_Replace the heading above with the project's name, and this line with one sentence describing what this app does for users._
+An exam-preparation app that turns uploaded course material or pasted notes into study summaries, key terms, practice questions, cram sheets, and date-based plans.
 
 ## Run & Operate
 
@@ -22,15 +22,20 @@ _Replace the heading above with the project's name, and this line with one sente
 
 ## Where things live
 
-_Populate as you build — short repo map plus pointers to the source-of-truth file for DB schema, API contracts, theme files, etc._
+- `artifacts/jaguar-study/` — React + Vite study app; document text extraction runs in the browser and study sets are saved in browser storage.
+- `artifacts/api-server/src/routes/study.ts` — OpenAI-backed study-material generation endpoint.
+- `lib/api-spec/openapi.yaml` — source of truth for the study-generation request and response.
+- `lib/api-client-react/` and `lib/api-zod/` — generated API hooks and validation schemas.
 
 ## Architecture decisions
 
-_Populate as you build — non-obvious choices a reader couldn't infer from the code (3-5 bullets)._
+- Course files are parsed in the browser; only extracted text is sent for AI generation.
+- Generated study sets are stored in local browser storage and do not sync across devices.
+- The API key is read only by the server from the `OPENAI_API_KEY` Replit Secret.
 
 ## Product
 
-_Describe the high-level user-facing capabilities of this app once they exist._
+Jaguar Study creates exam-focused summaries, key terms, interactive practice tests, cram sheets, and study plans from a student's own material. It supports PDF, DOCX, PPTX, TXT, MD, CSV, and pasted text.
 
 ## User preferences
 
@@ -38,7 +43,8 @@ _Populate as you build — explicit user instructions worth remembering across s
 
 ## Gotchas
 
-_Populate as you build — sharp edges, "always run X before Y" rules._
+- Scanned/image-only PDFs and slide decks without extractable text are not OCR'd; the app reports when it cannot find readable source text.
+- Regenerate API client and Zod files after editing `lib/api-spec/openapi.yaml`.
 
 ## Pointers
 
