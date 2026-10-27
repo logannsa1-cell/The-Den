@@ -126,7 +126,11 @@ export async function generateStudyContent(options: {
         if (response.choices[0].finish_reason !== "stop" || !prose) {
           throw new GeminiError(502, "The detailed lesson could not be completed. Please try again; your source is retained.");
         }
-        return prose;
+        // Keep the original subject/week heading even if the expansion renames it.
+        const originalHeading = section.match(/^## .+$/m)?.[0];
+        return originalHeading
+          ? `${originalHeading}\n${prose.replace(/^## .+\n?/, '').trim()}`
+          : prose;
         } catch (error) {
           const recoverable = error instanceof GeminiError && [429, 500, 502, 503, 504].includes(error.status) ||
             error instanceof Error && ["TimeoutError", "AbortError"].includes(error.name);

@@ -1,3 +1,4 @@
+import { SubjectPrompt } from './SubjectPrompt';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { ChevronLeft, ChevronRight, CircleAlert, Play, RotateCcw, Send, Timer } from 'lucide-react';
 import type { StudyQuestion, TheoryQuestion } from '@/study';
@@ -121,7 +122,7 @@ export function TimedExam({ title, questions, theory, minutes, storageKey, clean
             <div className="q-dots" role="navigation" aria-label="Questions">
               {questions.map((_, i) => <button key={i} type="button" className={`q-dot${i === state.current ? ' current' : ''}${state.obj[i] !== null ? ' done' : ''}`} onClick={() => set(() => ({ current: i }))} aria-label={`Question ${i + 1}`} data-testid={`button-exam-q-${i}`}>{i + 1}</button>)}
             </div>
-            <h3 className="quiz-prompt">{state.current + 1}. {clean(q.prompt)}</h3>
+            <h3 className="quiz-prompt">{state.current + 1}. <SubjectPrompt text={clean(q.prompt)} /></h3>
             <div className="choices">
               {q.choices.map((c, i) => <button key={i} type="button" className={`choice${state.obj[state.current] === i ? ' selected' : ''}`} onClick={() => set((s) => ({ obj: s.obj.map((a, j) => (j === s.current ? i : a)) }))} data-testid={`button-exam-choice-${i}`}><span className="choice-letter">{L(i)}</span><span>{clean(c)}</span></button>)}
             </div>
@@ -149,7 +150,7 @@ export function TimedExam({ title, questions, theory, minutes, storageKey, clean
                           onChange={() => (name === 'PART A' ? set((s) => ({ partA: s.partA === qi ? null : qi })) : togglePartB(qi))} data-testid={`select-paper-q-${qi}`} />
                         <span>{on ? 'Answering' : blocked ? 'Limit reached' : 'Answer this question'}</span>
                       </label>
-                      <h3><span className="cram-dot">{qi + 1}</span>{clean(tq.prompt)}</h3>
+                      <h3><span className="cram-dot">{qi + 1}</span><SubjectPrompt text={clean(tq.prompt)} /></h3>
                       {tq.parts.map((p) => {
                         const k = `${qi}-${p.label}`;
                         return (
@@ -183,7 +184,7 @@ export function TimedExam({ title, questions, theory, minutes, storageKey, clean
       <h4 className="section-title">SECTION B · YOUR ANSWERS</h4>
       {picks.length === 0 ? <p className="helper">No theory questions were chosen.</p> : picks.map((qi) => (
         <article key={qi} className="theory-card" data-testid={`review-theory-${qi}`}>
-          <h3><span className="cram-dot">{qi + 1}</span>{clean(theory[qi].prompt)}</h3>
+          <h3><span className="cram-dot">{qi + 1}</span><SubjectPrompt text={clean(theory[qi].prompt)} /></h3>
           {theory[qi].parts.map((p) => (
             <div key={p.label} className="theory-part">
               <label><b>({p.label})</b> {clean(p.question)}</label>
@@ -200,7 +201,7 @@ export function TimedExam({ title, questions, theory, minutes, storageKey, clean
           const ok = a === q.answerIndex;
           return (
             <li key={i} className={ok ? 'good' : 'bad'} data-testid={`review-q-${i}`}>
-              <strong>{i + 1}. {clean(q.prompt)}</strong>
+              <strong>{i + 1}. <SubjectPrompt text={clean(q.prompt)} /></strong>
               <span>Your answer: {a === null ? 'Not answered' : `${L(a)}. ${clean(q.choices[a] ?? '')}`}</span>
               {!ok && <span>Correct: {L(q.answerIndex)}. {clean(q.choices[q.answerIndex] ?? '')}</span>}
               <p>{clean(q.explanation)}</p>

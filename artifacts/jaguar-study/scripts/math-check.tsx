@@ -3,6 +3,7 @@ import React from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { StudyText } from '../src/components/StudyText';
 import { RichNotes } from '../src/components/RichNotes';
+import { SubjectPrompt } from '../src/components/SubjectPrompt';
 
 // tsx's standalone runner uses the classic JSX runtime.
 Object.assign(globalThis, { React });
@@ -28,3 +29,11 @@ assert.match(malformed, /could not be formatted/);
 const currency = renderToStaticMarkup(<StudyText text="Costs $20 and $30 today" />);
 assert.ok(!currency.includes('class="katex'));
 console.log('Equation, chemistry, formatting, safety and fallback checks passed.');
+const subject = renderToStaticMarkup(<SubjectPrompt text="[Chemistry] Explain $CO_2$." />);
+assert.match(subject, /subject-label">Chemistry/);
+assert.match(subject, /class="katex/);
+assert.ok(!subject.includes('[Chemistry]'));
+const legacy = renderToStaticMarkup(<SubjectPrompt text="Original saved question" />);
+assert.match(legacy, /Original saved question/);
+assert.ok(!legacy.includes('subject-label'));
+console.log('Subject labels and legacy question rendering passed.');
