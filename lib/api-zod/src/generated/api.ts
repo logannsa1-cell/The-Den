@@ -23,13 +23,15 @@ export const HealthCheckResponse = zod.object({
 export const generateStudyMaterialsBodySourceNameMax = 160;
 
 export const generateStudyMaterialsBodySourceTextMin = 120;
-export const generateStudyMaterialsBodySourceTextMax = 60000;
+export const generateStudyMaterialsBodySourceTextMax = 180000;
 
 export const generateStudyMaterialsBodyHoursPerDayMin = 0.5;
 export const generateStudyMaterialsBodyHoursPerDayMax = 12;
 
-export const generateStudyMaterialsBodyQuestionCountMin = 5;
-export const generateStudyMaterialsBodyQuestionCountMax = 20;
+export const generateStudyMaterialsBodyQuestionCountMax = 50;
+
+
+export const generateStudyMaterialsBodyExamMinutesMax = 180;
 
 
 
@@ -38,18 +40,28 @@ export const GenerateStudyMaterialsBody = zod.object({
   "sourceText": zod.string().min(generateStudyMaterialsBodySourceTextMin).max(generateStudyMaterialsBodySourceTextMax),
   "examDate": zod.coerce.date().optional(),
   "hoursPerDay": zod.number().min(generateStudyMaterialsBodyHoursPerDayMin).max(generateStudyMaterialsBodyHoursPerDayMax),
-  "questionCount": zod.number().int().min(generateStudyMaterialsBodyQuestionCountMin).max(generateStudyMaterialsBodyQuestionCountMax)
+  "questionCount": zod.number().int().min(1).max(generateStudyMaterialsBodyQuestionCountMax),
+  "modes": zod.array(zod.enum(['summary', 'timed', 'objective', 'theory', 'tutor', 'cram'])).min(1).optional(),
+  "examMinutes": zod.number().int().min(1).max(generateStudyMaterialsBodyExamMinutesMax).optional()
 })
 
 export const generateStudyMaterialsResponseQuestionsItemChoicesMin = 4;
-export const generateStudyMaterialsResponseQuestionsItemChoicesMax = 4;
+export const generateStudyMaterialsResponseQuestionsItemChoicesMax = 5;
 
 export const generateStudyMaterialsResponseQuestionsItemAnswerIndexMin = 0;
-export const generateStudyMaterialsResponseQuestionsItemAnswerIndexMax = 3;
+export const generateStudyMaterialsResponseQuestionsItemAnswerIndexMax = 4;
+
+export const generateStudyMaterialsResponseTheoryQuestionsItemPartsMin = 3;
+export const generateStudyMaterialsResponseTheoryQuestionsItemPartsMax = 3;
+
+export const generateStudyMaterialsResponseTheoryQuestionsMax = 10;
+
+export const generateStudyMaterialsResponseExamMinutesMax = 180;
 
 
 
 export const GenerateStudyMaterialsResponse = zod.object({
+  "tutorLesson": zod.string().optional(),
   "title": zod.string(),
   "summary": zod.string(),
   "keyTerms": zod.array(zod.object({
@@ -67,31 +79,43 @@ export const GenerateStudyMaterialsResponse = zod.object({
   "date": zod.coerce.date(),
   "focus": zod.string(),
   "tasks": zod.array(zod.string())
-}))
+})),
+  "theoryQuestions": zod.array(zod.object({
+  "prompt": zod.string(),
+  "parts": zod.array(zod.object({
+  "label": zod.enum(['a', 'b', 'c']),
+  "question": zod.string(),
+  "modelAnswer": zod.string()
+})).min(generateStudyMaterialsResponseTheoryQuestionsItemPartsMin).max(generateStudyMaterialsResponseTheoryQuestionsItemPartsMax)
+})).max(generateStudyMaterialsResponseTheoryQuestionsMax).optional(),
+  "modes": zod.array(zod.enum(['summary', 'timed', 'objective', 'theory', 'tutor', 'cram'])).optional(),
+  "examMinutes": zod.number().int().min(1).max(generateStudyMaterialsResponseExamMinutesMax).optional()
 })
 
 
 /**
  * @summary List the signed-in user's saved study sets
  */
+export const listStudySetsResponseOneTutorLessonMax = 60000;
+
 export const listStudySetsResponseOneTitleMax = 160;
 
 export const listStudySetsResponseOneSourceNameMax = 160;
 
 export const listStudySetsResponseOneSourceTextMin = 120;
-export const listStudySetsResponseOneSourceTextMax = 60000;
+export const listStudySetsResponseOneSourceTextMax = 180000;
 
-export const listStudySetsResponseOneSummaryMax = 20000;
+export const listStudySetsResponseOneSummaryMax = 60000;
 
 export const listStudySetsResponseOneKeyTermsMax = 100;
 
 export const listStudySetsResponseOneCramPointsMax = 100;
 
 export const listStudySetsResponseOneQuestionsItemChoicesMin = 4;
-export const listStudySetsResponseOneQuestionsItemChoicesMax = 4;
+export const listStudySetsResponseOneQuestionsItemChoicesMax = 5;
 
 export const listStudySetsResponseOneQuestionsItemAnswerIndexMin = 0;
-export const listStudySetsResponseOneQuestionsItemAnswerIndexMax = 3;
+export const listStudySetsResponseOneQuestionsItemAnswerIndexMax = 4;
 
 export const listStudySetsResponseOneQuestionsMax = 50;
 
@@ -101,9 +125,17 @@ export const listStudySetsResponseOneMasteredTermsItemMax = 240;
 
 export const listStudySetsResponseOneMasteredTermsMax = 100;
 
+export const listStudySetsResponseOneTheoryQuestionsItemPartsMin = 3;
+export const listStudySetsResponseOneTheoryQuestionsItemPartsMax = 3;
+
+export const listStudySetsResponseOneTheoryQuestionsMax = 10;
+
+export const listStudySetsResponseOneExamMinutesMax = 180;
+
 
 
 export const ListStudySetsResponseItem = zod.object({
+  "tutorLesson": zod.string().max(listStudySetsResponseOneTutorLessonMax).optional(),
   "title": zod.string().min(1).max(listStudySetsResponseOneTitleMax),
   "sourceName": zod.string().min(1).max(listStudySetsResponseOneSourceNameMax),
   "sourceText": zod.string().min(listStudySetsResponseOneSourceTextMin).max(listStudySetsResponseOneSourceTextMax),
@@ -124,7 +156,17 @@ export const ListStudySetsResponseItem = zod.object({
   "focus": zod.string(),
   "tasks": zod.array(zod.string())
 })).max(listStudySetsResponseOneStudyPlanMax),
-  "masteredTerms": zod.array(zod.string().max(listStudySetsResponseOneMasteredTermsItemMax)).max(listStudySetsResponseOneMasteredTermsMax)
+  "masteredTerms": zod.array(zod.string().max(listStudySetsResponseOneMasteredTermsItemMax)).max(listStudySetsResponseOneMasteredTermsMax),
+  "theoryQuestions": zod.array(zod.object({
+  "prompt": zod.string(),
+  "parts": zod.array(zod.object({
+  "label": zod.enum(['a', 'b', 'c']),
+  "question": zod.string(),
+  "modelAnswer": zod.string()
+})).min(listStudySetsResponseOneTheoryQuestionsItemPartsMin).max(listStudySetsResponseOneTheoryQuestionsItemPartsMax)
+})).max(listStudySetsResponseOneTheoryQuestionsMax).optional(),
+  "modes": zod.array(zod.enum(['summary', 'timed', 'objective', 'theory', 'tutor', 'cram'])).optional(),
+  "examMinutes": zod.number().int().min(1).max(listStudySetsResponseOneExamMinutesMax).optional()
 }).and(zod.object({
   "id": zod.string(),
   "createdAt": zod.coerce.date()
@@ -142,24 +184,26 @@ export const UpsertStudySetParams = zod.object({
   "id": zod.coerce.string().min(1)
 })
 
+export const upsertStudySetBodyTutorLessonMax = 60000;
+
 export const upsertStudySetBodyTitleMax = 160;
 
 export const upsertStudySetBodySourceNameMax = 160;
 
 export const upsertStudySetBodySourceTextMin = 120;
-export const upsertStudySetBodySourceTextMax = 60000;
+export const upsertStudySetBodySourceTextMax = 180000;
 
-export const upsertStudySetBodySummaryMax = 20000;
+export const upsertStudySetBodySummaryMax = 60000;
 
 export const upsertStudySetBodyKeyTermsMax = 100;
 
 export const upsertStudySetBodyCramPointsMax = 100;
 
 export const upsertStudySetBodyQuestionsItemChoicesMin = 4;
-export const upsertStudySetBodyQuestionsItemChoicesMax = 4;
+export const upsertStudySetBodyQuestionsItemChoicesMax = 5;
 
 export const upsertStudySetBodyQuestionsItemAnswerIndexMin = 0;
-export const upsertStudySetBodyQuestionsItemAnswerIndexMax = 3;
+export const upsertStudySetBodyQuestionsItemAnswerIndexMax = 4;
 
 export const upsertStudySetBodyQuestionsMax = 50;
 
@@ -169,9 +213,17 @@ export const upsertStudySetBodyMasteredTermsItemMax = 240;
 
 export const upsertStudySetBodyMasteredTermsMax = 100;
 
+export const upsertStudySetBodyTheoryQuestionsItemPartsMin = 3;
+export const upsertStudySetBodyTheoryQuestionsItemPartsMax = 3;
+
+export const upsertStudySetBodyTheoryQuestionsMax = 10;
+
+export const upsertStudySetBodyExamMinutesMax = 180;
+
 
 
 export const UpsertStudySetBody = zod.object({
+  "tutorLesson": zod.string().max(upsertStudySetBodyTutorLessonMax).optional(),
   "title": zod.string().min(1).max(upsertStudySetBodyTitleMax),
   "sourceName": zod.string().min(1).max(upsertStudySetBodySourceNameMax),
   "sourceText": zod.string().min(upsertStudySetBodySourceTextMin).max(upsertStudySetBodySourceTextMax),
@@ -192,27 +244,39 @@ export const UpsertStudySetBody = zod.object({
   "focus": zod.string(),
   "tasks": zod.array(zod.string())
 })).max(upsertStudySetBodyStudyPlanMax),
-  "masteredTerms": zod.array(zod.string().max(upsertStudySetBodyMasteredTermsItemMax)).max(upsertStudySetBodyMasteredTermsMax)
+  "masteredTerms": zod.array(zod.string().max(upsertStudySetBodyMasteredTermsItemMax)).max(upsertStudySetBodyMasteredTermsMax),
+  "theoryQuestions": zod.array(zod.object({
+  "prompt": zod.string(),
+  "parts": zod.array(zod.object({
+  "label": zod.enum(['a', 'b', 'c']),
+  "question": zod.string(),
+  "modelAnswer": zod.string()
+})).min(upsertStudySetBodyTheoryQuestionsItemPartsMin).max(upsertStudySetBodyTheoryQuestionsItemPartsMax)
+})).max(upsertStudySetBodyTheoryQuestionsMax).optional(),
+  "modes": zod.array(zod.enum(['summary', 'timed', 'objective', 'theory', 'tutor', 'cram'])).optional(),
+  "examMinutes": zod.number().int().min(1).max(upsertStudySetBodyExamMinutesMax).optional()
 })
+
+export const upsertStudySetResponseOneTutorLessonMax = 60000;
 
 export const upsertStudySetResponseOneTitleMax = 160;
 
 export const upsertStudySetResponseOneSourceNameMax = 160;
 
 export const upsertStudySetResponseOneSourceTextMin = 120;
-export const upsertStudySetResponseOneSourceTextMax = 60000;
+export const upsertStudySetResponseOneSourceTextMax = 180000;
 
-export const upsertStudySetResponseOneSummaryMax = 20000;
+export const upsertStudySetResponseOneSummaryMax = 60000;
 
 export const upsertStudySetResponseOneKeyTermsMax = 100;
 
 export const upsertStudySetResponseOneCramPointsMax = 100;
 
 export const upsertStudySetResponseOneQuestionsItemChoicesMin = 4;
-export const upsertStudySetResponseOneQuestionsItemChoicesMax = 4;
+export const upsertStudySetResponseOneQuestionsItemChoicesMax = 5;
 
 export const upsertStudySetResponseOneQuestionsItemAnswerIndexMin = 0;
-export const upsertStudySetResponseOneQuestionsItemAnswerIndexMax = 3;
+export const upsertStudySetResponseOneQuestionsItemAnswerIndexMax = 4;
 
 export const upsertStudySetResponseOneQuestionsMax = 50;
 
@@ -222,9 +286,17 @@ export const upsertStudySetResponseOneMasteredTermsItemMax = 240;
 
 export const upsertStudySetResponseOneMasteredTermsMax = 100;
 
+export const upsertStudySetResponseOneTheoryQuestionsItemPartsMin = 3;
+export const upsertStudySetResponseOneTheoryQuestionsItemPartsMax = 3;
+
+export const upsertStudySetResponseOneTheoryQuestionsMax = 10;
+
+export const upsertStudySetResponseOneExamMinutesMax = 180;
+
 
 
 export const UpsertStudySetResponse = zod.object({
+  "tutorLesson": zod.string().max(upsertStudySetResponseOneTutorLessonMax).optional(),
   "title": zod.string().min(1).max(upsertStudySetResponseOneTitleMax),
   "sourceName": zod.string().min(1).max(upsertStudySetResponseOneSourceNameMax),
   "sourceText": zod.string().min(upsertStudySetResponseOneSourceTextMin).max(upsertStudySetResponseOneSourceTextMax),
@@ -245,7 +317,17 @@ export const UpsertStudySetResponse = zod.object({
   "focus": zod.string(),
   "tasks": zod.array(zod.string())
 })).max(upsertStudySetResponseOneStudyPlanMax),
-  "masteredTerms": zod.array(zod.string().max(upsertStudySetResponseOneMasteredTermsItemMax)).max(upsertStudySetResponseOneMasteredTermsMax)
+  "masteredTerms": zod.array(zod.string().max(upsertStudySetResponseOneMasteredTermsItemMax)).max(upsertStudySetResponseOneMasteredTermsMax),
+  "theoryQuestions": zod.array(zod.object({
+  "prompt": zod.string(),
+  "parts": zod.array(zod.object({
+  "label": zod.enum(['a', 'b', 'c']),
+  "question": zod.string(),
+  "modelAnswer": zod.string()
+})).min(upsertStudySetResponseOneTheoryQuestionsItemPartsMin).max(upsertStudySetResponseOneTheoryQuestionsItemPartsMax)
+})).max(upsertStudySetResponseOneTheoryQuestionsMax).optional(),
+  "modes": zod.array(zod.enum(['summary', 'timed', 'objective', 'theory', 'tutor', 'cram'])).optional(),
+  "examMinutes": zod.number().int().min(1).max(upsertStudySetResponseOneExamMinutesMax).optional()
 }).and(zod.object({
   "id": zod.string(),
   "createdAt": zod.coerce.date()

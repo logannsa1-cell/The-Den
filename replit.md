@@ -1,6 +1,6 @@
-# Jaguar Study
+# Jaguar
 
-An exam-preparation app that turns uploaded course material or pasted notes into study summaries, key terms, flashcards, practice questions, cram sheets, and date-based plans.
+An exam-preparation app that combines uploaded course materials into readable notes, timed exams, 1–50 A–E objective questions, a/b/c written questions, flashcards, cram sheets, and date-based plans.
 
 ## Run & Operate
 
@@ -38,7 +38,7 @@ An exam-preparation app that turns uploaded course material or pasted notes into
 
 ## Product
 
-Jaguar Study creates exam-focused summaries, key terms, flashcards, interactive practice tests, cram sheets, and study plans from a student's own material. It supports PDF, DOCX, PPTX, TXT, MD, CSV, and pasted text.
+Jaguar supports PDF, DOCX, PPTX, TXT, MD, CSV, and pasted text, with multiple files per study set and selectable output modes. Original PDF/PPTX previews are kept on the device in IndexedDB; written answers and timed-exam attempts are device-local. Generated sets sync to the account. Default styling is black/violet, with Rose, Ocean, and Jungle themes.
 
 ## User preferences
 

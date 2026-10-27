@@ -1,24 +1,11 @@
+import type { StudySet as ApiStudySet, TheoryQuestion } from '@workspace/api-client-react';
+
 export type KeyTerm = { term: string; definition: string };
-export type StudyQuestion = {
-  prompt: string;
-  choices: string[];
-  answerIndex: number;
-  explanation: string;
-};
+export type StudyQuestion = { prompt: string; choices: string[]; answerIndex: number; explanation: string };
 export type StudyDay = { date: string; focus: string; tasks: string[] };
-export type StudySet = {
-  id: string;
-  title: string;
-  sourceName: string;
-  createdAt: string;
-  sourceText: string;
-  summary: string;
-  keyTerms: KeyTerm[];
-  cramPoints: string[];
-  questions: StudyQuestion[];
-  studyPlan: StudyDay[];
-  masteredTerms?: string[];
-};
+export type StudyMode = 'summary' | 'timed' | 'objective' | 'theory' | 'tutor' | 'cram';
+export type { TheoryQuestion };
+export type StudySet = Omit<ApiStudySet, 'masteredTerms'> & { masteredTerms?: string[] };
 
 const OFFICE_XML_SIGNAL =
   /<\/?p:(?:sp|spPr|spTree|graphicFrame|pic)\b|<\/?a:(?:ln|effectLst|outerShdw|schemeClr|solidFill|latin|sym|prstGeom|blipFill|t)\b|<\/?w:(?:document|body|p|r|t)\b|panose=|spcFirstLastPara=|extrusionOk=/i;
