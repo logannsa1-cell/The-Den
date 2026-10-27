@@ -69,7 +69,9 @@ export function ModeNumbers({ modes, questionCount, onQuestionCount, examMinutes
   );
 }
 
-export function ModeDialog({ open, modes, onModes, onClose }: { open: boolean; modes: StudyMode[]; onModes: (m: StudyMode[]) => void; onClose: () => void }) {
+type DialogProps = NumProps & { open: boolean; onModes: (m: StudyMode[]) => void; onClose: () => void; onGenerate: () => void; busy: boolean; error: string };
+
+export function ModeDialog({ open, modes, onModes, onClose, onGenerate, busy, error, ...nums }: DialogProps) {
   const ref = useRef<HTMLButtonElement>(null);
   const closeRef = useRef(onClose);
   closeRef.current = onClose;
@@ -85,12 +87,14 @@ export function ModeDialog({ open, modes, onModes, onClose }: { open: boolean; m
     <div className="modal-scrim" onMouseDown={(e) => { if (e.target === e.currentTarget) onClose(); }}>
       <div className="modal-card" role="dialog" aria-modal="true" aria-labelledby="mode-dialog-title" data-testid="dialog-mode-picker">
         <div className="modal-head">
-          <div><span className="eyebrow">File ready</span><h2 id="mode-dialog-title">How do you want to study it?</h2></div>
+          <div><span className="eyebrow">Build it your way</span><h2 id="mode-dialog-title">How do you want to study it?</h2></div>
           <button className="icon-button" type="button" onClick={onClose} aria-label="Close" data-testid="button-close-modes"><X size={14} /></button>
         </div>
         <ModeGrid modes={modes} onModes={onModes} />
-        <button ref={ref} className="primary-button" type="button" disabled={!modes.length} onClick={onClose} data-testid="button-confirm-modes">
-          Use {modes.length} {modes.length === 1 ? 'mode' : 'modes'}
+        <ModeNumbers modes={modes} {...nums} />
+        {error && <p className="field-error" role="alert" data-testid="error-dialog-generation">{error}</p>}
+        <button ref={ref} className="primary-button generate" type="button" disabled={!modes.length || busy} aria-busy={busy} onClick={() => { if (!busy) onGenerate(); }} data-testid="button-generate">
+          {busy ? 'Starting...' : `Generate ${modes.length} ${modes.length === 1 ? 'mode' : 'modes'}`}
         </button>
       </div>
     </div>

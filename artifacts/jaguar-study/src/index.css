@@ -139,6 +139,9 @@ h1, h2, h3, h4, p { margin-top: 0; }
 .welcome h1 { margin: 0 0 8px; font: 800 clamp(38px, 6vw, 76px)/.95 var(--app-font-display); letter-spacing: -.05em; }
 .welcome h1::after { content: ''; display: inline-block; width: .32em; height: .32em; margin-left: .12em; border-radius: 50%; background: var(--accent); vertical-align: baseline; }
 .welcome-copy { margin: 0; color: var(--muted); font-size: 16px; }
+#welcome-title { font: 800 clamp(44px, 6vw, 80px)/1.04 var(--app-font-display); letter-spacing: -.04em; margin: 0 0 14px; overflow-wrap: anywhere; }
+#welcome-title, #welcome-title + .welcome-copy { padding-inline: 0; margin-inline: 0; text-align: left; }
+#welcome-title + .welcome-copy { font-size: 12px; }
 .eyebrow { font: 10px var(--app-font-mono); letter-spacing: .16em; text-transform: uppercase; color: var(--accent); }
 
 /* ---------- Panels & fields ---------- */
@@ -602,3 +605,33 @@ input[type='date']::-webkit-calendar-picker-indicator { filter: invert(.75); }
   .profile-avatar { width: 76px; height: 76px; font-size: 26px; }
   .section-switch { order: 3; flex-basis: 100%; }
 }
+
+/* Study view + jaguar runner */
+.study-view { display: grid; grid-template-columns: 200px minmax(0, 1fr); gap: 22px; align-items: start; min-width: 0; }
+.study-rail { position: sticky; top: 16px; display: flex; flex-direction: column; gap: 6px; min-width: 0; max-width: 100%; }
+.study-rail-modes { display: flex; flex-direction: column; gap: 4px; }
+.study-rail .nav-item[aria-disabled="true"] { opacity: .55; cursor: default; }
+.study-stage { min-width: 0; }
+@media (max-width: 767px) {
+  .study-view { grid-template-columns: minmax(0, 1fr); }
+  .study-rail { position: static; }
+  .study-rail-modes { flex-direction: row; overflow-x: auto; }
+  .study-rail-modes .nav-item { white-space: nowrap; flex: none; width: auto; }
+}
+.jaguar-runner { display: grid; place-items: center; gap: 12px; padding: 48px 16px; text-align: center; color: var(--muted); font: 12px var(--app-font-mono); }
+.jaguar-track { position: relative; width: 220px; height: 52px; overflow: hidden; }
+.jaguar-svg { position: absolute; top: 0; left: 0; animation: jag-cross 2.6s linear infinite; }
+.jaguar-body { animation: jag-bob .36s ease-in-out infinite alternate; transform-origin: center; }
+.jaguar-svg .leg { transform-box: fill-box; transform-origin: top center; }
+.leg-a { animation: jag-leg .36s ease-in-out infinite alternate; }
+.leg-b { animation: jag-leg .36s ease-in-out infinite alternate-reverse; }
+.jaguar-ground { position: absolute; left: 0; right: 0; bottom: 2px; height: 1px; background: repeating-linear-gradient(90deg, var(--line-2) 0 8px, transparent 8px 14px); }
+@keyframes jag-cross { from { transform: translateX(124px); } to { transform: translateX(0); } }
+@keyframes jag-bob { from { transform: translateY(0); } to { transform: translateY(-2px); } }
+@keyframes jag-leg { from { transform: rotate(28deg); } to { transform: rotate(-28deg); } }
+@media (prefers-reduced-motion: reduce) {
+  .jaguar-svg, .jaguar-body, .leg-a, .leg-b { animation: none; }
+  .jaguar-svg { transform: translateX(62px); }
+}
+.study-error { display: grid; gap: 12px; padding: 24px; }
+.study-error-actions { display: flex; flex-wrap: wrap; gap: 8px; }

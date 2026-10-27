@@ -12,6 +12,10 @@ Input is file-upload-only: no typed/pasted notes box. A top-right Settings butto
 
 **Why:** The user explicitly requested these changes to the workflow.
 
+Mode selection belongs in the upload popup, not a duplicate "Build it your way" panel. Its Generate action should open a study view with the selected modes on the side and a small jaguar running left during generation.
+
+**Why:** The user explicitly requested a Studley-like selection-to-study flow.
+
 Timed papers follow the supplied school exam: Section A objective, Section B theory with one of two Part A questions and three of five Part B questions. Personal exam scheduling must not affect study generation. Provider names should not appear in product UI, while service failures must still be explained honestly.
 
 **Why:** The user repeated these requirements after showing a failed slide-generation recording.
@@ -25,3 +29,7 @@ Use the owner's own Gemini API access, not managed AI setup or automatic paid-pr
 Gemini's model listing is not proof that an account can generate with a model. On 2026-10-27, the listing included Gemini 2.5 Flash, but generation returned 404 saying it was unavailable to new users and recommended Gemini 3.8 Flash.
 
 **Why:** Listing-based availability checks alone gave a misleading result. Verify a real generation before claiming a configured model works; distinguish 503 capacity failures from quota or credential errors.
+
+Natural-language-only JSON generation can omit requested questions and return theory subparts with letter keys instead of the required label/question/modelAnswer shape. Use structural response schemas plus runtime validation; a successful HTTP response alone is not successful generation. Avoid nested numeric array bounds in Gemini's response schema: express counts in descriptions and enforce them after parsing instead.
+
+**Why:** A live response contained 10 objective and 5 malformed theory questions despite a request for 50 objective and 7 theory questions. Full schemas with nested array/numeric bounds also returned opaque INVALID_ARGUMENT errors; removing those bounds allowed real complete exam generation. Excess questions can be trimmed, but missing questions must never be fabricated to pass validation.
