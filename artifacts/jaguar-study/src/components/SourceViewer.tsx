@@ -18,27 +18,40 @@ function PdfPage({ blob, page, onCount }: { blob: Blob; page: number; onCount: (
         const pdfjs = await import('pdfjs-dist/legacy/build/pdf.mjs');
         pdfjs.GlobalWorkerOptions.workerSrc = new URL('pdfjs-dist/legacy/build/pdf.worker.mjs', import.meta.url).toString();
         loaded = (await pdfjs.getDocument({ data: new Uint8Array(await blob.arrayBuffer()) }).promise) as unknown as PdfDoc;
-        if (!alive) return;
+        if (!alive) { void loaded.destroy(); return; }
         setDoc(loaded); onCountRef.current(loaded.numPages);
       } catch { if (alive) setError('This PDF could not be opened for preview.'); }
     })();
     return () => { alive = false; void loaded?.destroy(); };
   }, [blob]);
+  // Re-render when the pane is resized so the page stays sharp at any split width.
+  const [w, setW] = useState(0);
+  useEffect(() => {
+    const el = wrap.current; if (!el || typeof ResizeObserver === 'undefined') return;
+    let t = 0;
+    const ro = new ResizeObserver(() => { window.clearTimeout(t); t = window.setTimeout(() => setW(Math.round(el.clientWidth / 24) * 24), 140); });
+    ro.observe(el);
+    return () => { ro.disconnect(); window.clearTimeout(t); };
+  }, []);
   useEffect(() => {
     if (!doc || !canvas.current || !wrap.current) return;
+    let active = true;
     let task: { cancel: () => void; promise: Promise<void> } | null = null;
     (async () => {
+      try {
       const p = await doc.getPage(Math.min(page, doc.numPages));
+      if (!active || !wrap.current || !canvas.current) return;
       const base = p.getViewport({ scale: 1 });
-      const scale = ((wrap.current!.clientWidth || 900) / base.width) * Math.min(2, window.devicePixelRatio || 1);
+      const scale = ((wrap.current!.clientWidth || 900) / base.width) * Math.min(3, Math.max(1.5, window.devicePixelRatio || 1));
       const viewport = p.getViewport({ scale });
       const c = canvas.current!;
       c.width = viewport.width; c.height = viewport.height;
       task = p.render({ canvasContext: c.getContext('2d')!, viewport, canvas: c });
-      try { await task!.promise; } catch { /* cancelled */ }
+      await task!.promise;
+      } catch { if (active) setError('This PDF page could not be rendered. Try reattaching the file.'); }
     })();
-    return () => task?.cancel();
-  }, [doc, page]);
+    return () => { active = false; task?.cancel(); };
+  }, [doc, page, w]);
   if (error) return <div className="viewer-empty"><FileWarning size={18} />{error}</div>;
   return <div className="pdf-wrap" ref={wrap}>{!doc && <div className="viewer-skeleton" />}<canvas ref={canvas} className="pdf-canvas" data-testid="canvas-pdf-page" /></div>;
 }

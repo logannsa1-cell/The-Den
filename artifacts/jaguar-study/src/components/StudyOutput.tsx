@@ -35,6 +35,8 @@ type Props = {
 
 const SPLIT_KEY = 'jaguar-source-split';
 const SHOW_KEY = 'jaguar-source-visible';
+const READ_KEY = 'jaguar-read-size';
+const READ_SIZES = [15, 16.5, 18, 19.5];
 const MIN_SRC = 15, MAX_SRC = 70;
 const clampSrc = (n: number) => Math.round(Math.max(MIN_SRC, Math.min(MAX_SRC, n)));
 function readNum(k: string, d: number) { try { const v = Number(localStorage.getItem(k)); return Number.isFinite(v) && v > 0 ? clampSrc(v) : d; } catch { return d; } }
@@ -74,6 +76,9 @@ export function StudyOutput({ set, userId, synced, clean, sources, onReattach, o
   const [showSource, setShowSourceRaw] = useState(() => readBool(SHOW_KEY, true));
   const [srcPct, setSrcPctRaw] = useState(() => readNum(SPLIT_KEY, 30));
   const [full, setFull] = useState(false);
+  const [readIdx, setReadIdxRaw] = useState(() => { try { const raw = localStorage.getItem(READ_KEY); const v = raw === null ? 1 : Number(raw); return Number.isInteger(v) && v >= 0 && v < READ_SIZES.length ? v : 1; } catch { return 1; } });
+  const setReadIdx = (n: number) => { const c = Math.max(0, Math.min(READ_SIZES.length - 1, n)); setReadIdxRaw(c); try { localStorage.setItem(READ_KEY, String(c)); } catch { /* ignore */ } };
+  const reading = tab === 'summary' || tab === 'tutor' || tab === 'cram' || tab === 'terms';
   const setShowSource = (v: boolean) => { setShowSourceRaw(v); try { localStorage.setItem(SHOW_KEY, v ? '1' : '0'); } catch { /* ignore */ } };
   const setSrcPct = (n: number) => { const c = clampSrc(n); setSrcPctRaw(c); try { localStorage.setItem(SPLIT_KEY, String(c)); } catch { /* ignore */ } };
   const closeRef = useRef<HTMLButtonElement>(null);
@@ -169,6 +174,10 @@ export function StudyOutput({ set, userId, synced, clean, sources, onReattach, o
           ))}
         </div>
         <div className="split-controls">
+          {reading && <div className="read-size" role="group" aria-label="Text size">
+            <button className="quiet-button" type="button" onClick={() => setReadIdx(readIdx - 1)} disabled={readIdx === 0} aria-label="Smaller text" data-testid="button-text-smaller">A-</button>
+            <button className="quiet-button" type="button" onClick={() => setReadIdx(readIdx + 1)} disabled={readIdx === READ_SIZES.length - 1} aria-label="Larger text" data-testid="button-text-larger">A+</button>
+          </div>}
           {sourceToggle}
           {showSource && <div className="split-size" role="group" aria-label="Space split">
             <button className="quiet-button" type="button" onClick={() => setSrcPct(srcPct - 10)} disabled={srcPct <= MIN_SRC} data-testid="button-more-study">More study</button>
@@ -179,7 +188,7 @@ export function StudyOutput({ set, userId, synced, clean, sources, onReattach, o
       </div>
 
       <div ref={bodyRef} className={`study-split${showSource ? ' with-source' : ''}`} style={{ ['--src' as string]: `${srcPct}%` }} data-testid="layout-study-split">
-        <div className="panel output-card study-pane">
+        <div className="panel output-card study-pane" style={{ ['--read-size' as string]: `${READ_SIZES[readIdx]}px` }}>
           {mounted.map((id) => (
             <div key={id} role="tabpanel" id={`panel-${id}`} aria-labelledby={`tab-${id}`} hidden={id !== tab} data-testid={`panel-${id}`}>{panel(id)}</div>
           ))}

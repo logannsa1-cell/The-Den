@@ -18,6 +18,14 @@ Mode selection belongs in the upload popup, not a duplicate "Build it your way" 
 
 Tutor Lesson should be medium-length and detailed; Note Summary should be long and very detailed; Cram Sheet should be short and concise for last-minute test preparation. Do not make them interchangeable copies.
 
+The later Studley reference clarifies that "medium" is relative: substantial multi-topic tutor lessons should resemble the supplied ~3,200-word, 14-page teaching document, not a 500–800-word overview. Keep summaries more comprehensive and cram sheets brief.
+
+**Why:** The user supplied a full lesson to clarify the expected depth, examples and explanation quality.
+
+Long-form quality needs live output checks, not just larger word targets. Both multi-mode structured generation and a single plain-text expansion returned short overviews despite explicit length instructions; developing each draft topic separately produced substantial, distinct lessons and reference notes.
+
+**Why:** A ~3,200-word reference yielded only ~400-word outputs until generation was broken into topic-sized teaching requests. Preserve source grounding and bounded requests rather than padding text or assuming prompts enforce length.
+
 The source slideshow must be available beside each mode, with study content taking most space by default. Users must be able to resize either side, completely hide the slideshow, and restore it without deleting originals.
 
 **Why:** The user explicitly requested distinct learning formats and flexible study/slideshow screen space.
