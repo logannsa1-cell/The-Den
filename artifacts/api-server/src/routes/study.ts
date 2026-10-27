@@ -4,6 +4,7 @@ import {
   GenerateStudyMaterialsBody,
   GenerateStudyMaterialsResponse,
 } from "@workspace/api-zod";
+import { requireAuth } from "../middlewares/requireAuth";
 
 const router: IRouter = Router();
 const requestWindows = new Map<string, { count: number; resetAt: number }>();
@@ -79,7 +80,7 @@ function isRateLimited(key: string, now: number): boolean {
   return false;
 }
 
-router.post("/study/generate", async (req, res): Promise<void> => {
+router.post("/study/generate", requireAuth, async (req, res): Promise<void> => {
   if (!process.env.OPENAI_API_KEY) {
     res.status(503).json({
       error: "AI generation is not configured on the server yet.",

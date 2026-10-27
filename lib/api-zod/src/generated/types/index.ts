@@ -12,4 +12,6 @@ export * from './studyGeneration';
 export * from './studyGenerationInput';
 export * from './studyPlanDay';
 export * from './studyQuestion';
+export * from './studySet';
+export * from './studySetInput';
 export * from './studyTerm';

@@ -68,6 +68,44 @@ export interface StudyGeneration {
   studyPlan: StudyPlanDay[];
 }
 
+export interface StudySetInput {
+  /**
+     * @minLength 1
+     * @maxLength 160
+     */
+  title: string;
+  /**
+     * @minLength 1
+     * @maxLength 160
+     */
+  sourceName: string;
+  /**
+     * @minLength 120
+     * @maxLength 60000
+     */
+  sourceText: string;
+  /** @maxLength 20000 */
+  summary: string;
+  /** @maxItems 100 */
+  keyTerms: StudyTerm[];
+  /** @maxItems 100 */
+  cramPoints: string[];
+  /** @maxItems 50 */
+  questions: StudyQuestion[];
+  /** @maxItems 90 */
+  studyPlan: StudyPlanDay[];
+  /**
+     * @maxItems 100
+     * @items.maxLength 240
+     */
+  masteredTerms: string[];
+}
+
+export type StudySet = StudySetInput & {
+  id: string;
+  createdAt: string;
+};
+
 export interface ApiError {
   error: string;
 }
