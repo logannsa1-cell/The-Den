@@ -24,8 +24,8 @@ function clean(value: string) {
   if (c.text) return c.text;
   return c.removedOfficeMarkup ? 'Unreadable document formatting was removed.' : value;
 }
-function safeReadSets(): StudySet[] {
-  try { const p: unknown = JSON.parse(localStorage.getItem(STORAGE_KEY) ?? '[]'); return Array.isArray(p) ? (p as StudySet[]) : []; } catch { return []; }
+function safeReadSets(userId?: string): StudySet[] {
+  try { const p: unknown = JSON.parse(localStorage.getItem(userId ? `${STORAGE_KEY}-${userId}` : STORAGE_KEY) ?? '[]'); return Array.isArray(p) ? (p as StudySet[]) : []; } catch { return []; }
 }
 function toInput(set: StudySet): StudySetInput {
   return {
@@ -58,11 +58,14 @@ export default function Workspace() {
   const { user } = useUser();
   const { signOut } = useClerk();
   const userId = user?.id ?? '';
+  const alive = useRef(true);
+  useEffect(() => { alive.current = true; return () => { alive.current = false; }; }, []);
+  const accountQueryKey = [...getListStudySetsQueryKey(), userId];
   const qc = useQueryClient();
   const generate = useGenerateStudyMaterials();
   const upsert = useUpsertStudySet();
   const removeRemote = useDeleteStudySet();
-  const remoteQuery = useListStudySets({ query: { enabled: !!userId, queryKey: getListStudySetsQueryKey() } });
+  const remoteQuery = useListStudySets({ query: { enabled: !!userId, queryKey: accountQueryKey, staleTime: 0, refetchInterval: 15000, refetchOnWindowFocus: 'always', refetchOnReconnect: 'always' } });
   const remoteSets = useMemo(() => (remoteQuery.data ?? []) as StudySet[], [remoteQuery.data]);
 
   const [files, setFiles] = useState<SourceEntry[]>([]);
@@ -82,6 +85,7 @@ export default function Workspace() {
   const [error, setError] = useState('');
   const [tried, setTried] = useState(false);
   const [localSets, setLocalSets] = useState<StudySet[]>([]);
+  const [legacySets, setLegacySets] = useState<StudySet[]>([]);
   const [migration, setMigration] = useState<'pending' | 'sync' | 'local' | null>(null);
   const [syncing, setSyncing] = useState(false);
   const [active, setActive] = useState<StudySet | null>(null);
@@ -95,7 +99,12 @@ export default function Workspace() {
   const submitting = useRef(false);
   const [generating, setGenerating] = useState(false);
 
-  useEffect(() => { setLocalSets(safeReadSets()); }, []);
+  useEffect(() => {
+    const refresh = () => { setLocalSets(safeReadSets(userId)); setLegacySets(safeReadSets()); };
+    refresh();
+    window.addEventListener('storage', refresh);
+    return () => window.removeEventListener('storage', refresh);
+  }, [userId]);
   const setModesState = (m: StudyMode[]) => { setModesRaw(m); if (userId) { try { localStorage.setItem(modesKey(userId), JSON.stringify(m)); } catch { /* ignore */ } } };
   // Prompt for modes each time a newly uploaded file finishes reading.
   useEffect(() => {
@@ -127,13 +136,21 @@ export default function Workspace() {
 
   const remoteIds = new Set(remoteSets.map((s) => s.id));
   const savedSets = [...remoteSets, ...localSets.filter((l) => !remoteIds.has(l.id))];
-  const localOnly = localSets.filter((s) => !remoteIds.has(s.id));
+  const localOnly = [...localSets, ...legacySets.filter((s) => !localSets.some((l) => l.id === s.id))].filter((s) => !remoteIds.has(s.id));
 
   const persist = (sets: StudySet[]) => {
-    setLocalSets(sets);
-    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(sets)); } catch { setError('This browser could not save the set locally. Free some storage and try again.'); }
+    try {
+      localStorage.setItem(`${STORAGE_KEY}-${userId}`, JSON.stringify(sets));
+      setLocalSets(sets);
+      return true;
+    } catch { setError('This browser could not save the set locally. Free some storage and try again.'); return false; }
   };
-  const putRemote = (saved: StudySet) => qc.setQueryData<StudySet[]>(getListStudySetsQueryKey(), (old) => [saved, ...(old ?? []).filter((s) => s.id !== saved.id)]);
+  const putRemote = (saved: StudySet) => qc.setQueryData<StudySet[]>(accountQueryKey, (old) => [saved, ...(old ?? []).filter((s) => s.id !== saved.id)]);
+  const removeBackup = (id: string) => {
+    persist(safeReadSets(userId).filter((s) => s.id !== id));
+    const legacy = safeReadSets().filter((s) => s.id !== id);
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(legacy)); setLegacySets(legacy); } catch { /* Keep the original backup on failure. */ }
+  };
 
   const count = intIn(questionCount, 1, 50) ?? (modes.includes('objective') || modes.includes('timed') ? null : 10);
   const minutes = intIn(examMinutes, 1, 180);
@@ -166,6 +183,7 @@ export default function Workspace() {
           ...(modes.includes('timed') && minutes ? { examMinutes: minutes } : {}),
         },
       });
+      if (!alive.current) return;
       const created: StudySet = {
         ...result, modes: result.modes ?? modes, ...(modes.includes('timed') && minutes ? { examMinutes: result.examMinutes ?? minutes } : {}),
         id: `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`, sourceName, sourceText, createdAt: new Date().toISOString(), masteredTerms: [],
@@ -174,10 +192,11 @@ export default function Workspace() {
       if (userId && originals.length) await saveSources(sourceKey(userId, created.id), originals).catch(() => {
         setError('Your study materials were generated, but this browser could not save the original files. Reattach the files to preview them after reloading.');
       });
-      persist([created, ...safeReadSets().filter((s) => s.id !== created.id)].slice(0, 24));
+      if (!alive.current) return;
+      persist([created, ...safeReadSets(userId).filter((s) => s.id !== created.id)]);
       let synced = false;
       if (userId) {
-        try { const saved = await upsert.mutateAsync({ id: created.id, data: toInput(created) }); persist(safeReadSets().filter((s) => s.id !== saved.id)); putRemote(saved as StudySet); synced = true; }
+        try { const saved = await upsert.mutateAsync({ id: created.id, data: toInput(created) }); if (!alive.current) return; removeBackup(saved.id); putRemote(saved as StudySet); synced = true; }
         catch { setNotice('Saved on this browser only. Sync it when you are back online.'); }
       }
       setActive(created);
@@ -208,25 +227,36 @@ export default function Workspace() {
     const remote = remoteIds.has(set.id);
     if (!window.confirm(`Delete "${clean(set.title)}"${remote ? ' from your account' : ' from this browser'}? This cannot be undone.`)) return;
     const done = () => { if (active?.id === set.id) { setActive(null); setView('builder'); } if (userId) void deleteSources(sourceKey(userId, set.id)); setNotice('Study set deleted.'); };
-    if (remote) removeRemote.mutate({ id: set.id }, { onSuccess: () => { qc.setQueryData<StudySet[]>(getListStudySetsQueryKey(), (old) => (old ?? []).filter((s) => s.id !== set.id)); done(); }, onError: () => setError('Could not delete. Try again.') });
+    if (remote) removeRemote.mutate({ id: set.id }, { onSuccess: () => { qc.setQueryData<StudySet[]>(accountQueryKey, (old) => (old ?? []).filter((s) => s.id !== set.id)); removeBackup(set.id); done(); }, onError: () => setError('Could not delete. Try again.') });
     else { persist(localSets.filter((s) => s.id !== set.id)); done(); }
   };
 
   const syncOne = async (set: StudySet) => {
-    try { const saved = await upsert.mutateAsync({ id: set.id, data: toInput(set) }); persist(safeReadSets().filter((s) => s.id !== saved.id)); putRemote(saved as StudySet); setNotice('Synced to your account.'); }
+    try { const saved = await upsert.mutateAsync({ id: set.id, data: toInput(set) }); if (!alive.current) return; removeBackup(saved.id); putRemote(saved as StudySet); setNotice('Synced to your account.'); }
     catch { setNotice('Could not sync. It is still on this browser.'); }
   };
   const syncAll = async () => {
     if (!userId || syncing) return;
     setSyncing(true); let n = 0;
     try {
-      for (const set of localOnly) { const saved = await upsert.mutateAsync({ id: set.id, data: toInput(set) }); putRemote(saved as StudySet); persist(safeReadSets().filter((s) => s.id !== saved.id)); n += 1; }
+      for (const set of localOnly) {
+        if (!alive.current) return;
+        const saved = await upsert.mutateAsync({ id: set.id, data: toInput(set) });
+        if (!alive.current) return;
+        putRemote(saved as StudySet); removeBackup(saved.id); n += 1;
+      }
       localStorage.setItem(`jaguar-study-migration-${userId}`, 'sync'); setMigration('sync');
       setNotice(n ? `${n} ${n === 1 ? 'set' : 'sets'} synced.` : 'Already up to date.');
     } catch { setNotice(`Synced ${n} of ${localOnly.length}. The rest are safe here; retry anytime.`); }
     finally { setSyncing(false); }
   };
-  const keepLocal = () => { if (!userId) return; localStorage.setItem(`jaguar-study-migration-${userId}`, 'local'); setMigration('local'); };
+  const keepLocal = () => {
+    if (!userId || !persist(localOnly)) return;
+    try {
+      localStorage.removeItem(STORAGE_KEY); setLegacySets([]);
+      localStorage.setItem(`jaguar-study-migration-${userId}`, 'local'); setMigration('local');
+    } catch { setError('Could not update the import preference. Your sets are retained.'); }
+  };
 
   const reattach = async (picked: File[]) => {
     if (!active || !userId) return;
@@ -333,10 +363,10 @@ export default function Workspace() {
             <p className="welcome-copy">Bring your note so you can study</p>
           </section>
 
-          {migration === 'pending' && localOnly.length > 0 && (
+          {(migration === 'pending' || legacySets.length > 0) && localOnly.length > 0 && (
             <section className="sync-choice reveal">
               <span className="sync-choice-icon"><Cloud size={18} /></span>
-              <div className="sync-choice-copy"><h2>Earlier sets on this browser</h2><p>{localOnly.length} local {localOnly.length === 1 ? 'set' : 'sets'} found. Sync them to your account? Nothing is removed unless syncing succeeds.</p></div>
+              <div className="sync-choice-copy"><h2>Earlier sets on this browser</h2><p>{localOnly.length} local {localOnly.length === 1 ? 'set' : 'sets'} found. Only import these if they belong to you. Sync them to your account, or keep them locally for this account. Nothing is removed unless saving succeeds.</p></div>
               <div className="sync-choice-actions">
                 <button className="primary-button" type="button" onClick={() => void syncAll()} disabled={syncing} data-testid="button-sync-local">{syncing ? 'Syncing...' : 'Sync to my account'}</button>
                 <button className="quiet-button" type="button" onClick={keepLocal} data-testid="button-keep-local">Keep on this browser</button>

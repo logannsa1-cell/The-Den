@@ -52,43 +52,26 @@ router.put("/study-sets/:id", requireAuth, async (req, res): Promise<void> => {
   }
 
   const userId = res.locals.userId as string;
-  const [existing] = await db
-    .select()
-    .from(studySetsTable)
-    .where(eq(studySetsTable.id, params.data.id))
-    .limit(1);
-
-  if (existing && existing.userId !== userId) {
+  // One atomic operation: simultaneous retries cannot race into duplicate IDs,
+  // and a conflicting ID owned by another account is never overwritten.
+  const [saved] = await db.insert(studySetsTable).values({
+    id: params.data.id, userId, payload: parsed.data,
+    createdAt: new Date(), updatedAt: new Date(),
+  }).onConflictDoUpdate({
+    target: studySetsTable.id,
+    set: { payload: parsed.data, updatedAt: new Date() },
+    setWhere: eq(studySetsTable.userId, userId),
+  }).returning({ createdAt: studySetsTable.createdAt });
+  if (!saved) {
     res.status(409).json({ error: "That study set belongs to another account." });
     return;
-  }
-
-  const createdAt = existing?.createdAt ?? new Date();
-  if (existing) {
-    await db
-      .update(studySetsTable)
-      .set({ payload: parsed.data, updatedAt: new Date() })
-      .where(
-        and(
-          eq(studySetsTable.id, params.data.id),
-          eq(studySetsTable.userId, userId),
-        ),
-      );
-  } else {
-    await db.insert(studySetsTable).values({
-      id: params.data.id,
-      userId,
-      payload: parsed.data,
-      createdAt,
-      updatedAt: new Date(),
-    });
   }
 
   res.json(
     UpsertStudySetResponse.parse({
       ...parsed.data,
       id: params.data.id,
-      createdAt: createdAt.toISOString(),
+      createdAt: saved.createdAt.toISOString(),
     }),
   );
 });
