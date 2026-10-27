@@ -246,7 +246,7 @@ export default function Workspace() {
   const initial = (user?.firstName?.[0] ?? user?.emailAddresses[0]?.emailAddress[0] ?? 'J').toUpperCase();
 
   return (
-    <div className="app-shell">
+    <div className={`app-shell${view === 'study' && !settingsOpen ? ' study-focused' : ''}`}>
       <RosetteCorners />
       <aside className="sidebar" aria-label="Jaguar workspace">
         <BrandLockup size={42} caption="exam prep" />

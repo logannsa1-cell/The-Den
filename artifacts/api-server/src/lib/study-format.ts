@@ -16,8 +16,8 @@ export function studyFormat(modes: string[], questionCount: number) {
       name: "study_materials",
       schema: object({
         title: text,
-        summary: { ...text, description: "Long, very detailed exam-ready reference notes covering every source topic; longer than tutorLesson. Empty when not selected." },
-        tutorLesson: { ...text, description: "Medium-length detailed guided teaching, shorter than summary; not a duplicate. Empty when not selected." },
+        summary: { ...text, description: "Long, very detailed reference notes: target 2800–4500 words for substantial multi-topic files, proportionately shorter for short sources. Developed explanations of every source topic, mechanisms, comparisons and worked examples; longer than tutorLesson. Empty when not selected." },
+        tutorLesson: { ...text, description: "Substantial guided teaching: target 1800–3200 words for substantial multi-topic files, proportionately shorter for short sources. Explain what, why and how with developed paragraphs, step-by-step examples, understanding checks and explained answers. Shorter than summary, not a duplicate. Empty when not selected." },
         keyTerms: array(object({ term: text, definition: text }), 8, 16),
         cramPoints: array({ ...text, description: "One concise last-minute recall cue, usually 8–18 words. Entire cram sheet at most 180 words." }, modes.includes("cram") ? 8 : 0, modes.includes("cram") ? 12 : 0),
         questions: array(object({

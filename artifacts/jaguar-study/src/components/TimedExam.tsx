@@ -96,15 +96,20 @@ export function TimedExam({ title, questions, theory, minutes, storageKey, clean
     const set = (fn: (s: Extract<ExamState, { status: 'running' }>) => Partial<Extract<ExamState, { status: 'running' }>>) =>
       setState((s) => (s.status === 'running' ? { ...s, ...fn(s) } : s));
     const low = remaining < 5 * 60000;
+    const critical = remaining < 60000;
     const q = questions[state.current];
     const togglePartB = (qi: number) => set((s) => ({ partB: s.partB.includes(qi) ? s.partB.filter((x) => x !== qi) : s.partB.length >= 3 ? s.partB : [...s.partB, qi] }));
     return (
       <div className="exam-run paper" data-testid="exam-running">
         <div className="exam-top">
-          <span className={`countdown${low ? ' low' : ''}`} role="timer" aria-live="off" data-testid="text-countdown"><Timer size={14} /> {fmt(remaining)}</span>
           <div className="section-switch" role="tablist">
             <button type="button" role="tab" aria-selected={state.section === 'A'} className={state.section === 'A' ? 'on' : ''} onClick={() => set(() => ({ section: 'A' }))} data-testid="tab-section-a">Section A <small>{answered}/{questions.length}</small></button>
             <button type="button" role="tab" aria-selected={state.section === 'B'} className={state.section === 'B' ? 'on' : ''} onClick={() => set(() => ({ section: 'B' }))} data-testid="tab-section-b">Section B <small>{picks.length}/4</small></button>
+          </div>
+          <div className={`exam-clock${low ? ' low' : ''}${critical ? ' critical' : ''}`} data-testid="status-exam-clock">
+            <span className="countdown" role="timer" aria-live="off" aria-label={`Time left ${fmt(remaining)}`} data-testid="text-countdown"><Timer size={13} /> {fmt(remaining)}<small>left</small></span>
+            <span className="clock-bar" aria-hidden="true"><span style={{ transform: `scaleX(${Math.max(0, Math.min(1, remaining / (minutes * 60000)))})` }} /></span>
+            {low && <span className="sr-only" role="status">{critical ? 'Less than one minute left' : 'Less than five minutes left'}</span>}
           </div>
           <button className="small-primary" type="button" onClick={() => { if (!incomplete.length || window.confirm(`Your paper is incomplete: ${incomplete.join('; ')}. Submit anyway?`)) submit(false); }} data-testid="button-submit-exam"><Send size={13} /> Submit</button>
         </div>
