@@ -129,6 +129,7 @@ router.post("/study/generate", requireAuth, async (req, res): Promise<void> => {
       model: process.env.GEMINI_MODEL || "gemini-3.1-flash-lite",
       modes,
       questionCount: parsed.data.questionCount,
+      onAttempt: (event) => req.log.info({ ...event, modes, sourceCharacters: cleanedSource.sourceText.length }, "Study provider attempt completed"),
       messages: [
         {
           role: "system",
