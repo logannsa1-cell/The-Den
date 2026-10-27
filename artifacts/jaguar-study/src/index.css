@@ -3,9 +3,13 @@
 @import 'tailwindcss';
 @import '@clerk/themes/shadcn.css';
 @import 'tw-animate-css';
+@import 'katex/dist/katex.min.css';
 @plugin "@tailwindcss/typography";
 
 @custom-variant dark (&:is(.dark *));
+.study-math { max-width: 100%; }
+.study-math .katex { font-size: 1.08em; }
+.display-math { display: block; overflow-x: auto; padding: .35rem 0; }
 
 :root { --jaguar-hue: 0deg; }
 .workspace[hidden] { display: none; }

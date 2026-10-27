@@ -2,6 +2,7 @@ import { useEffect, useRef, useState, type KeyboardEvent as ReactKeyboardEvent, 
 import { ArrowDownToLine, BookOpen, Copy, Eye, EyeOff, GraduationCap, KeyRound, Layers, Lightbulb, ListChecks, Maximize2, Minimize2, PanelRightClose, PanelRightOpen, PenLine, Timer, X } from 'lucide-react';
 import type { StudyMode, StudySet } from '@/study';
 import { RichNotes } from './RichNotes';
+import { StudyText } from './StudyText';
 import { SourceViewer } from './SourceViewer';
 import { TimedExam } from './TimedExam';
 import { TheoryTest } from './TheoryTest';
@@ -137,7 +138,7 @@ export function StudyOutput({ set, userId, synced, clean, sources, onReattach, o
       case 'theory': return <TheoryTest key={`theory-${key}`} questions={set.theoryQuestions ?? []} storageKey={`jaguar-theory-${key}`} clean={clean} />;
       case 'terms': return set.keyTerms.length ? <div className="term-grid">{set.keyTerms.map((t, i) => <article className="term-card" key={i} data-testid={`term-card-${i}`}><strong>{clean(t.term)}</strong><p>{clean(t.definition)}</p></article>)}</div> : <div className="empty-state"><strong>No key terms</strong></div>;
       case 'flashcards': return <Flashcards terms={set.keyTerms} mastered={set.masteredTerms ?? []} onRate={onRate} clean={clean} setId={set.id} />;
-      case 'cram': return set.cramPoints.length ? <ul className="cram-list">{set.cramPoints.map((p, i) => <li key={i} data-testid={`cram-point-${i}`}><span className="cram-dot">{String(i + 1).padStart(2, '0')}</span><span>{clean(p)}</span></li>)}</ul> : <div className="empty-state"><strong>No cram points</strong></div>;
+      case 'cram': return set.cramPoints.length ? <ul className="cram-list">{set.cramPoints.map((p, i) => <li key={i} data-testid={`cram-point-${i}`}><span className="cram-dot">{String(i + 1).padStart(2, '0')}</span><span><StudyText text={clean(p)} /></span></li>)}</ul> : <div className="empty-state"><strong>No cram points</strong></div>;
       case 'tutor': return set.tutorLesson ? <RichNotes text={clean(set.tutorLesson)} testId="text-tutor-lesson" /> : <div className="empty-state"><strong>No tutor lesson in this set</strong><p>Build a new set with Tutor Lesson selected.</p></div>;
     }
   };
