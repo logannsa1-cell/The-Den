@@ -1,5 +1,6 @@
 import { type DragEvent, type ReactNode, useEffect, useRef, useState } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { useQueryClient } from '@tanstack/react-query';
 import { ErrorBoundary } from '@/components/error-boundary';
 import { Toaster } from '@/components/ui/toaster';
 import { TooltipProvider } from '@/components/ui/tooltip';
@@ -8,10 +9,16 @@ import {
   AlertCircle, ArrowDownToLine, BookOpen, Bookmark, CheckCircle2, ChevronRight,
   CircleHelp, Clock3, Copy, FileText, Flame, FolderOpen, KeyRound,
   Layers, Lightbulb, ListChecks, LoaderCircle, LockKeyhole, PawPrint, Plus, RotateCcw,
-  Sparkles, Trash2, Upload, X,
+  Sparkles, Trash2, Upload, X, ArrowRight, ShieldCheck, Cloud, LogIn,
 } from 'lucide-react';
-import { useGenerateStudyMaterials, type StudyGeneration } from '@workspace/api-client-react';
-import { Route, Switch, useLocation, Router as WouterRouter } from 'wouter';
+import {
+  getListStudySetsQueryKey, useDeleteStudySet, useGenerateStudyMaterials,
+  useListStudySets, useUpsertStudySet, type StudyGeneration, type StudySetInput,
+} from '@workspace/api-client-react';
+import { ClerkProvider, Show, SignIn, SignUp, useClerk, useUser } from '@clerk/react';
+import { publishableKeyFromHost } from '@clerk/react/internal';
+import { shadcn } from '@clerk/themes';
+import { Link, Redirect, Route, Switch, useLocation, Router as WouterRouter } from 'wouter';
 import { readStudyFile, sanitizeStudyText, type StudySet } from './study';
 
 const queryClient = new QueryClient();
@@ -20,6 +27,17 @@ const ACCEPTED = '.pdf,.docx,.pptx,.txt,.md,.csv';
 const MAX_FILE_BYTES = 15 * 1024 * 1024;
 const MAX_SOURCE_CHARS = 60000;
 type OutputTab = 'summary' | 'terms' | 'flashcards' | 'practice' | 'cram' | 'plan';
+const basePath = import.meta.env.BASE_URL.replace(/\/$/, '');
+const clerkPubKey = publishableKeyFromHost(window.location.hostname, import.meta.env.VITE_CLERK_PUBLISHABLE_KEY);
+const clerkProxyUrl = import.meta.env.VITE_CLERK_PROXY_URL;
+
+function toStudySetInput(set: StudySet): StudySetInput {
+  return {
+    title: set.title, sourceName: set.sourceName, sourceText: set.sourceText, summary: set.summary,
+    keyTerms: set.keyTerms, cramPoints: set.cramPoints, questions: set.questions,
+    studyPlan: set.studyPlan, masteredTerms: set.masteredTerms ?? [],
+  };
+}
 
 function displayText(value: string, fallback = 'Unreadable document formatting was removed. Re-upload the original file to rebuild this section.') {
   const cleaned = sanitizeStudyText(value);
@@ -76,8 +94,15 @@ function formatDate(date: string) {
     : new Intl.DateTimeFormat(undefined, { month: 'short', day: 'numeric', year: 'numeric' }).format(parsed);
 }
 
-function Home() {
+function Workspace() {
   const generate = useGenerateStudyMaterials();
+  const upsert = useUpsertStudySet();
+  const removeRemote = useDeleteStudySet();
+  const queryClient = useQueryClient();
+  const { user } = useUser();
+  const { signOut } = useClerk();
+  const remoteQuery = useListStudySets({ query: { enabled: !!user?.id, queryKey: getListStudySetsQueryKey() } });
+  const remoteSets = remoteQuery.data ?? [];
   const [notes, setNotes] = useState('');
   const [sourceName, setSourceName] = useState('Pasted notes');
   const [examDate, setExamDate] = useState(defaultExamDate);
@@ -86,7 +111,9 @@ function Home() {
   const [fileError, setFileError] = useState('');
   const [isReading, setIsReading] = useState(false);
   const [dragging, setDragging] = useState(false);
-  const [savedSets, setSavedSets] = useState<StudySet[]>([]);
+  const [localSets, setLocalSets] = useState<StudySet[]>([]);
+  const [migrationChoice, setMigrationChoice] = useState<'pending' | 'sync' | 'local' | null>(null);
+  const [syncing, setSyncing] = useState(false);
   const [activeSet, setActiveSet] = useState<StudySet | null>(null);
   const [activeTab, setActiveTab] = useState<OutputTab>('summary');
   const [selectedAnswer, setSelectedAnswer] = useState<number | null>(null);
@@ -96,11 +123,24 @@ function Home() {
   const [notice, setNotice] = useState('');
   const fileInput = useRef<HTMLInputElement>(null);
   const outputRef = useRef<HTMLElement>(null);
-  const isPending = generate.isPending || isReading;
+  const isPending = generate.isPending || upsert.isPending || isReading;
 
+  useEffect(() => { setLocalSets(safeReadSets()); }, []);
   useEffect(() => {
-    setSavedSets(safeReadSets());
-  }, []);
+    setActiveSet(null);
+    setSelectedAnswer(null);
+    setQuestionIndex(0);
+    setFlashcardIndex(0);
+    setFlashcardFlipped(false);
+  }, [user?.id]);
+  const savedSets = [...remoteSets, ...localSets.filter((local) => !remoteSets.some((remote) => remote.id === local.id))];
+  const remoteIds = new Set(remoteSets.map((set) => set.id));
+  const localOnlyCount = localSets.filter((set) => !remoteIds.has(set.id)).length;
+  useEffect(() => {
+    if (!user?.id) { setMigrationChoice(null); return; }
+    const decision = localStorage.getItem(`jaguar-study-migration-${user.id}`);
+    setMigrationChoice(decision === 'sync' ? 'sync' : decision === 'local' ? 'local' : 'pending');
+  }, [user?.id]);
 
   useEffect(() => {
     if (!notice) return;
@@ -109,7 +149,7 @@ function Home() {
   }, [notice]);
 
   const persist = (sets: StudySet[]) => {
-    setSavedSets(sets);
+    setLocalSets(sets);
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(sets));
     } catch {
@@ -187,13 +227,25 @@ function Home() {
       const created = toStoredSet(result, sourceName || 'Pasted notes', sourceText);
       const next = [created, ...safeReadSets().filter((item) => item.id !== created.id)].slice(0, 24);
       persist(next);
+      let syncedToAccount = false;
+      if (user?.id) {
+        try {
+          const synced = await upsert.mutateAsync({ id: created.id, data: toStudySetInput(created) });
+          persist(safeReadSets().filter((item) => item.id !== synced.id));
+          queryClient.setQueryData<StudySet[]>(getListStudySetsQueryKey(), (old) => [synced, ...(old ?? []).filter((item) => item.id !== synced.id)]);
+          syncedToAccount = true;
+        } catch {
+          setNotice('Saved on this browser only. Sync it when your connection is back.');
+        }
+      }
       setActiveSet(created);
       setActiveTab('summary');
       setSelectedAnswer(null);
       setQuestionIndex(0);
       setFlashcardIndex(0);
       setFlashcardFlipped(false);
-      setNotice('Your study set is ready and saved in this browser.');
+      if (syncedToAccount) setNotice('Your study set is ready and synced to your account.');
+      else if (!user?.id) setNotice('Your study set is ready and saved in this browser.');
       window.setTimeout(() => outputRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 60);
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : 'Study materials could not be generated. Please try again.');
@@ -218,16 +270,69 @@ function Home() {
     else masteredTerms.delete(term.term);
     const updated = { ...activeSet, masteredTerms: Array.from(masteredTerms) };
     setActiveSet(updated);
-    persist(savedSets.map((set) => (set.id === updated.id ? updated : set)));
+    if (remoteIds.has(updated.id)) {
+      upsert.mutate({ id: updated.id, data: toStudySetInput(updated) }, {
+        onSuccess: (saved) => queryClient.setQueryData<StudySet[]>(getListStudySetsQueryKey(), (old) => (old ?? []).map((set) => set.id === saved.id ? saved : set)),
+        onError: () => setNotice('Progress could not sync. Try again when you are online.'),
+      });
+    } else persist(localSets.map((set) => (set.id === updated.id ? updated : set)));
     setFlashcardIndex((index) => (index + 1) % activeSet.keyTerms.length);
     setFlashcardFlipped(false);
   };
 
   const deleteSet = (id: string) => {
-    const next = savedSets.filter((set) => set.id !== id);
-    persist(next);
-    if (activeSet?.id === id) setActiveSet(null);
-    setNotice('Study set removed from this browser.');
+    const target = savedSets.find((set) => set.id === id);
+    if (!target || !window.confirm(`Delete “${displayText(target.title, 'this study set')}”${remoteIds.has(id) ? ' from your account' : ' from this browser'}? This cannot be undone.`)) return;
+    if (remoteIds.has(id)) {
+      removeRemote.mutate({ id }, {
+        onSuccess: () => {
+          queryClient.setQueryData<StudySet[]>(getListStudySetsQueryKey(), (old) => (old ?? []).filter((set) => set.id !== id));
+          if (activeSet?.id === id) setActiveSet(null);
+          setNotice('Study set removed from your account.');
+        },
+        onError: () => setError('This set could not be removed. Please try again.'),
+      });
+    } else {
+      persist(localSets.filter((set) => set.id !== id));
+      if (activeSet?.id === id) setActiveSet(null);
+      setNotice('Study set removed from this browser.');
+    }
+  };
+
+  const syncOneSet = async (set: StudySet) => {
+    try {
+      const synced = await upsert.mutateAsync({ id: set.id, data: toStudySetInput(set) });
+      persist(safeReadSets().filter((item) => item.id !== synced.id));
+      queryClient.setQueryData<StudySet[]>(getListStudySetsQueryKey(), (old) => [synced, ...(old ?? []).filter((item) => item.id !== synced.id)]);
+      if (activeSet?.id === synced.id) setActiveSet(synced);
+      setNotice('Study set synced to your account.');
+    } catch {
+      setNotice('Could not sync this set. It is still safe on this browser.');
+    }
+  };
+
+  const chooseLocalOnly = () => {
+    if (!user?.id) return;
+    localStorage.setItem(`jaguar-study-migration-${user.id}`, 'local');
+    setMigrationChoice('local');
+  };
+  const syncLocalSets = async () => {
+    if (!user?.id || syncing) return;
+    setSyncing(true);
+    let completed = 0;
+    try {
+      for (const set of localSets.filter((item) => !remoteIds.has(item.id))) {
+        const synced = await upsert.mutateAsync({ id: set.id, data: toStudySetInput(set) });
+        queryClient.setQueryData<StudySet[]>(getListStudySetsQueryKey(), (old) => [synced, ...(old ?? []).filter((item) => item.id !== synced.id)]);
+        persist(safeReadSets().filter((item) => item.id !== synced.id));
+        completed += 1;
+      }
+      localStorage.setItem(`jaguar-study-migration-${user.id}`, 'sync');
+      setMigrationChoice('sync');
+      setNotice(completed ? `${completed} study ${completed === 1 ? 'set' : 'sets'} synced to your account.` : 'Your study sets are up to date.');
+    } catch {
+      setNotice(`Synced ${completed} of ${localOnlyCount}. Your remaining browser sets are safe; retry anytime.`);
+    } finally { setSyncing(false); }
   };
 
   const copyOutput = async () => {
@@ -289,7 +394,7 @@ function Home() {
         <div className="sidebar-bottom">
           <div className="privacy-card">
             <div className="privacy-title"><LockKeyhole size={14} aria-hidden="true" /> Your notes stay yours</div>
-            <p>Files are read in your browser. Only extracted text is sent for generation; saved sets live in this browser.</p>
+            <p>Your original file is parsed here and never uploaded. Extracted text is sent to OpenAI to generate study materials, which are saved to your account for cross-device sync.</p>
           </div>
           <div className="sidebar-foot">A LITTLE MORE READY, EVERY DAY</div>
         </div>
@@ -298,9 +403,10 @@ function Home() {
       <main className="main-area">
         <header className="topbar">
           <div className="crumb">WORKSPACE <span aria-hidden="true">/</span> <strong>Study den</strong></div>
-          <div className="top-status">
-            <span className="local-pill"><span className="status-dot" /> AI study mode</span>
-            <div className="avatar" aria-label="Student profile">ST</div>
+            <div className="top-status">
+            <span className="local-pill"><span className="status-dot" /> Account sync</span>
+            <div className="avatar" aria-label="Student profile">{(user?.firstName?.[0] ?? user?.emailAddresses[0]?.emailAddress[0] ?? 'J').toUpperCase()}</div>
+            <button className="quiet-button signout-button" type="button" onClick={() => void signOut({ redirectUrl: basePath || '/' })} data-testid="button-sign-out">Sign out</button>
           </div>
         </header>
 
@@ -320,9 +426,23 @@ function Home() {
 
             <div className="notice" role="note">
               <Sparkles className="notice-icon" size={16} aria-hidden="true" />
-              <div><strong>AI study mode.</strong> Extracted study text is sent to OpenAI to create your materials. Raw files are parsed in your browser and never uploaded. Saved sets stay in this browser. Avoid including sensitive personal details.</div>
+              <div><strong>Your material stays in your hands.</strong> The original file is parsed in this browser and never uploaded. Extracted source text is sent to OpenAI to generate your study materials, then stored in your account for cross-device sync. Avoid including sensitive personal details.</div>
             </div>
           </section>
+
+          {migrationChoice === 'pending' && localOnlyCount > 0 && (
+            <section className="sync-choice" aria-labelledby="sync-choice-title">
+              <div className="sync-choice-icon"><Cloud size={18} /></div>
+              <div className="sync-choice-copy">
+                <h2 id="sync-choice-title">Your earlier study sets are on this browser</h2>
+                <p>{localOnlyCount} local {localOnlyCount === 1 ? 'set is' : 'sets are'} ready. Choose whether to sync them to your account. Nothing is removed unless syncing succeeds.</p>
+              </div>
+              <div className="sync-choice-actions">
+                <button type="button" className="primary-button" onClick={() => void syncLocalSets()} disabled={syncing} data-testid="button-sync-local">{syncing ? 'Syncing safely…' : 'Sync to my account'}</button>
+                <button type="button" className="quiet-button" onClick={chooseLocalOnly} data-testid="button-keep-local">Keep on this browser</button>
+              </div>
+            </section>
+          )}
 
           <section className="builder-grid" aria-label="Create a study set">
             <div className="panel source-panel">
@@ -401,10 +521,14 @@ function Home() {
 
           <section id="saved-sets" aria-labelledby="saved-heading">
             <div className="section-heading">
-              <div><h2 id="saved-heading">Back to your den</h2><p>Your study sets are saved only in this browser.</p></div>
+              <div><h2 id="saved-heading">Back to your den</h2><p>Account sets travel with you. Browser-only sets stay on this device until you sync them.</p></div>
               {savedSets.length > 0 && <span className="step-label">{savedSets.length} SAVED</span>}
             </div>
-            {savedSets.length === 0 ? (
+            {remoteQuery.isLoading ? (
+              <div className="loading-saved" role="status" aria-label="Loading saved study sets"><span /><span /><span /></div>
+            ) : remoteQuery.isError ? (
+              <div className="error-message" role="alert">Your account sets could not load. <button className="inline-retry" type="button" onClick={() => void remoteQuery.refetch()} data-testid="button-retry-study-sets">Try again</button></div>
+            ) : savedSets.length === 0 ? (
               <div className="empty-state" data-testid="empty-saved">
                 <div><div className="empty-state-icon"><Bookmark size={17} aria-hidden="true" /></div><strong>No saved sets just yet</strong><p>Build a set from your notes and it will be waiting here next time.</p></div>
               </div>
@@ -413,8 +537,9 @@ function Home() {
                 {savedSets.map((set) => (
                   <article className="saved-card" key={set.id} data-testid={`card-study-set-${set.id}`}>
                     <div className="saved-card-top">
-                      <span className="step-label">STUDY SET</span>
+                      <span className={`step-label${remoteIds.has(set.id) ? '' : ' local-only-label'}`}>{remoteIds.has(set.id) ? 'ACCOUNT SYNCED' : 'THIS BROWSER'}</span>
                       <div className="saved-actions">
+                        {!remoteIds.has(set.id) && <button className="icon-button sync-set-button" type="button" onClick={() => void syncOneSet(set)} disabled={upsert.isPending} aria-label={`Sync ${displayText(set.title)} to your account`} data-testid={`button-sync-${set.id}`}><Cloud size={13} /></button>}
                         <button className="icon-button" type="button" onClick={() => openSet(set)} aria-label={`Open ${displayText(set.title)}`} data-testid={`button-open-${set.id}`}><BookOpen size={13} /></button>
                         <button className="icon-button danger" type="button" onClick={() => deleteSet(set.id)} aria-label={`Delete ${set.title}`} data-testid={`button-delete-${set.id}`}><Trash2 size={13} /></button>
                       </div>
@@ -436,7 +561,7 @@ function Home() {
                 <div>
                   <div className="eyebrow">Your study set</div>
                   <h2 id="output-heading">{displayText(activeSet.title, 'Study set')}</h2>
-                  <p>Built from {displayText(activeSet.sourceName, 'course material')} · saved in this browser</p>
+                  <p>Built from {displayText(activeSet.sourceName, 'course material')} · {remoteIds.has(activeSet.id) ? 'synced to your account' : 'saved on this browser only'}</p>
                 </div>
                 <div className="output-actions">
                   <button className="quiet-button" type="button" onClick={() => void copyOutput()} data-testid="button-copy-output"><Copy size={13} /> Copy</button>
@@ -554,32 +679,193 @@ function Home() {
   );
 }
 
-function Router() {
-  return (
-    <RoutedErrorBoundary>
-      <Switch>
-        <Route path="/" component={Home} />
-        <Route component={NotFound} />
-      </Switch>
-    </RoutedErrorBoundary>
-  );
-}
-
 function RoutedErrorBoundary({ children }: { children: ReactNode }) {
   const [location] = useLocation();
   return <ErrorBoundary resetKey={location}>{children}</ErrorBoundary>;
 }
 
-function App() {
+function LandingPage() {
   return (
-    <QueryClientProvider client={queryClient}>
-      <TooltipProvider>
-        <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, '')}>
-          <Router />
-        </WouterRouter>
-        <Toaster />
-      </TooltipProvider>
-    </QueryClientProvider>
+    <main className="landing-page">
+      <nav className="landing-nav" aria-label="Main navigation">
+        <Link href="/" className="brand landing-brand">
+          <span className="brand-mark"><PawPrint size={21} strokeWidth={2.2} aria-hidden="true" /></span>
+          <span><span className="brand-name">jaguar</span><span className="brand-caption">study</span></span>
+        </Link>
+        <div className="landing-nav-actions">
+          <Link href="/sign-in" className="landing-signin" data-testid="link-sign-in">Sign in</Link>
+          <Link href="/sign-up" className="landing-cta" data-testid="link-sign-up">Create your account <ArrowRight size={15} /></Link>
+        </div>
+      </nav>
+      <section className="landing-hero">
+        <div className="hero-copy">
+          <div className="eyebrow"><span className="hero-pip" /> A study space built around your course</div>
+          <h1>Your notes.<br /><em>A clearer way through.</em></h1>
+          <p>Turn the material you already have into focused study sessions, useful practice, and a plan that fits your time.</p>
+          <div className="hero-actions">
+            <Link href="/sign-up" className="landing-cta hero-cta" data-testid="link-start-studying">Start studying <ArrowRight size={16} /></Link>
+            <Link href="/sign-in" className="hero-secondary" data-testid="link-returning-student"><LogIn size={15} /> I already have an account</Link>
+          </div>
+          <div className="hero-trust"><ShieldCheck size={15} /> Your original course files stay on your device.</div>
+        </div>
+        <div className="hero-art" aria-label="Preview of a Jaguar Study session">
+          <div className="orbit orbit-one" /><div className="orbit orbit-two" />
+          <div className="session-card">
+            <div className="session-card-top"><span className="session-kicker">TODAY'S SESSION</span><span className="session-time">24 min</span></div>
+            <div className="session-title">Cell energy<br />&amp; photosynthesis</div>
+            <div className="session-rule" />
+            <div className="session-task"><span className="task-check">01</span><span>Review the light reactions</span><CheckCircle2 size={15} /></div>
+            <div className="session-task"><span className="task-check">02</span><span>Recall key terms</span><span className="task-open" /></div>
+            <div className="session-task"><span className="task-check">03</span><span>Try 5 practice questions</span><span className="task-open" /></div>
+            <div className="session-progress"><span /></div>
+            <div className="session-foot"><span>MADE FROM YOUR COURSE NOTES</span><span>01 / 03</span></div>
+          </div>
+          <div className="hero-stamp"><PawPrint size={17} /><span>STUDY<br />AT YOUR PACE</span></div>
+        </div>
+      </section>
+      <section className="landing-proof">
+        <span>START WITH WHAT YOU HAVE</span><div className="proof-line" /><span>STAY GROUNDED IN YOUR MATERIAL</span><div className="proof-line" /><span>MAKE THE NEXT SESSION COUNT</span>
+      </section>
+      <section className="landing-story">
+        <div className="story-index">01 / FROM SOURCE TO SESSION</div>
+        <div className="story-layout">
+          <h2>Less sorting.<br /><em>More understanding.</em></h2>
+          <div className="story-copy"><p>Jaguar takes your lecture notes, readings, and slides and gives them a useful shape—without losing the connection to what your class actually covered.</p><p>Bring a file or paste a passage. Get a summary, key terms, flashcards, practice questions, a cram sheet, and a study plan in one calm workspace.</p></div>
+        </div>
+      </section>
+      <section className="landing-steps">
+        <article><span className="step-number">01</span><h3>Bring your material</h3><p>Choose a course file or paste your notes. PDFs, Word documents, slides, and plain text work right here in your browser.</p></article>
+        <article><span className="step-number">02</span><h3>Set a realistic pace</h3><p>Add an exam date and the time you have each day. Your plan starts with the calendar you actually have.</p></article>
+        <article><span className="step-number">03</span><h3>Study in your own way</h3><p>Switch between explainers, recall, and practice. Your saved sets follow your account across devices.</p></article>
+      </section>
+      <section className="landing-privacy">
+        <div className="privacy-mark"><LockKeyhole size={20} /></div>
+        <div><span className="eyebrow">A thoughtful note on your material</span><h2>Your file stays yours.</h2><p>The original file is parsed locally and is never uploaded. Extracted source text is sent to OpenAI to create study materials, and those materials are stored in your account so you can pick up on another device. Avoid including sensitive personal details.</p></div>
+        <Link href="/sign-up" className="privacy-link" data-testid="link-create-account-bottom">Make a study space <ArrowRight size={15} /></Link>
+      </section>
+      <footer className="landing-footer"><Link href="/" className="footer-brand">jaguar study</Link><span>One useful session at a time.</span><Link href="/sign-in" data-testid="link-footer-sign-in">Sign in</Link></footer>
+    </main>
+  );
+}
+
+function HomeRedirect() {
+  return <><Show when="signed-in"><Redirect to="/user-portal" /></Show><Show when="signed-out"><LandingPage /></Show></>;
+}
+
+function UserPortal() {
+  return <><Show when="signed-in"><Workspace /></Show><Show when="signed-out"><Redirect to="/" /></Show></>;
+}
+
+function SignInPage() {
+  return <div className="auth-page"><div className="auth-aside"><Link href="/" className="brand landing-brand"><span className="brand-mark"><PawPrint size={21} /></span><span><span className="brand-name">jaguar</span><span className="brand-caption">study</span></span></Link><div><span className="eyebrow">YOUR STUDY SPACE, READY</span><h1>Pick up where<br /><em>you left off.</em></h1><p>Your sets, your plan, your next step—all in one place.</p></div><span className="auth-aside-foot">A LITTLE MORE READY, EVERY DAY</span></div><div className="auth-card"><SignIn routing="path" path={`${basePath}/sign-in`} signUpUrl={`${basePath}/sign-up`} /></div></div>;
+}
+
+function SignUpPage() {
+  return <div className="auth-page"><div className="auth-aside"><Link href="/" className="brand landing-brand"><span className="brand-mark"><PawPrint size={21} /></span><span><span className="brand-name">jaguar</span><span className="brand-caption">study</span></span></Link><div><span className="eyebrow">START WITH WHAT YOU HAVE</span><h1>Make room for<br /><em>better studying.</em></h1><p>Build a personal workspace for the material that matters to your next exam.</p></div><span className="auth-aside-foot">YOUR COURSE MATERIAL. YOUR PACE.</span></div><div className="auth-card"><SignUp routing="path" path={`${basePath}/sign-up`} signInUrl={`${basePath}/sign-in`} /></div></div>;
+}
+
+function ClerkQueryClientCacheInvalidator() {
+  const { addListener } = useClerk();
+  const client = useQueryClient();
+  const previousUser = useRef<string | null | undefined>(undefined);
+  useEffect(() => {
+    const unsubscribe = addListener(({ user: currentUser }) => {
+      const nextUser = currentUser?.id ?? null;
+      if (previousUser.current !== undefined && previousUser.current !== nextUser) client.clear();
+      previousUser.current = nextUser;
+    });
+    return unsubscribe;
+  }, [addListener, client]);
+  return null;
+}
+
+const clerkAppearance = {
+  theme: shadcn,
+  cssLayerName: 'clerk',
+  options: {
+    logoPlacement: 'inside' as const,
+    logoLinkUrl: basePath || '/',
+    logoImageUrl: `${window.location.origin}${basePath}/logo.svg`,
+    socialButtonsPlacement: 'top' as const,
+    socialButtonsVariant: 'blockButton' as const,
+  },
+  variables: {
+    colorPrimary: '#285d45', colorForeground: '#203c31', colorMutedForeground: '#69796f',
+    colorDanger: '#a64037', colorBackground: '#fffdf8', colorInput: '#f6f3eb',
+    colorInputForeground: '#203c31', colorNeutral: '#d8d8ca', fontFamily: 'DM Sans, sans-serif',
+    borderRadius: '0.8rem',
+  },
+  elements: {
+    rootBox: 'w-full flex justify-center',
+    cardBox: 'bg-[#fffdf8] rounded-2xl w-[440px] max-w-full overflow-hidden shadow-xl',
+    card: '!shadow-none !border-0 !bg-transparent !rounded-none',
+    footer: '!shadow-none !border-0 !bg-transparent !rounded-none',
+    headerTitle: 'text-[#203c31] font-semibold tracking-tight',
+    headerSubtitle: 'text-[#69796f]',
+    socialButtonsBlockButtonText: 'text-[#203c31] font-medium',
+    formFieldLabel: 'text-[#304b3e] font-medium',
+    footerActionLink: 'text-[#285d45] font-semibold',
+    footerActionText: 'text-[#69796f]',
+    dividerText: 'text-[#78847b]',
+    identityPreviewEditButton: 'text-[#285d45]',
+    formFieldSuccessText: 'text-[#285d45]',
+    alertText: 'text-[#8c352e]',
+    logoBox: 'rounded-xl',
+    logoImage: 'object-contain',
+    socialButtonsBlockButton: 'border border-[#d8d8ca] bg-[#fffdf8] hover:bg-[#f6f3eb]',
+    formButtonPrimary: 'bg-[#285d45] hover:bg-[#204b38] text-[#fffdf8]',
+    formFieldInput: 'border-[#d8d8ca] bg-[#f6f3eb] text-[#203c31]',
+    footerAction: 'border-t border-[#e5e2d8]',
+    dividerLine: 'bg-[#e5e2d8]',
+    alert: 'bg-[#fff3ef] border border-[#e6bcb5]',
+    otpCodeFieldInput: 'border-[#d8d8ca] bg-[#f6f3eb] text-[#203c31]',
+    formFieldRow: 'gap-2',
+    main: 'text-[#203c31]',
+  },
+};
+
+function ClerkRoutes() {
+  const [, setLocation] = useLocation();
+  const stripBase = (path: string) => basePath && path.startsWith(basePath) ? path.slice(basePath.length) || '/' : path;
+  return (
+    <ClerkProvider
+      publishableKey={clerkPubKey}
+      proxyUrl={clerkProxyUrl}
+      appearance={clerkAppearance}
+      signInUrl={`${basePath}/sign-in`}
+      signUpUrl={`${basePath}/sign-up`}
+      routerPush={(to) => setLocation(stripBase(to))}
+      routerReplace={(to) => setLocation(stripBase(to), { replace: true })}
+      localization={{
+        signIn: { start: { title: 'Welcome back', subtitle: 'Your study space is right where you left it.' } },
+        signUp: { start: { title: 'Start your study space', subtitle: 'A personal home for your course material.' } },
+      }}
+    >
+      <QueryClientProvider client={queryClient}>
+        <TooltipProvider>
+          <ClerkQueryClientCacheInvalidator />
+          <RoutedErrorBoundary>
+            <Switch>
+              <Route path="/" component={HomeRedirect} />
+              <Route path="/user-portal" component={UserPortal} />
+              <Route path="/sign-in/*?" component={SignInPage} />
+              <Route path="/sign-up/*?" component={SignUpPage} />
+              <Route component={NotFound} />
+            </Switch>
+          </RoutedErrorBoundary>
+          <Toaster />
+        </TooltipProvider>
+      </QueryClientProvider>
+    </ClerkProvider>
+  );
+}
+
+function App() {
+  if (!clerkPubKey) throw new Error('Missing VITE_CLERK_PUBLISHABLE_KEY in .env file');
+  return (
+    <WouterRouter base={basePath}>
+      <ClerkRoutes />
+    </WouterRouter>
   );
 }
 

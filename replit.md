@@ -1,6 +1,6 @@
 # Jaguar Study
 
-An exam-preparation app that turns uploaded course material or pasted notes into study summaries, key terms, practice questions, cram sheets, and date-based plans.
+An exam-preparation app that turns uploaded course material or pasted notes into study summaries, key terms, flashcards, practice questions, cram sheets, and date-based plans.
 
 ## Run & Operate
 
@@ -22,20 +22,23 @@ An exam-preparation app that turns uploaded course material or pasted notes into
 
 ## Where things live
 
-- `artifacts/jaguar-study/` — React + Vite study app; document text extraction runs in the browser and study sets are saved in browser storage.
+- `artifacts/jaguar-study/` — React + Vite study app; document text extraction runs in the browser and signed-in study sets sync to the user's account.
 - `artifacts/api-server/src/routes/study.ts` — OpenAI-backed study-material generation endpoint.
-- `lib/api-spec/openapi.yaml` — source of truth for the study-generation request and response.
+- `artifacts/api-server/src/routes/study-sets.ts` — authenticated, owner-scoped study-set storage endpoints.
+- `lib/api-spec/openapi.yaml` — source of truth for study generation and study-set storage endpoints.
 - `lib/api-client-react/` and `lib/api-zod/` — generated API hooks and validation schemas.
 
 ## Architecture decisions
 
-- Course files are parsed in the browser; only extracted text is sent for AI generation.
-- Generated study sets are stored in local browser storage and do not sync across devices.
+- Course files are parsed in the browser; original file bytes are not uploaded.
+- Extracted source text is sent to OpenAI for generation and saved with the study materials in the signed-in user's account for cross-device access.
+- Clerk session cookies authenticate web requests; the API derives the owner from Clerk and scopes all study-set reads, writes, and deletes to that owner.
+- Previously browser-only sets remain available locally until the user chooses to sync them to an account.
 - The API key is read only by the server from the `OPENAI_API_KEY` Replit Secret.
 
 ## Product
 
-Jaguar Study creates exam-focused summaries, key terms, interactive practice tests, cram sheets, and study plans from a student's own material. It supports PDF, DOCX, PPTX, TXT, MD, CSV, and pasted text.
+Jaguar Study creates exam-focused summaries, key terms, flashcards, interactive practice tests, cram sheets, and study plans from a student's own material. It supports PDF, DOCX, PPTX, TXT, MD, CSV, and pasted text.
 
 ## User preferences
 

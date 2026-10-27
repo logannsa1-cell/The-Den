@@ -50,6 +50,12 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ApiError"
+        "401":
+          description: Sign-in required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
         "503":
           description: AI provider is not configured
           content:
@@ -64,6 +70,95 @@ paths:
                 $ref: "#/components/schemas/ApiError"
         "502":
           description: Study materials could not be generated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+  /study-sets:
+    get:
+      operationId: listStudySets
+      tags: [study]
+      summary: List the signed-in user's saved study sets
+      responses:
+        "200":
+          description: Saved study sets
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/StudySet"
+        "401":
+          description: Sign-in required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+  /study-sets/{id}:
+    put:
+      operationId: upsertStudySet
+      tags: [study]
+      summary: Create or update one of the signed-in user's study sets
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            minLength: 1
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/StudySetInput"
+      responses:
+        "200":
+          description: Saved study set
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StudySet"
+        "400":
+          description: Invalid study set
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "401":
+          description: Sign-in required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "409":
+          description: Study set belongs to another account
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+    delete:
+      operationId: deleteStudySet
+      tags: [study]
+      summary: Delete one of the signed-in user's study sets
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            minLength: 1
+      responses:
+        "204":
+          description: Study set deleted
+        "401":
+          description: Sign-in required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "404":
+          description: Study set not found
           content:
             application/json:
               schema:
@@ -163,6 +258,63 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/StudyPlanDay"
+    StudySetInput:
+      type: object
+      required:
+        [title, sourceName, sourceText, summary, keyTerms, cramPoints, questions, studyPlan, masteredTerms]
+      properties:
+        title:
+          type: string
+          minLength: 1
+          maxLength: 160
+        sourceName:
+          type: string
+          minLength: 1
+          maxLength: 160
+        sourceText:
+          type: string
+          minLength: 120
+          maxLength: 60000
+        summary:
+          type: string
+          maxLength: 20000
+        keyTerms:
+          type: array
+          maxItems: 100
+          items:
+            $ref: "#/components/schemas/StudyTerm"
+        cramPoints:
+          type: array
+          maxItems: 100
+          items:
+            type: string
+        questions:
+          type: array
+          maxItems: 50
+          items:
+            $ref: "#/components/schemas/StudyQuestion"
+        studyPlan:
+          type: array
+          maxItems: 90
+          items:
+            $ref: "#/components/schemas/StudyPlanDay"
+        masteredTerms:
+          type: array
+          maxItems: 100
+          items:
+            type: string
+            maxLength: 240
+    StudySet:
+      allOf:
+        - $ref: "#/components/schemas/StudySetInput"
+        - type: object
+          required: [id, createdAt]
+          properties:
+            id:
+              type: string
+            createdAt:
+              type: string
+              format: date-time
     ApiError:
       type: object
       required: [error]

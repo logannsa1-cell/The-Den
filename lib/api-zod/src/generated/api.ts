@@ -71,3 +71,197 @@ export const GenerateStudyMaterialsResponse = zod.object({
 })
 
 
+/**
+ * @summary List the signed-in user's saved study sets
+ */
+export const listStudySetsResponseOneTitleMax = 160;
+
+export const listStudySetsResponseOneSourceNameMax = 160;
+
+export const listStudySetsResponseOneSourceTextMin = 120;
+export const listStudySetsResponseOneSourceTextMax = 60000;
+
+export const listStudySetsResponseOneSummaryMax = 20000;
+
+export const listStudySetsResponseOneKeyTermsMax = 100;
+
+export const listStudySetsResponseOneCramPointsMax = 100;
+
+export const listStudySetsResponseOneQuestionsItemChoicesMin = 4;
+export const listStudySetsResponseOneQuestionsItemChoicesMax = 4;
+
+export const listStudySetsResponseOneQuestionsItemAnswerIndexMin = 0;
+export const listStudySetsResponseOneQuestionsItemAnswerIndexMax = 3;
+
+export const listStudySetsResponseOneQuestionsMax = 50;
+
+export const listStudySetsResponseOneStudyPlanMax = 90;
+
+export const listStudySetsResponseOneMasteredTermsItemMax = 240;
+
+export const listStudySetsResponseOneMasteredTermsMax = 100;
+
+
+
+export const ListStudySetsResponseItem = zod.object({
+  "title": zod.string().min(1).max(listStudySetsResponseOneTitleMax),
+  "sourceName": zod.string().min(1).max(listStudySetsResponseOneSourceNameMax),
+  "sourceText": zod.string().min(listStudySetsResponseOneSourceTextMin).max(listStudySetsResponseOneSourceTextMax),
+  "summary": zod.string().max(listStudySetsResponseOneSummaryMax),
+  "keyTerms": zod.array(zod.object({
+  "term": zod.string(),
+  "definition": zod.string()
+})).max(listStudySetsResponseOneKeyTermsMax),
+  "cramPoints": zod.array(zod.string()).max(listStudySetsResponseOneCramPointsMax),
+  "questions": zod.array(zod.object({
+  "prompt": zod.string(),
+  "choices": zod.array(zod.string()).min(listStudySetsResponseOneQuestionsItemChoicesMin).max(listStudySetsResponseOneQuestionsItemChoicesMax),
+  "answerIndex": zod.number().int().min(listStudySetsResponseOneQuestionsItemAnswerIndexMin).max(listStudySetsResponseOneQuestionsItemAnswerIndexMax),
+  "explanation": zod.string()
+})).max(listStudySetsResponseOneQuestionsMax),
+  "studyPlan": zod.array(zod.object({
+  "date": zod.coerce.date(),
+  "focus": zod.string(),
+  "tasks": zod.array(zod.string())
+})).max(listStudySetsResponseOneStudyPlanMax),
+  "masteredTerms": zod.array(zod.string().max(listStudySetsResponseOneMasteredTermsItemMax)).max(listStudySetsResponseOneMasteredTermsMax)
+}).and(zod.object({
+  "id": zod.string(),
+  "createdAt": zod.coerce.date()
+}))
+export const ListStudySetsResponse = zod.array(ListStudySetsResponseItem)
+
+
+/**
+ * @summary Create or update one of the signed-in user's study sets
+ */
+
+
+
+export const UpsertStudySetParams = zod.object({
+  "id": zod.coerce.string().min(1)
+})
+
+export const upsertStudySetBodyTitleMax = 160;
+
+export const upsertStudySetBodySourceNameMax = 160;
+
+export const upsertStudySetBodySourceTextMin = 120;
+export const upsertStudySetBodySourceTextMax = 60000;
+
+export const upsertStudySetBodySummaryMax = 20000;
+
+export const upsertStudySetBodyKeyTermsMax = 100;
+
+export const upsertStudySetBodyCramPointsMax = 100;
+
+export const upsertStudySetBodyQuestionsItemChoicesMin = 4;
+export const upsertStudySetBodyQuestionsItemChoicesMax = 4;
+
+export const upsertStudySetBodyQuestionsItemAnswerIndexMin = 0;
+export const upsertStudySetBodyQuestionsItemAnswerIndexMax = 3;
+
+export const upsertStudySetBodyQuestionsMax = 50;
+
+export const upsertStudySetBodyStudyPlanMax = 90;
+
+export const upsertStudySetBodyMasteredTermsItemMax = 240;
+
+export const upsertStudySetBodyMasteredTermsMax = 100;
+
+
+
+export const UpsertStudySetBody = zod.object({
+  "title": zod.string().min(1).max(upsertStudySetBodyTitleMax),
+  "sourceName": zod.string().min(1).max(upsertStudySetBodySourceNameMax),
+  "sourceText": zod.string().min(upsertStudySetBodySourceTextMin).max(upsertStudySetBodySourceTextMax),
+  "summary": zod.string().max(upsertStudySetBodySummaryMax),
+  "keyTerms": zod.array(zod.object({
+  "term": zod.string(),
+  "definition": zod.string()
+})).max(upsertStudySetBodyKeyTermsMax),
+  "cramPoints": zod.array(zod.string()).max(upsertStudySetBodyCramPointsMax),
+  "questions": zod.array(zod.object({
+  "prompt": zod.string(),
+  "choices": zod.array(zod.string()).min(upsertStudySetBodyQuestionsItemChoicesMin).max(upsertStudySetBodyQuestionsItemChoicesMax),
+  "answerIndex": zod.number().int().min(upsertStudySetBodyQuestionsItemAnswerIndexMin).max(upsertStudySetBodyQuestionsItemAnswerIndexMax),
+  "explanation": zod.string()
+})).max(upsertStudySetBodyQuestionsMax),
+  "studyPlan": zod.array(zod.object({
+  "date": zod.coerce.date(),
+  "focus": zod.string(),
+  "tasks": zod.array(zod.string())
+})).max(upsertStudySetBodyStudyPlanMax),
+  "masteredTerms": zod.array(zod.string().max(upsertStudySetBodyMasteredTermsItemMax)).max(upsertStudySetBodyMasteredTermsMax)
+})
+
+export const upsertStudySetResponseOneTitleMax = 160;
+
+export const upsertStudySetResponseOneSourceNameMax = 160;
+
+export const upsertStudySetResponseOneSourceTextMin = 120;
+export const upsertStudySetResponseOneSourceTextMax = 60000;
+
+export const upsertStudySetResponseOneSummaryMax = 20000;
+
+export const upsertStudySetResponseOneKeyTermsMax = 100;
+
+export const upsertStudySetResponseOneCramPointsMax = 100;
+
+export const upsertStudySetResponseOneQuestionsItemChoicesMin = 4;
+export const upsertStudySetResponseOneQuestionsItemChoicesMax = 4;
+
+export const upsertStudySetResponseOneQuestionsItemAnswerIndexMin = 0;
+export const upsertStudySetResponseOneQuestionsItemAnswerIndexMax = 3;
+
+export const upsertStudySetResponseOneQuestionsMax = 50;
+
+export const upsertStudySetResponseOneStudyPlanMax = 90;
+
+export const upsertStudySetResponseOneMasteredTermsItemMax = 240;
+
+export const upsertStudySetResponseOneMasteredTermsMax = 100;
+
+
+
+export const UpsertStudySetResponse = zod.object({
+  "title": zod.string().min(1).max(upsertStudySetResponseOneTitleMax),
+  "sourceName": zod.string().min(1).max(upsertStudySetResponseOneSourceNameMax),
+  "sourceText": zod.string().min(upsertStudySetResponseOneSourceTextMin).max(upsertStudySetResponseOneSourceTextMax),
+  "summary": zod.string().max(upsertStudySetResponseOneSummaryMax),
+  "keyTerms": zod.array(zod.object({
+  "term": zod.string(),
+  "definition": zod.string()
+})).max(upsertStudySetResponseOneKeyTermsMax),
+  "cramPoints": zod.array(zod.string()).max(upsertStudySetResponseOneCramPointsMax),
+  "questions": zod.array(zod.object({
+  "prompt": zod.string(),
+  "choices": zod.array(zod.string()).min(upsertStudySetResponseOneQuestionsItemChoicesMin).max(upsertStudySetResponseOneQuestionsItemChoicesMax),
+  "answerIndex": zod.number().int().min(upsertStudySetResponseOneQuestionsItemAnswerIndexMin).max(upsertStudySetResponseOneQuestionsItemAnswerIndexMax),
+  "explanation": zod.string()
+})).max(upsertStudySetResponseOneQuestionsMax),
+  "studyPlan": zod.array(zod.object({
+  "date": zod.coerce.date(),
+  "focus": zod.string(),
+  "tasks": zod.array(zod.string())
+})).max(upsertStudySetResponseOneStudyPlanMax),
+  "masteredTerms": zod.array(zod.string().max(upsertStudySetResponseOneMasteredTermsItemMax)).max(upsertStudySetResponseOneMasteredTermsMax)
+}).and(zod.object({
+  "id": zod.string(),
+  "createdAt": zod.coerce.date()
+}))
+
+
+/**
+ * @summary Delete one of the signed-in user's study sets
+ */
+
+
+
+export const DeleteStudySetParams = zod.object({
+  "id": zod.coerce.string().min(1)
+})
+
+export const DeleteStudySetResponse = zod.void()
+
+
