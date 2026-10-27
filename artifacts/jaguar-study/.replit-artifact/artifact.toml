@@ -1,6 +1,6 @@
 kind = "web"
 previewPath = "/"
-title = "Jaguar Study"
+title = "Jaguar"
 description = "An exam-prep workspace that turns course notes and uploaded documents into focused study guides, cram sheets, practice tests, and day-by-day revision plans."
 version = "1.0.0"
 id = "artifacts/jaguar-study"
