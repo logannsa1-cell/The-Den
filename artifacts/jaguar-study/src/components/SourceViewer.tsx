@@ -30,7 +30,7 @@ function PdfPage({ blob, page, onCount }: { blob: Blob; page: number; onCount: (
     (async () => {
       const p = await doc.getPage(Math.min(page, doc.numPages));
       const base = p.getViewport({ scale: 1 });
-      const scale = (wrap.current!.clientWidth / base.width) * Math.min(2, window.devicePixelRatio || 1);
+      const scale = ((wrap.current!.clientWidth || 900) / base.width) * Math.min(2, window.devicePixelRatio || 1);
       const viewport = p.getViewport({ scale });
       const c = canvas.current!;
       c.width = viewport.width; c.height = viewport.height;

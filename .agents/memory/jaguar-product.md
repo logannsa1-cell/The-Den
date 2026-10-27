@@ -16,6 +16,12 @@ Mode selection belongs in the upload popup, not a duplicate "Build it your way" 
 
 **Why:** The user explicitly requested a Studley-like selection-to-study flow.
 
+Tutor Lesson should be medium-length and detailed; Note Summary should be long and very detailed; Cram Sheet should be short and concise for last-minute test preparation. Do not make them interchangeable copies.
+
+The source slideshow must be available beside each mode, with study content taking most space by default. Users must be able to resize either side, completely hide the slideshow, and restore it without deleting originals.
+
+**Why:** The user explicitly requested distinct learning formats and flexible study/slideshow screen space.
+
 Timed papers follow the supplied school exam: Section A objective, Section B theory with one of two Part A questions and three of five Part B questions. Personal exam scheduling must not affect study generation. Provider names should not appear in product UI, while service failures must still be explained honestly.
 
 **Why:** The user repeated these requirements after showing a failed slide-generation recording.

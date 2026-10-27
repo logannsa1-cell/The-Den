@@ -297,7 +297,7 @@ export default function Workspace() {
                 {MODE_INFO.filter((m) => studyModes.includes(m.id)).map(({ id, label, Icon }) => {
                   const ready = !!active && !generate.isPending && !studyError;
                   return (
-                    <button key={id} type="button" className={`nav-item${ready && studyTab === MODE_TAB[id] ? ' active' : ''}`} aria-disabled={!ready} onClick={() => { if (ready) setStudyTab(MODE_TAB[id]); }} data-testid={`rail-mode-${id}`}><Icon size={15} /> {label}</button>
+                    <button key={id} type="button" className={`nav-item${ready && (studyTab === MODE_TAB[id] || (id === 'summary' && (studyTab === 'terms' || studyTab === 'flashcards'))) ? ' active' : ''}`} aria-disabled={!ready} onClick={() => { if (ready) setStudyTab(MODE_TAB[id]); }} data-testid={`rail-mode-${id}`}><Icon size={15} /> {label}</button>
                   );
                 })}
               </div>
