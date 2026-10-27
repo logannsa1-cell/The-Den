@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { useClerk, useUser } from '@clerk/react';
-import { AlertCircle, BookOpen, Bookmark, CheckCircle2, ChevronRight, Cloud, FolderOpen, LoaderCircle, LogOut, Plus, SlidersHorizontal, Trash2 } from 'lucide-react';
+import { AlertCircle, BookOpen, Bookmark, CheckCircle2, ChevronRight, Cloud, FolderOpen, LoaderCircle, LogOut, Plus, Settings, SlidersHorizontal, Trash2 } from 'lucide-react';
 import {
   getListStudySetsQueryKey, useDeleteStudySet, useGenerateStudyMaterials, useListStudySets, useUpsertStudySet,
   type StudyGeneration, type StudySetInput,
@@ -69,6 +69,12 @@ export default function Workspace() {
   const [questionCount, setQuestionCount] = useState('50');
   const [examMinutes, setExamMinutes] = useState('120');
   const avatar = useProfileMedia(userId, 'avatar');
+  const [settingsOpen, setSettingsOpen] = useState(window.location.hash === '#settings');
+  useEffect(() => {
+    const update = () => setSettingsOpen(window.location.hash === '#settings');
+    window.addEventListener('hashchange', update);
+    return () => window.removeEventListener('hashchange', update);
+  }, []);
   const banner = useProfileMedia(userId, 'banner');
   const readyCount = useRef(0);
   const [error, setError] = useState('');
@@ -227,7 +233,18 @@ export default function Workspace() {
       <RosetteCorners />
       <aside className="sidebar" aria-label="Jaguar workspace">
         <BrandLockup size={42} caption="exam prep" />
-        <nav className="side-nav" aria-label="Sections">
+        <nav className="side-nav" aria-label="Sections" onClick={(event) => {
+          if (!settingsOpen) return;
+          const target = (event.target as HTMLElement).closest('button')?.dataset.testid;
+          if (!target) return;
+          setSettingsOpen(false);
+          window.location.hash = '';
+          window.setTimeout(() => {
+            if (target === 'nav-saved') document.getElementById('saved-sets')?.scrollIntoView({ behavior: 'smooth' });
+            else if (target === 'nav-active') outputRef.current?.scrollIntoView({ behavior: 'smooth' });
+            else window.scrollTo({ top: 0, behavior: 'smooth' });
+          }, 0);
+        }}>
           <button className="nav-item active" type="button" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })} data-testid="nav-create"><Plus size={16} /> New study set</button>
           <button className="nav-item" type="button" onClick={() => document.getElementById('saved-sets')?.scrollIntoView({ behavior: 'smooth' })} data-testid="nav-saved"><FolderOpen size={16} /> Saved sets <span className="nav-count">{String(savedSets.length).padStart(2, '0')}</span></button>
           {active && <button className="nav-item" type="button" onClick={() => outputRef.current?.scrollIntoView({ behavior: 'smooth' })} data-testid="nav-active"><BookOpen size={16} /> Open set</button>}
@@ -238,20 +255,27 @@ export default function Workspace() {
       <main className="main-area">
         <header className="topbar">
           <div className="mobile-brand"><BrandLockup size={30} /></div>
-          <div className="crumb">WORKSPACE <span>/</span> <strong>Study</strong></div>
+          <div className="crumb">WORKSPACE <span>/</span> <strong>{settingsOpen ? 'Settings' : 'Study'}</strong></div>
           <div className="top-status">
             <span className="mobile-only"><ThemeSwitcher compact /></span>
             <span className="local-pill"><span className="status-dot" /> Account sync</span>
-            <div className="avatar" data-testid="text-avatar">{avatar.url ? <img src={avatar.url} alt="" /> : initial}</div>
             <button className="quiet-button" type="button" onClick={() => void signOut({ redirectUrl: basePath || '/' })} data-testid="button-sign-out" aria-label="Sign out"><LogOut size={13} /><span className="hide-sm">Sign out</span></button>
+            <button className="quiet-button" type="button" onClick={() => { window.location.hash = 'settings'; window.scrollTo(0, 0); }} aria-current={settingsOpen ? 'page' : undefined} data-testid="button-settings"><Settings size={16} /> Settings</button>
           </div>
         </header>
 
-        <div className="workspace">
+        {settingsOpen && <div className="workspace profile-settings-page" data-testid="page-settings">
+          <button className="quiet-button" type="button" onClick={() => { window.location.hash = ''; }} data-testid="button-back-study">Back to study</button>
+          <h1>Settings</h1>
           <ProfileHeader initial={initial} name={user?.firstName ?? 'Your'} avatar={avatar} banner={banner} notify={setNotice}>
+            <h2>Your profile</h2><p className="welcome-copy">Manage your profile picture and banner.</p>
+          </ProfileHeader>
+        </div>}
+        <div className="workspace" hidden={settingsOpen}>
+          <section style={{ marginBottom: 30 }}>
             <h1 id="welcome-title" data-testid="text-workspace-heading">Exam is soon ooo</h1>
             <p className="welcome-copy">Bring your note so You can study</p>
-          </ProfileHeader>
+          </section>
 
           {migration === 'pending' && localOnly.length > 0 && (
             <section className="sync-choice reveal">

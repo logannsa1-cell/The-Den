@@ -132,7 +132,7 @@ router.post("/study/generate", requireAuth, async (req, res): Promise<void> => {
       maxRetries: 0,
     });
     const completion = await client.chat.completions.create({
-      model: process.env.GEMINI_MODEL || "gemini-2.5-flash",
+      model: process.env.GEMINI_MODEL || "gemini-3.8-flash",
       max_completion_tokens: 24000,
       reasoning_effort: "low",
       response_format: { type: "json_object" },
@@ -247,6 +247,10 @@ Include 8–16 keyTerms. Include 8–12 cramPoints if cram mode is selected, oth
     }
     if (error instanceof OpenAI.APIConnectionTimeoutError) {
       res.status(504).json({ error: "Generation took too long. Try fewer options or a smaller file. Your files are retained." });
+      return;
+    }
+    if (error instanceof OpenAI.APIError && (error.status === 503 || error.status === 500)) {
+      res.status(503).json({ error: "The study service is temporarily busy. Please try again shortly. Your files are retained." });
       return;
     }
     if (error instanceof OpenAI.APIError && (error.status === 400 || error.status === 404)) {
