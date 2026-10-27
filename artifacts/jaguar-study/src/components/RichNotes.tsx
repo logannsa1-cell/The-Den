@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react';
+import { StudyText } from './StudyText';
 
 type Block =
   | { type: 'h'; level: number; text: string }
@@ -13,8 +14,8 @@ function inline(text: string): ReactNode[] {
   const safe = text.replace(/<\/?[a-z][^>]*>/gi, '');
   return safe.split(/(\*\*[^*]+\*\*|__[^_]+__)/g).filter(Boolean).map((part, i) =>
     (part.startsWith('**') && part.endsWith('**') && part.length > 4) || (part.startsWith('__') && part.endsWith('__') && part.length > 4)
-      ? <strong key={i}>{part.slice(2, -2)}</strong>
-      : <span key={i}>{part.replace(/`+/g, '').replace(/(^|\s)\*(\S)/g, '$1$2').replace(/(\S)\*(?=\s|$|[.,;:])/g, '$1')}</span>);
+      ? <strong key={i}><StudyText text={part.slice(2, -2)} /></strong>
+      : <StudyText key={i} text={part.replace(/`+/g, '').replace(/(^|\s)\*(\S)/g, '$1$2').replace(/(\S)\*(?=\s|$|[.,;:])/g, '$1')} />);
 }
 
 const isRow = (l: string) => l.startsWith('|') && l.endsWith('|') && l.length > 2;
