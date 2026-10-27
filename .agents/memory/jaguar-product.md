@@ -28,6 +28,10 @@ Long-form quality needs live output checks, not just larger word targets. Both m
 
 The source slideshow must be available beside each mode, with study content taking most space by default. Users must be able to resize either side, completely hide the slideshow, and restore it without deleting originals.
 
+Put study mode links directly beneath "Open set" in the main sidebar, not in an additional separate column. Slide previews should preserve the original full-slide layout and decoration, not display enlarged cropped extracted text.
+
+**Why:** The user supplied comparison screenshots and explicitly requested more room for each mode.
+
 **Why:** The user explicitly requested distinct learning formats and flexible study/slideshow screen space.
 
 Timed papers follow the supplied school exam: Section A objective, Section B theory with one of two Part A questions and three of five Part B questions. Personal exam scheduling must not affect study generation. Provider names should not appear in product UI, while service failures must still be explained honestly.
@@ -37,6 +41,10 @@ Timed papers follow the supplied school exam: Section A objective, Section B the
 **How to apply:** Preserve these product expectations when changing generation or redesigning. The latest wording removes the source subtitle and motivational eyebrow; do not restore the earlier proposed Man United or Mr. Omoks wording.
 
 Use the owner's own Gemini API access, not managed AI setup or automatic paid-provider fallback.
+
+Retry provider failures only when they fail quickly; do not repeat already-slow transient failures. Preserve the time allowance for successful long generations.
+
+**Why:** A latency investigation found slow AI requests (including an upstream 503), while ordinary page requests and resource usage were normal. Repeating slow provider failures adds latency and load without fixing page performance.
 
 **Why:** After repeated credit-limit failures, the user explicitly approved switching to Gemini and previously declined managed AI setup. Keeping an SDK with an OpenAI name is acceptable when it sends exclusively to Google's documented compatibility endpoint; it does not mean OpenAI is the provider.
 

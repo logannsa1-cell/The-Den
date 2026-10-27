@@ -304,11 +304,12 @@ input[type='date']::-webkit-calendar-picker-indicator { filter: invert(.75); }
 .viewer-skeleton { width: 100%; aspect-ratio: 3/4; background: linear-gradient(100deg, var(--surface) 20%, var(--surface-2) 40%, var(--surface) 60%); background-size: 200% 100%; animation: shimmer 1.4s infinite; }
 .viewer-empty { display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 34px 18px; text-align: center; color: var(--muted); font-size: 13px; line-height: 1.5; }
 .viewer-empty strong { color: var(--text); font-size: 15px; }
-.slide-stage { position: relative; width: 100%; container-type: inline-size; overflow: hidden; background: #f6f3fa; color: #1c1622; }
-.slide-el { position: absolute; }
-.slide-el:is(img) { object-fit: contain; }
-.slide-text { overflow: hidden; line-height: 1.2; }
-.slide-text p { margin: 0 0 .25em; }
+.slide-frame { position: relative; width: 100%; overflow: hidden; border-radius: 6px; box-shadow: 0 1px 0 var(--line), 0 10px 30px -18px rgba(20, 10, 30, .45); }
+.slide-stage { position: absolute; left: 0; top: 0; transform-origin: 0 0; overflow: hidden; background: #f6f3fa; color: #1c1622; font-family: Calibri, Carlito, "Segoe UI", system-ui, sans-serif; }
+.pptx-el { position: absolute; transform-origin: 50% 50%; }
+.pptx-fill { position: absolute; inset: 0; width: 100%; height: 100%; box-sizing: border-box; overflow: visible; }
+.pptx-text { position: absolute; inset: 0; display: flex; flex-direction: column; box-sizing: border-box; overflow-wrap: break-word; }
+.pptx-text p { margin: 0; }
 .viewer-note { margin: 8px 0 0; font-size: 11px; color: var(--faint); line-height: 1.45; }
 
 .fullscreen { position: fixed; inset: 0; z-index: 50; display: flex; flex-direction: column; background: var(--bg); animation: pop .22s var(--ease); }
@@ -666,15 +667,7 @@ input[type='date']::-webkit-calendar-picker-indicator { filter: invert(.75); }
 }
 
 /* ---------- Reading space & exam clock (v3) ---------- */
-.app-shell.study-focused { grid-template-columns: minmax(0, 1fr); }
-.study-focused > .sidebar { display: none; }
-.study-focused .topbar .mobile-brand, .study-focused .topbar .mobile-only { display: block; }
-.study-focused .workspace { width: 100%; padding: 20px 24px 40px; }
-.study-focused .study-view { grid-template-columns: 160px minmax(0, 1fr); gap: 18px; }
-@media (max-width: 767px) {
-  .study-focused .workspace { padding: 18px 12px 36px; }
-  .study-focused .study-view { grid-template-columns: minmax(0, 1fr); }
-}
+
 .workspace:has(.output-area) { width: min(1680px, 100%); }
 .output-area { margin-top: 28px; }
 .output-head { margin-bottom: 10px; align-items: center; }
@@ -733,3 +726,15 @@ input[type='date']::-webkit-calendar-picker-indicator { filter: invert(.75); }
   .study-pane .pane-tools { top: 58px; }
 }
 @media (prefers-reduced-motion: reduce) { .exam-clock.critical .countdown { animation: none; } }
+
+/* Study modes live in the global sidebar under "Open set"; mobile gets one horizontal strip. */
+.side-modes { display: grid; gap: 2px; margin: 2px 0 6px 18px; padding-left: 10px; border-left: 1px solid var(--line); }
+.side-modes .nav-item { padding: 8px 10px; font-size: 12.5px; }
+.mode-link[aria-disabled="true"] { opacity: .5; cursor: default; }
+.mode-link[aria-disabled="true"]:hover { transform: none; background: transparent; }
+.study-view { grid-template-columns: minmax(0, 1fr); }
+.mobile-mode-nav { display: none; }
+@media (max-width: 720px) {
+  .mobile-mode-nav { display: flex; gap: 6px; overflow-x: auto; margin: 0 -14px 4px; padding: 0 14px 8px; position: sticky; top: 58px; z-index: 4; background: color-mix(in srgb, var(--bg) 88%, transparent); backdrop-filter: blur(10px); }
+  .mobile-mode-nav .nav-item { flex: none; width: auto; white-space: nowrap; padding: 8px 12px; border: 1px solid var(--line); border-radius: 999px; }
+}

@@ -243,10 +243,22 @@ export default function Workspace() {
     setNotice('Source attached on this device.');
   };
 
+  const modeLinks = (where: 'side' | 'mobile') => {
+    const ready = !!active && !generate.isPending && !studyError;
+    return MODE_INFO.filter((m) => studyModes.includes(m.id)).map(({ id, label, Icon }) => {
+      const on = ready && view === 'study' && (studyTab === MODE_TAB[id] || (id === 'summary' && (studyTab === 'terms' || studyTab === 'flashcards')));
+      return (
+        <button key={id} type="button" className={`nav-item mode-link${on ? ' active' : ''}`} aria-disabled={!ready} aria-current={on ? 'page' : undefined}
+          onClick={() => { if (!ready) return; if (settingsOpen) { setSettingsOpen(false); window.location.hash = ''; } setView('study'); setStudyTab(MODE_TAB[id]); }}
+          data-testid={`${where === 'side' ? 'rail' : 'mobile'}-mode-${id}`}><Icon size={14} /> {label}</button>
+      );
+    });
+  };
+
   const initial = (user?.firstName?.[0] ?? user?.emailAddresses[0]?.emailAddress[0] ?? 'J').toUpperCase();
 
   return (
-    <div className={`app-shell${view === 'study' && !settingsOpen ? ' study-focused' : ''}`}>
+    <div className={`app-shell${view === 'study' && !settingsOpen ? ' in-study' : ''}`}>
       <RosetteCorners />
       <aside className="sidebar" aria-label="Jaguar workspace">
         <BrandLockup size={42} caption="exam prep" />
@@ -265,6 +277,7 @@ export default function Workspace() {
           <button className={`nav-item${view === 'builder' ? ' active' : ''}`} type="button" onClick={() => { setView('builder'); window.scrollTo({ top: 0, behavior: 'smooth' }); }} data-testid="nav-create"><Plus size={16} /> New study set</button>
           <button className="nav-item" type="button" onClick={() => { setView('builder'); window.setTimeout(() => document.getElementById('saved-sets')?.scrollIntoView({ behavior: 'smooth' }), 0); }} data-testid="nav-saved"><FolderOpen size={16} /> Saved sets <span className="nav-count">{String(savedSets.length).padStart(2, '0')}</span></button>
           {(active || generate.isPending || studyError) && <button className={`nav-item${view === 'study' ? ' active' : ''}`} type="button" onClick={() => setView('study')} data-testid="nav-active"><BookOpen size={16} /> Open set</button>}
+          {(active || generate.isPending || studyError) && <div className="side-modes" role="group" aria-label="Study modes">{modeLinks('side')}</div>}
         </nav>
         <div className="sidebar-bottom"><ThemeSwitcher /></div>
       </aside>
@@ -290,17 +303,9 @@ export default function Workspace() {
         </div>}
         <div className="workspace" hidden={settingsOpen || view !== 'study'} data-testid="page-study-view">
           <div className="study-view">
-            <nav className="study-rail" aria-label="Selected modes">
-              <button className="quiet-button" type="button" onClick={backToBuilder} data-testid="button-back-builder"><ArrowLeft size={13} /> Back to builder</button>
-              <span className="step-label" style={{ marginTop: 8 }}>MODES</span>
-              <div className="study-rail-modes">
-                {MODE_INFO.filter((m) => studyModes.includes(m.id)).map(({ id, label, Icon }) => {
-                  const ready = !!active && !generate.isPending && !studyError;
-                  return (
-                    <button key={id} type="button" className={`nav-item${ready && (studyTab === MODE_TAB[id] || (id === 'summary' && (studyTab === 'terms' || studyTab === 'flashcards'))) ? ' active' : ''}`} aria-disabled={!ready} onClick={() => { if (ready) setStudyTab(MODE_TAB[id]); }} data-testid={`rail-mode-${id}`}><Icon size={15} /> {label}</button>
-                  );
-                })}
-              </div>
+            <nav className="mobile-mode-nav" aria-label="Study modes (mobile)">
+              <button className="nav-item" type="button" onClick={backToBuilder} data-testid="button-back-builder"><ArrowLeft size={14} /> Builder</button>
+              {modeLinks('mobile')}
             </nav>
             <div className="study-stage" ref={outputRef}>
               {generating ? (
