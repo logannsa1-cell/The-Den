@@ -48,6 +48,10 @@ Retry fast transient provider failures with a bounded budget. Permit just one re
 
 Optional depth expansion must not discard already generated study materials on transient service failure. Preserve the original generated section with an explicit visible notice that extra detail was unavailable; keep strict validation of requested exam questions.
 
+Give optional expansion a separate short deadline and stop the entire expansion pass on service failure, including in-flight siblings and unscheduled sections. Preserve completed expansions and remaining drafts.
+
+**Why:** Limiting concurrency alone can extend serial waits, and rejecting a Promise.all does not cancel sibling provider requests. Optional detail must not keep work running after the usable initial material is ready and the provider is failing.
+
 **Why:** A real multi-mode test completed its initial generation but failed during a topic expansion, making the entire otherwise usable pack unavailable.
 
 **Why:** After repeated credit-limit failures, the user explicitly approved switching to Gemini and previously declined managed AI setup. Keeping an SDK with an OpenAI name is acceptable when it sends exclusively to Google's documented compatibility endpoint; it does not mean OpenAI is the provider.

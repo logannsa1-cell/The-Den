@@ -67,5 +67,39 @@ test("provider retry budget recovers capacity failures without retrying quotas o
     assert.match(recoveredMaterial.summary, /Cells are the basic units of life/);
     assert.match(recoveredMaterial.summary, /Detail expansion unavailable/);
     assert.equal(calls, 2);
+    for (const failure of ["busy", "deadline", "timeout"] as const) {
+      calls = 0;
+      let activeExpansionSignal: AbortSignal | null | undefined;
+      globalThis.fetch = async (_input, init) => {
+        calls++;
+        if (calls === 1) return Response.json({
+          candidates: [{ finishReason: "STOP", content: { parts: [{ text: JSON.stringify({
+            tutorLesson: "## One\nFirst topic.\n## Two\nSecond topic.\n## Three\nThird topic.",
+            summary: "## Four\nFourth topic.",
+            questions: [{ question: "Original exam question" }],
+          }) }] } }],
+        });
+        activeExpansionSignal = init?.signal;
+        if (failure === "deadline") {
+          clock += 61000;
+          return Response.json({ candidates: [{ finishReason: "STOP", content: { parts: [{ text: "## One\nExpanded first topic." }] } }] });
+        }
+        if (failure === "timeout") throw new DOMException("Timed out", "TimeoutError");
+        // A quota response is non-retryable, allowing this test to verify the
+        // cancellation of the optional pass without a backoff delay.
+        return new Response("", { status: 429 });
+      };
+      const bounded = await generateStudyContent({ ...options, modes: ["tutor", "summary", "timed"],
+        messages: [options.messages[0], { role: "user", content: JSON.stringify({ sourceText: "Cells form tissues. ".repeat(120) }) }],
+      });
+      const value = JSON.parse(bounded.choices[0].message.content || "{}");
+      assert.ok(calls <= 3, `${failure}: no new batch or mode after failure/budget exhaustion`);
+      assert.equal(activeExpansionSignal?.aborted, true);
+      assert.match(value.tutorLesson, /Third topic/);
+      assert.match(value.summary, /Fourth topic/);
+      assert.match(value.summary, /Detail expansion unavailable/);
+      assert.equal(value.questions[0].question, "Original exam question");
+      if (failure === "deadline") assert.match(value.tutorLesson, /Expanded first topic/);
+    }
   } finally { globalThis.fetch = originalFetch; Date.now = originalNow; }
 });
