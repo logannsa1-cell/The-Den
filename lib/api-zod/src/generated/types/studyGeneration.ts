@@ -5,15 +5,26 @@
  * API specification
  * OpenAPI spec version: 0.1.0
  */
+import type { StudyGenerationModesItem } from './studyGenerationModesItem';
 import type { StudyPlanDay } from './studyPlanDay';
 import type { StudyQuestion } from './studyQuestion';
 import type { StudyTerm } from './studyTerm';
+import type { TheoryQuestion } from './theoryQuestion';
 
 export interface StudyGeneration {
+  tutorLesson?: string;
   title: string;
   summary: string;
   keyTerms: StudyTerm[];
   cramPoints: string[];
   questions: StudyQuestion[];
   studyPlan: StudyPlanDay[];
+  /** @maxItems 10 */
+  theoryQuestions?: TheoryQuestion[];
+  modes?: StudyGenerationModesItem[];
+  /**
+     * @minimum 1
+     * @maximum 180
+     */
+  examMinutes?: number;
 }

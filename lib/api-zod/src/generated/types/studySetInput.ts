@@ -7,9 +7,13 @@
  */
 import type { StudyPlanDay } from './studyPlanDay';
 import type { StudyQuestion } from './studyQuestion';
+import type { StudySetInputModesItem } from './studySetInputModesItem';
 import type { StudyTerm } from './studyTerm';
+import type { TheoryQuestion } from './theoryQuestion';
 
 export interface StudySetInput {
+  /** @maxLength 60000 */
+  tutorLesson?: string;
   /**
      * @minLength 1
      * @maxLength 160
@@ -22,10 +26,10 @@ export interface StudySetInput {
   sourceName: string;
   /**
      * @minLength 120
-     * @maxLength 60000
+     * @maxLength 180000
      */
   sourceText: string;
-  /** @maxLength 20000 */
+  /** @maxLength 60000 */
   summary: string;
   /** @maxItems 100 */
   keyTerms: StudyTerm[];
@@ -40,4 +44,12 @@ export interface StudySetInput {
      * @items.maxLength 240
      */
   masteredTerms: string[];
+  /** @maxItems 10 */
+  theoryQuestions?: TheoryQuestion[];
+  modes?: StudySetInputModesItem[];
+  /**
+     * @minimum 1
+     * @maximum 180
+     */
+  examMinutes?: number;
 }

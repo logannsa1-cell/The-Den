@@ -1,0 +1,1 @@
+- [Jaguar product direction](jaguar-product.md) — exact branding and note-generation expectations from the user.

@@ -5,6 +5,7 @@
  * API specification
  * OpenAPI spec version: 0.1.0
  */
+import type { StudyGenerationInputModesItem } from './studyGenerationInputModesItem';
 
 export interface StudyGenerationInput {
   /**
@@ -14,7 +15,7 @@ export interface StudyGenerationInput {
   sourceName: string;
   /**
      * @minLength 120
-     * @maxLength 60000
+     * @maxLength 180000
      */
   sourceText: string;
   examDate?: Date;
@@ -24,8 +25,15 @@ export interface StudyGenerationInput {
      */
   hoursPerDay: number;
   /**
-     * @minimum 5
-     * @maximum 20
+     * @minimum 1
+     * @maximum 50
      */
   questionCount: number;
+  /** @minItems 1 */
+  modes?: StudyGenerationInputModesItem[];
+  /**
+     * @minimum 1
+     * @maximum 180
+     */
+  examMinutes?: number;
 }

@@ -10,12 +10,12 @@ export interface StudyQuestion {
   prompt: string;
   /**
      * @minItems 4
-     * @maxItems 4
+     * @maxItems 5
      */
   choices: string[];
   /**
      * @minimum 0
-     * @maximum 3
+     * @maximum 4
      */
   answerIndex: number;
   explanation: string;

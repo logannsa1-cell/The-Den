@@ -9,6 +9,18 @@ export interface HealthStatus {
   status: string;
 }
 
+export type StudyGenerationInputModesItem = typeof StudyGenerationInputModesItem[keyof typeof StudyGenerationInputModesItem];
+
+
+export const StudyGenerationInputModesItem = {
+  summary: 'summary',
+  timed: 'timed',
+  objective: 'objective',
+  theory: 'theory',
+  tutor: 'tutor',
+  cram: 'cram',
+} as const;
+
 export interface StudyGenerationInput {
   /**
      * @minLength 1
@@ -17,7 +29,7 @@ export interface StudyGenerationInput {
   sourceName: string;
   /**
      * @minLength 120
-     * @maxLength 60000
+     * @maxLength 180000
      */
   sourceText: string;
   examDate?: string;
@@ -27,10 +39,41 @@ export interface StudyGenerationInput {
      */
   hoursPerDay: number;
   /**
-     * @minimum 5
-     * @maximum 20
+     * @minimum 1
+     * @maximum 50
      */
   questionCount: number;
+  /** @minItems 1 */
+  modes?: StudyGenerationInputModesItem[];
+  /**
+     * @minimum 1
+     * @maximum 180
+     */
+  examMinutes?: number;
+}
+
+export type TheoryPartLabel = typeof TheoryPartLabel[keyof typeof TheoryPartLabel];
+
+
+export const TheoryPartLabel = {
+  a: 'a',
+  b: 'b',
+  c: 'c',
+} as const;
+
+export interface TheoryPart {
+  label: TheoryPartLabel;
+  question: string;
+  modelAnswer: string;
+}
+
+export interface TheoryQuestion {
+  prompt: string;
+  /**
+     * @minItems 3
+     * @maxItems 3
+     */
+  parts: TheoryPart[];
 }
 
 export interface StudyTerm {
@@ -42,12 +85,12 @@ export interface StudyQuestion {
   prompt: string;
   /**
      * @minItems 4
-     * @maxItems 4
+     * @maxItems 5
      */
   choices: string[];
   /**
      * @minimum 0
-     * @maximum 3
+     * @maximum 4
      */
   answerIndex: number;
   explanation: string;
@@ -59,16 +102,51 @@ export interface StudyPlanDay {
   tasks: string[];
 }
 
+export type StudyGenerationModesItem = typeof StudyGenerationModesItem[keyof typeof StudyGenerationModesItem];
+
+
+export const StudyGenerationModesItem = {
+  summary: 'summary',
+  timed: 'timed',
+  objective: 'objective',
+  theory: 'theory',
+  tutor: 'tutor',
+  cram: 'cram',
+} as const;
+
 export interface StudyGeneration {
+  tutorLesson?: string;
   title: string;
   summary: string;
   keyTerms: StudyTerm[];
   cramPoints: string[];
   questions: StudyQuestion[];
   studyPlan: StudyPlanDay[];
+  /** @maxItems 10 */
+  theoryQuestions?: TheoryQuestion[];
+  modes?: StudyGenerationModesItem[];
+  /**
+     * @minimum 1
+     * @maximum 180
+     */
+  examMinutes?: number;
 }
 
+export type StudySetInputModesItem = typeof StudySetInputModesItem[keyof typeof StudySetInputModesItem];
+
+
+export const StudySetInputModesItem = {
+  summary: 'summary',
+  timed: 'timed',
+  objective: 'objective',
+  theory: 'theory',
+  tutor: 'tutor',
+  cram: 'cram',
+} as const;
+
 export interface StudySetInput {
+  /** @maxLength 60000 */
+  tutorLesson?: string;
   /**
      * @minLength 1
      * @maxLength 160
@@ -81,10 +159,10 @@ export interface StudySetInput {
   sourceName: string;
   /**
      * @minLength 120
-     * @maxLength 60000
+     * @maxLength 180000
      */
   sourceText: string;
-  /** @maxLength 20000 */
+  /** @maxLength 60000 */
   summary: string;
   /** @maxItems 100 */
   keyTerms: StudyTerm[];
@@ -99,6 +177,14 @@ export interface StudySetInput {
      * @items.maxLength 240
      */
   masteredTerms: string[];
+  /** @maxItems 10 */
+  theoryQuestions?: TheoryQuestion[];
+  modes?: StudySetInputModesItem[];
+  /**
+     * @minimum 1
+     * @maximum 180
+     */
+  examMinutes?: number;
 }
 
 export type StudySet = StudySetInput & {
