@@ -4,6 +4,7 @@ import { clerkMiddleware } from "@clerk/express";
 import { publishableKeyFromHost } from "@clerk/shared/keys";
 import pinoHttp from "pino-http";
 import router from "./routes";
+import sourceExtractionRouter from "./routes/source-extraction";
 import { logger } from "./lib/logger";
 import {
   CLERK_PROXY_PATH,
@@ -34,8 +35,6 @@ app.use(
 );
 app.use(CLERK_PROXY_PATH, clerkProxyMiddleware());
 app.use(cors({ credentials: true, origin: true }));
-app.use(express.json({ limit: "1mb" }));
-app.use(express.urlencoded({ extended: true }));
 app.use(
   clerkMiddleware((req) => ({
     publishableKey: publishableKeyFromHost(
@@ -45,6 +44,10 @@ app.use(
   })),
 );
 
+// Authenticate large uploads before parsing their body; keep the normal API limit.
+app.use(sourceExtractionRouter);
+app.use(express.json({ limit: "1mb" }));
+app.use(express.urlencoded({ extended: true }));
 app.use("/api", router);
 
 export default app;

@@ -13,6 +13,36 @@ tags:
   - name: study
     description: Exam preparation tools
 paths:
+  /study/extract:
+    post:
+      operationId: extractStudySource
+      tags: [study]
+      summary: Transient authenticated document extraction for mobile uploads
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SourceUploadInput"
+      responses:
+        "200":
+          description: Readable source text and page previews; original is not stored
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SourceExtraction"
+        "400":
+          description: Invalid or unsupported document
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "401":
+          description: Sign-in required
+        "413":
+          description: Document exceeds extraction limits
+        "429":
+          description: Extraction capacity reached; retry shortly
   /healthz:
     get:
       operationId: healthCheck
@@ -165,6 +195,31 @@ paths:
                 $ref: "#/components/schemas/ApiError"
 components:
   schemas:
+    SourceUploadInput:
+      type: object
+      required: [name, base64]
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 160
+        base64:
+          type: string
+          maxLength: 20971520
+    SourceExtraction:
+      type: object
+      required: [name, text, pages, notice]
+      properties:
+        name:
+          type: string
+        text:
+          type: string
+        pages:
+          type: array
+          items:
+            type: string
+        notice:
+          type: string
     HealthStatus:
       type: object
       properties:

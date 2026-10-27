@@ -5,6 +5,23 @@
  * API specification
  * OpenAPI spec version: 0.1.0
  */
+export interface SourceUploadInput {
+  /**
+     * @minLength 1
+     * @maxLength 160
+     */
+  name: string;
+  /** @maxLength 20971520 */
+  base64: string;
+}
+
+export interface SourceExtraction {
+  name: string;
+  text: string;
+  pages: string[];
+  notice: string;
+}
+
 export interface HealthStatus {
   status: string;
 }

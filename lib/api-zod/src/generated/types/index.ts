@@ -8,6 +8,8 @@
 
 export * from './apiError';
 export * from './healthStatus';
+export * from './sourceExtraction';
+export * from './sourceUploadInput';
 export * from './studyGeneration';
 export * from './studyGenerationInput';
 export * from './studyGenerationInputModesItem';
