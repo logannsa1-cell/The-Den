@@ -81,7 +81,7 @@ function isRateLimited(key: string, now: number): boolean {
 }
 
 router.post("/study/generate", requireAuth, async (req, res): Promise<void> => {
-  if (!process.env.OPENAI_API_KEY) {
+  if (!process.env.GEMINI_API_KEY) {
     res.status(503).json({
       error: "AI generation is not configured on the server yet.",
     });
@@ -98,7 +98,7 @@ router.post("/study/generate", requireAuth, async (req, res): Promise<void> => {
   if (cleanedSource.sourceText.length < 120) {
     res.status(400).json({
       error: cleanedSource.hadMarkup
-        ? "This source contains Office formatting but not enough readable text. Re-upload it as a searchable PDF or paste the slide text."
+        ? "This source contains Office formatting but not enough readable text. Re-upload it as a searchable PDF."
         : "Add at least 120 characters of readable course material.",
     });
     return;
@@ -126,13 +126,15 @@ router.post("/study/generate", requireAuth, async (req, res): Promise<void> => {
     const modes = parsed.data.modes ?? ["summary", "objective"];
     const needsQuestions = modes.includes("objective") || modes.includes("timed");
     const client = new OpenAI({
-      apiKey: process.env.OPENAI_API_KEY,
+      apiKey: process.env.GEMINI_API_KEY,
+      baseURL: "https://generativelanguage.googleapis.com/v1beta/openai/",
       timeout: 180_000,
-      maxRetries: 1,
+      maxRetries: 0,
     });
     const completion = await client.chat.completions.create({
-      model: "gpt-4.1-mini",
+      model: process.env.GEMINI_MODEL || "gemini-2.5-flash",
       max_completion_tokens: 24000,
+      reasoning_effort: "low",
       response_format: { type: "json_object" },
       messages: [
         {
@@ -167,6 +169,10 @@ Include 8–16 keyTerms. Include 8–12 cramPoints if cram mode is selected, oth
       });
       return;
     }
+    if (completion.choices[0]?.finish_reason !== "stop") {
+      res.status(502).json({ error: "The service could not finish this response. Try fewer study options or review your source material. Your files are retained." });
+      return;
+    }
     const content = completion.choices[0]?.message.content;
     if (!content) {
       res.status(502).json({ error: "The AI provider returned an empty response." });
@@ -194,7 +200,9 @@ Include 8–16 keyTerms. Include 8–12 cramPoints if cram mode is selected, oth
     }
     if (needsQuestions && (
       materials.data.questions.length !== parsed.data.questionCount ||
-      materials.data.questions.some((q) => q.choices.length !== 5)
+      materials.data.questions.some((q) => q.choices.length !== 5 ||
+        new Set(q.choices.map((choice) => choice.trim().toLowerCase())).size !== 5 ||
+        !Number.isInteger(q.answerIndex) || q.answerIndex < 0 || q.answerIndex > 4)
     )) {
       res.status(502).json({ error: "The AI did not return the requested number of A–E questions. Your notes are retained; please try again." });
       return;
@@ -208,6 +216,11 @@ Include 8–16 keyTerms. Include 8–12 cramPoints if cram mode is selected, oth
     }
     if (modes.includes("tutor") && !materials.data.tutorLesson?.trim()) {
       res.status(502).json({ error: "The lesson was incomplete. Your source is retained; please try again." });
+      return;
+    }
+    if ((modes.includes("summary") && !materials.data.summary.trim()) ||
+      (modes.includes("cram") && !materials.data.cramPoints.some((point) => point.trim()))) {
+      res.status(502).json({ error: "Some selected study materials were missing. Your files are retained; please try again." });
       return;
     }
     res.json({
@@ -229,7 +242,15 @@ Include 8–16 keyTerms. Include 8–12 cramPoints if cram mode is selected, oth
       return;
     }
     if (error instanceof OpenAI.APIError && error.status === 429) {
-      res.status(503).json({ error: "Study generation has reached its service credit or usage limit. Please ask the app owner to restore credits or try again later." });
+      res.status(429).json({ error: "The study service has reached a request or usage quota. Wait before retrying; if this continues, the app owner must check the account quota. Your files are retained." });
+      return;
+    }
+    if (error instanceof OpenAI.APIConnectionTimeoutError) {
+      res.status(504).json({ error: "Generation took too long. Try fewer options or a smaller file. Your files are retained." });
+      return;
+    }
+    if (error instanceof OpenAI.APIError && (error.status === 400 || error.status === 404)) {
+      res.status(503).json({ error: "The generation request could not be accepted. The app owner should check the service key, model availability and account access. Your files are retained." });
       return;
     }
     res.status(502).json({

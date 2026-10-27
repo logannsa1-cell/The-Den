@@ -48,7 +48,7 @@ function readModes(userId: string): StudyMode[] {
 }
 function friendlyError(cause: unknown) {
   const msg = cause instanceof Error ? cause.message : '';
-  if (/credit|quota|limit|429|402/i.test(msg)) return 'Study generation is blocked right now because the workspace AI credit limit has been reached. Your notes and files are still here. Try again once credits are available.';
+  if (/^429\b/.test(msg)) return 'Too many generation requests. Wait before retrying; if this continues, the app owner should check the service quota. Your files are retained.';
   return msg || 'Generation failed. Your notes and files are still here. Try again.';
 }
 
