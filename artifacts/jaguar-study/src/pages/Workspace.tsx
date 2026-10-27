@@ -1,19 +1,20 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { useClerk, useUser } from '@clerk/react';
-import { AlertCircle, BookOpen, Bookmark, CheckCircle2, ChevronRight, Cloud, FolderOpen, LoaderCircle, LogOut, Plus, Settings, SlidersHorizontal, Trash2 } from 'lucide-react';
+import { AlertCircle, ArrowLeft, BookOpen, Bookmark, CheckCircle2, ChevronRight, Cloud, FolderOpen, LogOut, Plus, RotateCcw, Settings, SlidersHorizontal, Trash2 } from 'lucide-react';
 import {
   getListStudySetsQueryKey, useDeleteStudySet, useGenerateStudyMaterials, useListStudySets, useUpsertStudySet,
   type StudyGeneration, type StudySetInput,
 } from '@workspace/api-client-react';
 import { sanitizeStudyText, type StudyMode, type StudySet } from '@/study';
 import { BrandLockup, RosetteCorners, ThemeSwitcher, basePath } from '@/components/Brand';
-import { ALL_MODES, ModeDialog, ModeGrid, ModeNumbers, intIn, modeLabel } from '@/components/ModePicker';
+import { ALL_MODES, MODE_INFO, ModeDialog, intIn, modeLabel } from '@/components/ModePicker';
+import { JaguarRunner } from '@/components/JaguarRunner';
 import { ExamSchedule } from '@/components/ExamSchedule';
 import { ProfileHeader } from '@/components/ProfileMedia';
 import { useProfileMedia } from '@/lib/profile-media';
 import { SourceUploader, combineSources, MAX_SOURCE_CHARS, type SourceEntry } from '@/components/SourceUploader';
-import { StudyOutput, setModes } from '@/components/StudyOutput';
+import { StudyOutput, setModes, type OutputTab } from '@/components/StudyOutput';
 import { deleteSources, loadSources, saveSources, sourceKey, type StoredSource } from '@/lib/source-store';
 
 const STORAGE_KEY = 'jaguar-study-sets-v1';
@@ -46,6 +47,7 @@ function readModes(userId: string): StudyMode[] {
   try { const p: unknown = JSON.parse(localStorage.getItem(modesKey(userId)) ?? 'null'); if (Array.isArray(p)) { const v = ALL_MODES.filter((m) => p.includes(m)); if (v.length) return v; } } catch { /* ignore */ }
   return [...ALL_MODES];
 }
+const MODE_TAB: Record<StudyMode, OutputTab> = { timed: 'timed', tutor: 'tutor', summary: 'summary', objective: 'objective', cram: 'cram', theory: 'theory' };
 function friendlyError(cause: unknown) {
   const msg = cause instanceof Error ? cause.message : '';
   if (/^429\b/.test(msg)) return 'Too many generation requests. Wait before retrying; if this continues, the app owner should check the service quota. Your files are retained.';
@@ -86,6 +88,12 @@ export default function Workspace() {
   const [activeSources, setActiveSources] = useState<StoredSource[] | null>(null);
   const [notice, setNotice] = useState('');
   const outputRef = useRef<HTMLDivElement>(null);
+  const [view, setView] = useState<'builder' | 'study'>('builder');
+  const [pendingModes, setPendingModes] = useState<StudyMode[]>([]);
+  const [studyError, setStudyError] = useState('');
+  const [studyTab, setStudyTab] = useState<OutputTab | undefined>(undefined);
+  const submitting = useRef(false);
+  const [generating, setGenerating] = useState(false);
 
   useEffect(() => { setLocalSets(safeReadSets()); }, []);
   const setModesState = (m: StudyMode[]) => { setModesRaw(m); if (userId) { try { localStorage.setItem(modesKey(userId), JSON.stringify(m)); } catch { /* ignore */ } } };
@@ -102,7 +110,7 @@ export default function Workspace() {
   }, []);
   // Clear all user-specific working state whenever the signed-in user changes.
   useEffect(() => {
-    setActive(null); setActiveSources(null); setFiles([]); setError(''); setTried(false);
+    setActive(null); setActiveSources(null); setFiles([]); setView('builder'); setStudyError(''); setError(''); setTried(false);
     setModesRaw(userId ? readModes(userId) : [...ALL_MODES]); readyCount.current = 0;
     if (!userId) { setMigration(null); return; }
     const d = localStorage.getItem(`jaguar-study-migration-${userId}`);
@@ -132,9 +140,10 @@ export default function Workspace() {
   const countError = tried && count === null ? 'Whole number from 1 to 50.' : '';
   const minutesError = tried && modes.includes('timed') && minutes === null ? 'Whole number from 1 to 180.' : '';
   const reading = files.some((f) => f.status === 'reading');
-  const busy = generate.isPending || upsert.isPending;
+  const busy = generating || generate.isPending || upsert.isPending;
 
   const onGenerate = async () => {
+    if (submitting.current || generate.isPending) return;
     setError(''); setTried(true);
     if (!modes.length) return setError('Pick at least one mode.');
     if (count === null) return setError('Questions must be a whole number from 1 to 50.');
@@ -145,6 +154,10 @@ export default function Workspace() {
     if (sourceText.replace(/=== Source[^\n]*===/g, '').trim().length < 120) return setError('Upload a readable file containing at least 120 characters of course material.');
     if (sourceText.length > MAX_SOURCE_CHARS) return setError(`Combined sources are over ${MAX_SOURCE_CHARS.toLocaleString()} characters. Remove a file or upload a smaller document.`);
     const sourceName = sourceLabel(files);
+    submitting.current = true;
+    setGenerating(true);
+    setModeDialog(false); setStudyError(''); setActive(null); setPendingModes(modes); setStudyTab(undefined); setView('study');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
     try {
       const result: StudyGeneration = await generate.mutateAsync({
         data: {
@@ -169,13 +182,17 @@ export default function Workspace() {
       }
       setActive(created);
       if (synced) setNotice('Ready and synced to your account.');
-      window.setTimeout(() => outputRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 80);
     } catch (cause) {
-      setError(friendlyError(cause));
+      setStudyError(friendlyError(cause));
+    } finally {
+      submitting.current = false;
+      setGenerating(false);
     }
   };
 
-  const openSet = (set: StudySet) => { setActive(set); window.setTimeout(() => outputRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 40); };
+  const openSet = (set: StudySet) => { if (generating) return; setStudyError(''); setStudyTab(undefined); setActive(set); setView('study'); window.scrollTo({ top: 0, behavior: 'smooth' }); };
+  const backToBuilder = () => { setView('builder'); setStudyError(''); };
+  const studyModes: StudyMode[] = generate.isPending || studyError || !active ? pendingModes : setModes(active);
 
   const rate = (term: string, ok: boolean) => {
     if (!active) return;
@@ -190,7 +207,7 @@ export default function Workspace() {
   const deleteSet = (set: StudySet) => {
     const remote = remoteIds.has(set.id);
     if (!window.confirm(`Delete "${clean(set.title)}"${remote ? ' from your account' : ' from this browser'}? This cannot be undone.`)) return;
-    const done = () => { if (active?.id === set.id) setActive(null); if (userId) void deleteSources(sourceKey(userId, set.id)); setNotice('Study set deleted.'); };
+    const done = () => { if (active?.id === set.id) { setActive(null); setView('builder'); } if (userId) void deleteSources(sourceKey(userId, set.id)); setNotice('Study set deleted.'); };
     if (remote) removeRemote.mutate({ id: set.id }, { onSuccess: () => { qc.setQueryData<StudySet[]>(getListStudySetsQueryKey(), (old) => (old ?? []).filter((s) => s.id !== set.id)); done(); }, onError: () => setError('Could not delete. Try again.') });
     else { persist(localSets.filter((s) => s.id !== set.id)); done(); }
   };
@@ -241,13 +258,13 @@ export default function Workspace() {
           window.location.hash = '';
           window.setTimeout(() => {
             if (target === 'nav-saved') document.getElementById('saved-sets')?.scrollIntoView({ behavior: 'smooth' });
-            else if (target === 'nav-active') outputRef.current?.scrollIntoView({ behavior: 'smooth' });
+            else if (target === 'nav-active') setView('study');
             else window.scrollTo({ top: 0, behavior: 'smooth' });
           }, 0);
         }}>
-          <button className="nav-item active" type="button" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })} data-testid="nav-create"><Plus size={16} /> New study set</button>
-          <button className="nav-item" type="button" onClick={() => document.getElementById('saved-sets')?.scrollIntoView({ behavior: 'smooth' })} data-testid="nav-saved"><FolderOpen size={16} /> Saved sets <span className="nav-count">{String(savedSets.length).padStart(2, '0')}</span></button>
-          {active && <button className="nav-item" type="button" onClick={() => outputRef.current?.scrollIntoView({ behavior: 'smooth' })} data-testid="nav-active"><BookOpen size={16} /> Open set</button>}
+          <button className={`nav-item${view === 'builder' ? ' active' : ''}`} type="button" onClick={() => { setView('builder'); window.scrollTo({ top: 0, behavior: 'smooth' }); }} data-testid="nav-create"><Plus size={16} /> New study set</button>
+          <button className="nav-item" type="button" onClick={() => { setView('builder'); window.setTimeout(() => document.getElementById('saved-sets')?.scrollIntoView({ behavior: 'smooth' }), 0); }} data-testid="nav-saved"><FolderOpen size={16} /> Saved sets <span className="nav-count">{String(savedSets.length).padStart(2, '0')}</span></button>
+          {(active || generate.isPending || studyError) && <button className={`nav-item${view === 'study' ? ' active' : ''}`} type="button" onClick={() => setView('study')} data-testid="nav-active"><BookOpen size={16} /> Open set</button>}
         </nav>
         <div className="sidebar-bottom"><ThemeSwitcher /></div>
       </aside>
@@ -255,7 +272,7 @@ export default function Workspace() {
       <main className="main-area">
         <header className="topbar">
           <div className="mobile-brand"><BrandLockup size={30} /></div>
-          <div className="crumb">WORKSPACE <span>/</span> <strong>{settingsOpen ? 'Settings' : 'Study'}</strong></div>
+          <div className="crumb">WORKSPACE <span>/</span> <strong>{settingsOpen ? 'Settings' : view === 'study' ? 'Study view' : 'Study'}</strong></div>
           <div className="top-status">
             <span className="mobile-only"><ThemeSwitcher compact /></span>
             <span className="local-pill"><span className="status-dot" /> Account sync</span>
@@ -271,10 +288,44 @@ export default function Workspace() {
             <h2>Your profile</h2><p className="welcome-copy">Manage your profile picture and banner.</p>
           </ProfileHeader>
         </div>}
-        <div className="workspace" hidden={settingsOpen}>
+        <div className="workspace" hidden={settingsOpen || view !== 'study'} data-testid="page-study-view">
+          <div className="study-view">
+            <nav className="study-rail" aria-label="Selected modes">
+              <button className="quiet-button" type="button" onClick={backToBuilder} data-testid="button-back-builder"><ArrowLeft size={13} /> Back to builder</button>
+              <span className="step-label" style={{ marginTop: 8 }}>MODES</span>
+              <div className="study-rail-modes">
+                {MODE_INFO.filter((m) => studyModes.includes(m.id)).map(({ id, label, Icon }) => {
+                  const ready = !!active && !generate.isPending && !studyError;
+                  return (
+                    <button key={id} type="button" className={`nav-item${ready && studyTab === MODE_TAB[id] ? ' active' : ''}`} aria-disabled={!ready} onClick={() => { if (ready) setStudyTab(MODE_TAB[id]); }} data-testid={`rail-mode-${id}`}><Icon size={15} /> {label}</button>
+                  );
+                })}
+              </div>
+            </nav>
+            <div className="study-stage" ref={outputRef}>
+              {generating ? (
+                <div className="panel"><JaguarRunner label={`Building ${pendingModes.length} ${pendingModes.length === 1 ? 'mode' : 'modes'} from your notes...`} /></div>
+              ) : studyError ? (
+                <div className="panel study-error" role="alert" data-testid="error-generation">
+                  <div className="error-message"><AlertCircle size={13} /> {studyError}</div>
+                  <div className="study-error-actions">
+                    <button className="primary-button" type="button" onClick={() => void onGenerate()} data-testid="button-retry-generation"><RotateCcw size={13} /> Retry</button>
+                    <button className="quiet-button" type="button" onClick={() => setModeDialog(true)} data-testid="button-change-selection"><SlidersHorizontal size={13} /> Change selection</button>
+                    <button className="quiet-button" type="button" onClick={backToBuilder} data-testid="button-error-back"><ArrowLeft size={13} /> Back</button>
+                  </div>
+                </div>
+              ) : active ? (
+                <StudyOutput set={active} userId={userId} synced={remoteIds.has(active.id)} clean={clean} sources={activeSources} onReattach={(f) => void reattach(f)} onRate={rate} onClose={() => { setActive(null); setView('builder'); }} notify={setNotice} tab={studyTab} onTab={setStudyTab} />
+              ) : (
+                <div className="empty-state"><div><strong>Nothing open</strong><p>Pick a saved set or build a new one.</p></div></div>
+              )}
+            </div>
+          </div>
+        </div>
+        <div className="workspace" hidden={settingsOpen || view !== 'builder'}>
           <section style={{ marginBottom: 30 }}>
             <h1 id="welcome-title" data-testid="text-workspace-heading">Exam is soon ooo</h1>
-            <p className="welcome-copy">Bring your note so You can study</p>
+            <p className="welcome-copy">Bring your note so you can study</p>
           </section>
 
           {migration === 'pending' && localOnly.length > 0 && (
@@ -288,20 +339,11 @@ export default function Workspace() {
             </section>
           )}
 
-          <section className="builder-grid reveal" aria-label="Create a study set">
+          <section aria-label="Create a study set" className="reveal">
             <div className="panel source-panel">
-              <div className="panel-head"><h2 className="panel-title">Bring your note</h2><span className="step-label"><b>01</b> SOURCE</span></div>
+              <div className="panel-head"><h2 className="panel-title">Bring your note</h2><button className="quiet-button" type="button" onClick={() => setModeDialog(true)} data-testid="button-open-modes"><SlidersHorizontal size={13} /> Choose modes <ChevronRight size={13} /></button></div>
               <SourceUploader files={files} onFiles={setFiles} disabled={busy} />
-            </div>
-            <div className="panel settings-panel">
-              <div className="panel-head"><h2 className="panel-title">Build it your way</h2><button className="quiet-button" type="button" onClick={() => setModeDialog(true)} data-testid="button-open-modes"><SlidersHorizontal size={13} /> Choose modes</button></div>
-              <ModeGrid modes={modes} onModes={setModesState} />
-              <ModeNumbers modes={modes} questionCount={questionCount} onQuestionCount={setQuestionCount} examMinutes={examMinutes} onExamMinutes={setExamMinutes} countError={countError} minutesError={minutesError} />
-              {error && <div className="error-message" role="alert" data-testid="error-generation"><AlertCircle size={13} /> {error}</div>}
-              <button className="primary-button generate" type="button" onClick={() => void onGenerate()} disabled={busy} data-testid="button-generate">
-                {busy ? <><LoaderCircle size={16} className="spin-icon" /> Making your study set...</> : <>Build my study set <ChevronRight size={15} /></>}
-              </button>
-              {generate.isPending && <div className="loading-bar" role="progressbar" aria-label="Generating" />}
+              {error && !modeDialog && <div className="error-message" role="alert" data-testid="error-builder"><AlertCircle size={13} /> {error}</div>}
             </div>
           </section>
 
@@ -337,12 +379,10 @@ export default function Workspace() {
               )}
           </section>
 
-          <div ref={outputRef} className="output-anchor">
-            {active && <StudyOutput set={active} userId={userId} synced={remoteIds.has(active.id)} clean={clean} sources={activeSources} onReattach={(f) => void reattach(f)} onRate={rate} onClose={() => setActive(null)} notify={setNotice} />}
-          </div>
         </div>
       </main>
-      <ModeDialog open={modeDialog} modes={modes} onModes={setModesState} onClose={() => setModeDialog(false)} />
+      <ModeDialog open={modeDialog} modes={modes} onModes={setModesState} onClose={() => setModeDialog(false)} onGenerate={() => void onGenerate()} busy={generating} error={error}
+        questionCount={questionCount} onQuestionCount={setQuestionCount} examMinutes={examMinutes} onExamMinutes={setExamMinutes} countError={countError} minutesError={minutesError} />
       {notice && <div className="toast-message" role="status" data-testid="status-toast"><CheckCircle2 size={15} /> {notice}</div>}
     </div>
   );

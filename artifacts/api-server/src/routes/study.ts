@@ -1,5 +1,5 @@
 import { Router, type IRouter } from "express";
-import OpenAI from "openai";
+import { GeminiError, generateStudyContent } from "../lib/gemini-study";
 import {
   GenerateStudyMaterialsBody,
   GenerateStudyMaterialsResponse,
@@ -125,17 +125,10 @@ router.post("/study/generate", requireAuth, async (req, res): Promise<void> => {
   try {
     const modes = parsed.data.modes ?? ["summary", "objective"];
     const needsQuestions = modes.includes("objective") || modes.includes("timed");
-    const client = new OpenAI({
-      apiKey: process.env.GEMINI_API_KEY,
-      baseURL: "https://generativelanguage.googleapis.com/v1beta/openai/",
-      timeout: 180_000,
-      maxRetries: 0,
-    });
-    const completion = await client.chat.completions.create({
-      model: process.env.GEMINI_MODEL || "gemini-3.8-flash",
-      max_completion_tokens: 24000,
-      reasoning_effort: "low",
-      response_format: { type: "json_object" },
+    const completion = await generateStudyContent({
+      model: process.env.GEMINI_MODEL || "gemini-3.1-flash-lite",
+      modes,
+      questionCount: parsed.data.questionCount,
       messages: [
         {
           role: "system",
@@ -187,6 +180,17 @@ Include 8–16 keyTerms. Include 8–12 cramPoints if cram mode is selected, oth
       return;
     }
 
+    // Some models return bonus questions. Keep exactly the requested count;
+    // never pad a short response with fabricated questions.
+    if (decoded && typeof decoded === "object" && !Array.isArray(decoded)) {
+      const value = decoded as Record<string, unknown>;
+      if (Array.isArray(value.questions)) {
+        value.questions = value.questions.slice(0, needsQuestions ? parsed.data.questionCount : 0);
+      }
+      if (Array.isArray(value.theoryQuestions)) {
+        value.theoryQuestions = value.theoryQuestions.slice(0, modes.includes("timed") ? 7 : modes.includes("theory") ? 5 : 0);
+      }
+    }
     const materials = GenerateStudyMaterialsResponse.safeParse(decoded);
     if (!materials.success) {
       req.log.warn(
@@ -232,28 +236,27 @@ Include 8–16 keyTerms. Include 8–12 cramPoints if cram mode is selected, oth
     req.log.error(
       {
         errorName: error instanceof Error ? error.name : "UnknownError",
-        providerStatus: error instanceof OpenAI.APIError ? error.status : undefined,
-        providerCode: error instanceof OpenAI.APIError ? error.code : undefined,
+        providerStatus: error instanceof GeminiError ? error.status : undefined,
       },
       "Study material generation failed",
     );
-    if (error instanceof OpenAI.APIError && (error.status === 401 || error.status === 403)) {
+    if (error instanceof GeminiError && (error.status === 401 || error.status === 403)) {
       res.status(503).json({ error: "Study generation is unavailable because its service credentials need attention. Please contact the app owner." });
       return;
     }
-    if (error instanceof OpenAI.APIError && error.status === 429) {
+    if (error instanceof GeminiError && error.status === 429) {
       res.status(429).json({ error: "The study service has reached a request or usage quota. Wait before retrying; if this continues, the app owner must check the account quota. Your files are retained." });
       return;
     }
-    if (error instanceof OpenAI.APIConnectionTimeoutError) {
+    if (error instanceof Error && (error.name === "TimeoutError" || error.name === "AbortError")) {
       res.status(504).json({ error: "Generation took too long. Try fewer options or a smaller file. Your files are retained." });
       return;
     }
-    if (error instanceof OpenAI.APIError && (error.status === 503 || error.status === 500)) {
+    if (error instanceof GeminiError && (error.status === 503 || error.status === 500)) {
       res.status(503).json({ error: "The study service is temporarily busy. Please try again shortly. Your files are retained." });
       return;
     }
-    if (error instanceof OpenAI.APIError && (error.status === 400 || error.status === 404)) {
+    if (error instanceof GeminiError && (error.status === 400 || error.status === 404)) {
       res.status(503).json({ error: "The generation request could not be accepted. The app owner should check the service key, model availability and account access. Your files are retained." });
       return;
     }

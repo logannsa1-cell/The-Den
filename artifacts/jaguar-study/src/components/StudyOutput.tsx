@@ -30,9 +30,10 @@ type Props = {
   set: StudySet; userId: string; synced: boolean; clean: (s: string) => string;
   sources: StoredSource[] | null; onReattach: (files: File[]) => void;
   onRate: (term: string, ok: boolean) => void; onClose: () => void; notify: (msg: string) => void;
+  tab?: OutputTab; onTab?: (t: OutputTab) => void;
 };
 
-export function StudyOutput({ set, userId, synced, clean, sources, onReattach, onRate, onClose, notify }: Props) {
+export function StudyOutput({ set, userId, synced, clean, sources, onReattach, onRate, onClose, notify, tab: ctrlTab, onTab }: Props) {
   const modes = setModes(set);
   type T = [OutputTab, string, typeof BookOpen];
   const legacy = !set.modes?.length;
@@ -45,7 +46,9 @@ export function StudyOutput({ set, userId, synced, clean, sources, onReattach, o
     ...(modes.includes('theory') ? [['theory', 'Theory', PenLine] as T] : []),
   ];
   if (!tabs.length) tabs.push(['summary', 'Notes', BookOpen]);
-  const [tab, setTab] = useState<OutputTab>(tabs[0][0]);
+  const [ownTab, setOwnTab] = useState<OutputTab>(tabs[0][0]);
+  const tab = ctrlTab && tabs.some((t) => t[0] === ctrlTab) ? ctrlTab : ownTab;
+  const setTab = (t: OutputTab) => { setOwnTab(t); onTab?.(t); };
   const [showNotes, setShowNotes] = useState(true);
   const [split, setSplit] = useState(true);
   const [full, setFull] = useState(false);
