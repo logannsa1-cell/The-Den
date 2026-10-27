@@ -9,6 +9,28 @@ import * as zod from 'zod';
 
 
 /**
+ * @summary Transient authenticated document extraction for mobile uploads
+ */
+export const extractStudySourceBodyNameMax = 160;
+
+export const extractStudySourceBodyBase64Max = 20971520;
+
+
+
+export const ExtractStudySourceBody = zod.object({
+  "name": zod.string().min(1).max(extractStudySourceBodyNameMax),
+  "base64": zod.string().max(extractStudySourceBodyBase64Max)
+})
+
+export const ExtractStudySourceResponse = zod.object({
+  "name": zod.string(),
+  "text": zod.string(),
+  "pages": zod.array(zod.string()),
+  "notice": zod.string()
+})
+
+
+/**
  * Returns server health status
  * @summary Health check
  */

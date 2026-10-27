@@ -1,1 +1,2 @@
 - [Jaguar product direction](jaguar-product.md) — exact branding and note-generation expectations from the user.
+- [Mobile compatibility](mobile-compatibility.md) — Expo SDK alignment and the separate-origin limitation of automated Clerk sign-in.
