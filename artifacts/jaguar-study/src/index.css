@@ -8,6 +8,9 @@
 @custom-variant dark (&:is(.dark *));
 
 :root { --jaguar-hue: 0deg; }
+.workspace[hidden] { display: none; }
+.profile-settings-page .media-editor { position: relative; inset: auto; margin: 24px 0; width: min(100%, 480px); }
+.profile-settings-page > h1 { margin: 24px 0; }
 :root[data-theme="rose"] { --jaguar-hue: 60deg; }
 :root[data-theme="ocean"] { --jaguar-hue: -65deg; }
 :root[data-theme="jungle"] { --jaguar-hue: -145deg; }

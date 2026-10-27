@@ -38,7 +38,12 @@ function MediaEditor({ kind, media, onDone, notify }: { kind: MediaKind; media: 
           try { await media.save(file); notify(`${label} saved on this device.`); onDone(); } catch { setError('This browser could not store the image. Free some space and try again.'); }
           finally { setBusy(false); }
         }} data-testid={`button-save-${kind}`}>Save</button>}
-        {media.url && !file && <button className="text-button danger-text" type="button" onClick={async () => { await media.remove(); notify(`${label} removed.`); onDone(); }} data-testid={`button-remove-${kind}`}><Trash2 size={11} /> Remove</button>}
+        {media.url && !file && <button className="text-button danger-text" type="button" disabled={busy} onClick={async () => {
+          setBusy(true);
+          try { await media.remove(); notify(`${label} removed.`); onDone(); }
+          catch { setError('This browser could not remove the image. Please try again.'); }
+          finally { setBusy(false); }
+        }} data-testid={`button-remove-${kind}`}><Trash2 size={11} /> Remove</button>}
       </div>
     </div>
   );
@@ -46,7 +51,7 @@ function MediaEditor({ kind, media, onDone, notify }: { kind: MediaKind; media: 
 
 export function ProfileHeader({ initial, name, avatar, banner, notify, children }: { initial: string; name: string; avatar: Media; banner: Media; notify: (m: string) => void; children: ReactNode }) {
   const [editing, setEditing] = useState<MediaKind | null>(null);
-  const [settingsOpen, setSettingsOpen] = useState(false);
+  const [settingsOpen, setSettingsOpen] = useState(true);
   useEffect(() => {
     const close = (event: KeyboardEvent) => {
       if (event.key === 'Escape') { setSettingsOpen(false); setEditing(null); }
