@@ -8,6 +8,14 @@ The product name is just "Jaguar", with black and purple as the default, Rose/Oc
 
 Notes must be analyzed and synthesized into readable exam material, not just extracted text shown as notes. Multiple source files should form one study set; summary, timed exam, objective A–E questions (1–50), theory questions with a/b/c parts, Tutor Lesson and Cram Sheet must be selectable together after upload.
 
+Multi-file sets must stay organised by subject, explaining each subject's supplied weeks in order before the next subject. Exams and theory use subject sections in one combined paper, not separate papers.
+
+**Why:** The user explicitly chose "Subject sections in one paper" for Biology, Chemistry and Physics uploads.
+
+Week-level headings must be specified in both generation instructions and structured-output field descriptions. Generic numbered-topic directions can otherwise collapse weeks; theory may invent an "Integrated" subject unless explicitly prohibited.
+
+**Why:** Live three-subject generation initially combined weeks into subject overviews and later invented a mixed-subject theory question despite the organisation instructions. Field-level constraints and explicit precedence corrected the test output.
+
 Input is file-upload-only: no typed/pasted notes box. A top-right Settings button opens a separate profile view; profile pictures and banners must not appear on the study home page. The jaguar icon must follow the selected accent color.
 
 **Why:** The user explicitly requested these changes to the workflow.

@@ -8,6 +8,8 @@
 
 @custom-variant dark (&:is(.dark *));
 .study-math { max-width: 100%; }
+.subject-prompt { display: inline-block; }
+.subject-label { display: block; font-size: .75rem; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; opacity: .75; margin-bottom: .4rem; }
 .study-math .katex { font-size: 1.08em; }
 .display-math { display: block; overflow-x: auto; padding: .35rem 0; }
 

@@ -1,3 +1,4 @@
+import { SubjectPrompt } from './SubjectPrompt';
 import { useEffect, useState } from 'react';
 import { CheckCircle2, ChevronLeft, ChevronRight, RotateCcw } from 'lucide-react';
 import type { KeyTerm, StudyQuestion } from '@/study';
@@ -17,7 +18,7 @@ export function ObjectivePractice({ questions, clean, setId }: { questions: Stud
     <div className="quiz-card" data-testid="objective-practice">
       <div className="quiz-top"><span>{correct} correct of {Object.keys(picked).length} tried</span><span>{index + 1} / {questions.length}</span></div>
       <div className="quiz-progress"><span style={{ transform: `scaleX(${(index + 1) / questions.length})` }} /></div>
-      <h3 className="quiz-prompt">{clean(q.prompt)}</h3>
+      <h3 className="quiz-prompt"><SubjectPrompt text={clean(q.prompt)} /></h3>
       <div className="choices">
         {q.choices.map((c, i) => {
           const st = answered && i === q.answerIndex ? ' correct' : answered && i === chosen ? ' incorrect' : '';

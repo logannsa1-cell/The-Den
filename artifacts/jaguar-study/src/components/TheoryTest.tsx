@@ -1,3 +1,4 @@
+import { SubjectPrompt } from './SubjectPrompt';
 import { useEffect, useState } from 'react';
 import { Eye, EyeOff } from 'lucide-react';
 import type { TheoryQuestion } from '@/study';
@@ -19,7 +20,7 @@ export function TheoryTest({ questions, storageKey, clean }: { questions: Theory
         const shown = !!draft.revealed[qi];
         return (
           <article key={qi} className="theory-card" data-testid={`card-theory-${qi}`}>
-            <h3><span className="cram-dot">{String(qi + 1).padStart(2, '0')}</span>{clean(q.prompt)}</h3>
+            <h3><span className="cram-dot">{String(qi + 1).padStart(2, '0')}</span><SubjectPrompt text={clean(q.prompt)} /></h3>
             {q.parts.map((part) => {
               const key = `${qi}-${part.label}`;
               return (
