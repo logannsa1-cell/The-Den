@@ -42,9 +42,13 @@ Timed papers follow the supplied school exam: Section A objective, Section B the
 
 Use the owner's own Gemini API access, not managed AI setup or automatic paid-provider fallback.
 
-Retry provider failures only when they fail quickly; do not repeat already-slow transient failures. Preserve the time allowance for successful long generations.
+Retry fast transient provider failures with a bounded budget. Permit just one recovery attempt for a slow 503 within the first minute; do not retry quota or credential errors. Keep topic expansion concurrency low across all selected modes.
 
-**Why:** A latency investigation found slow AI requests (including an upstream 503), while ordinary page requests and resource usage were normal. Repeating slow provider failures adds latency and load without fixing page performance.
+**Why:** A latency investigation found slow AI requests while ordinary routes were healthy. Failing immediately on every slow 503 left users unable to generate during intermittent capacity issues, so one recovery attempt balances availability against repeated long waits.
+
+Optional depth expansion must not discard already generated study materials on transient service failure. Preserve the original generated section with an explicit visible notice that extra detail was unavailable; keep strict validation of requested exam questions.
+
+**Why:** A real multi-mode test completed its initial generation but failed during a topic expansion, making the entire otherwise usable pack unavailable.
 
 **Why:** After repeated credit-limit failures, the user explicitly approved switching to Gemini and previously declined managed AI setup. Keeping an SDK with an OpenAI name is acceptable when it sends exclusively to Google's documented compatibility endpoint; it does not mean OpenAI is the provider.
 
