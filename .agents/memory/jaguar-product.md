@@ -17,3 +17,7 @@ Timed papers follow the supplied school exam: Section A objective, Section B the
 **Why:** The user repeated these requirements after showing a failed slide-generation recording.
 
 **How to apply:** Preserve these product expectations when changing generation or redesigning. The latest wording removes the source subtitle and motivational eyebrow; do not restore the earlier proposed Man United or Mr. Omoks wording.
+
+Use the owner's own Gemini API access, not managed AI setup or automatic paid-provider fallback.
+
+**Why:** After repeated credit-limit failures, the user explicitly approved switching to Gemini and previously declined managed AI setup. Keeping an SDK with an OpenAI name is acceptable when it sends exclusively to Google's documented compatibility endpoint; it does not mean OpenAI is the provider.
