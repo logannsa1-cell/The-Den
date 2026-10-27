@@ -18,6 +18,10 @@ Week-level headings must be specified in both generation instructions and struct
 
 Input is file-upload-only: no typed/pasted notes box. A top-right Settings button opens a separate profile view; profile pictures and banners must not appear on the study home page. The jaguar icon must follow the selected accent color.
 
+Legacy browser-only sets have no known owner and must be imported only through an explicit user choice. New unsynced backups belong to the signed-in account; never silently claim old shared-browser data for whoever signs in next.
+
+**Why:** Older local sets predate account ownership. Automatic claiming would risk exposing one student's notes to another on a shared device; preserving a consent-based import avoids guessing.
+
 **Why:** The user explicitly requested these changes to the workflow.
 
 Mode selection belongs in the upload popup, not a duplicate "Build it your way" panel. Its Generate action should open a study view with the selected modes on the side and a small jaguar running left during generation.
