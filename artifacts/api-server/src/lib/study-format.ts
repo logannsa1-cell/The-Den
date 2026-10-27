@@ -15,9 +15,11 @@ export function studyFormat(modes: string[], questionCount: number) {
     json_schema: {
       name: "study_materials",
       schema: object({
-        title: text, summary: text, tutorLesson: text,
+        title: text,
+        summary: { ...text, description: "Long, very detailed exam-ready reference notes covering every source topic; longer than tutorLesson. Empty when not selected." },
+        tutorLesson: { ...text, description: "Medium-length detailed guided teaching, shorter than summary; not a duplicate. Empty when not selected." },
         keyTerms: array(object({ term: text, definition: text }), 8, 16),
-        cramPoints: array(text, modes.includes("cram") ? 8 : 0, modes.includes("cram") ? 12 : 0),
+        cramPoints: array({ ...text, description: "One concise last-minute recall cue, usually 8–18 words. Entire cram sheet at most 180 words." }, modes.includes("cram") ? 8 : 0, modes.includes("cram") ? 12 : 0),
         questions: array(object({
           prompt: text, choices: array(text, 5),
           answerIndex: { type: "integer", description: "Index of the correct choice, from 0 through 4." }, explanation: text,
