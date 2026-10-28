@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, type KeyboardEvent as ReactKeyboardEvent, type PointerEvent as ReactPointerEvent } from 'react';
-import { ArrowDownToLine, BookOpen, Copy, Eye, EyeOff, GraduationCap, KeyRound, Layers, Lightbulb, ListChecks, Maximize2, Minimize2, PanelRightClose, PanelRightOpen, PenLine, Timer, X } from 'lucide-react';
-import type { StudyMode, StudySet } from '@/study';
+import { ArrowDownToLine, Copy, Eye, EyeOff, Maximize2, Minimize2, PanelRightClose, PanelRightOpen, X } from 'lucide-react';
+import type { StudySet } from '@/study';
 import { RichNotes } from './RichNotes';
 import { StudyText } from './StudyText';
 import { SourceViewer } from './SourceViewer';
@@ -9,14 +9,10 @@ import { TheoryTest } from './TheoryTest';
 import { Flashcards, ObjectivePractice } from './Practice';
 import type { StoredSource } from '@/lib/source-store';
 
-export type OutputTab = 'summary' | 'timed' | 'objective' | 'theory' | 'terms' | 'flashcards' | 'cram' | 'tutor';
+import { setViews, type OutputTab } from '@/lib/study-views';
+export { setModes, setViews, studyViews, type OutputTab } from '@/lib/study-views';
 
 const L = (i: number) => String.fromCharCode(65 + i);
-
-export function setModes(set: StudySet): StudyMode[] {
-  return set.modes?.length ? (set.modes as StudyMode[]) : ['summary', 'objective'];
-}
-
 
 export function outputText(set: StudySet, tab: OutputTab, clean: (s: string) => string): string {
   if (tab === 'summary') return clean(set.summary);
@@ -44,23 +40,12 @@ function readNum(k: string, d: number) { try { const v = Number(localStorage.get
 function readBool(k: string, d: boolean) { try { const v = localStorage.getItem(k); return v === null ? d : v === '1'; } catch { return d; } }
 
 export function StudyOutput({ set, userId, synced, clean, sources, onReattach, onRate, onClose, notify, tab: ctrlTab, onTab }: Props) {
-  const modes = setModes(set);
-  type T = [OutputTab, string, typeof BookOpen];
-  const legacy = !set.modes?.length;
-  const tabs: T[] = [
-    ...(modes.includes('timed') ? [['timed', 'Timed exam', Timer] as T] : []),
-    ...(modes.includes('tutor') ? [['tutor', 'Tutor Lesson', GraduationCap] as T] : []),
-    ...(modes.includes('summary') ? [['summary', 'Notes', BookOpen] as T, ['terms', 'Key terms', KeyRound] as T, ['flashcards', 'Flashcards', Layers] as T] : []),
-    ...(modes.includes('objective') ? [['objective', 'Objective', ListChecks] as T] : []),
-    ...(modes.includes('cram') || (legacy && set.cramPoints.length) ? [['cram', 'Cram Sheet', Lightbulb] as T] : []),
-    ...(modes.includes('theory') ? [['theory', 'Theory', PenLine] as T] : []),
-  ];
-  if (!tabs.length) tabs.push(['summary', 'Notes', BookOpen]);
-  const valid = (t?: OutputTab) => !!t && tabs.some((x) => x[0] === t);
+  const tabs = setViews(set);
+  const valid = (t?: OutputTab) => !!t && tabs.some((x) => x.id === t);
 
   // Single source of truth: parent tab wins when valid; local tab is a fallback; reset synchronously per set.
-  const [own, setOwn] = useState<{ setId: string; tab: OutputTab }>({ setId: set.id, tab: tabs[0][0] });
-  const ownTab = own.setId === set.id && valid(own.tab) ? own.tab : tabs[0][0];
+  const [own, setOwn] = useState<{ setId: string; tab: OutputTab }>({ setId: set.id, tab: tabs[0].id });
+  const ownTab = own.setId === set.id && valid(own.tab) ? own.tab : tabs[0].id;
   const tab: OutputTab = valid(ctrlTab) ? ctrlTab! : ownTab;
   const setTab = (t: OutputTab) => { setOwn({ setId: set.id, tab: t }); onTab?.(t); };
   const onTabRef = useRef(onTab); onTabRef.current = onTab;
@@ -124,21 +109,21 @@ export function StudyOutput({ set, userId, synced, clean, sources, onReattach, o
   };
   const minutes = set.examMinutes ?? 120;
   const key = `${userId}:${set.id}`;
-  const label = tabs.find((t) => t[0] === tab)?.[1] ?? 'Study';
+  const label = tabs.find((t) => t.id === tab)?.label ?? 'Study';
 
   const panel = (id: OutputTab) => {
     switch (id) {
       case 'summary': return (<>
         <div className="pane-tools"><button className="quiet-button" type="button" onClick={() => setShowNotes((v) => !v)} aria-expanded={showNotes} data-testid="button-toggle-summary">{showNotes ? <><EyeOff size={13} /> Hide notes</> : <><Eye size={13} /> Reveal notes</>}</button></div>
-        {!showNotes ? <div className="notes-hidden" data-testid="text-summary-hidden">Notes hidden. Try recalling the main ideas first, then reveal.</div>
-          : set.summary ? <div className="doc doc-summary"><RichNotes text={clean(set.summary)} testId="text-summary" /></div> : <div className="empty-state"><strong>No notes returned</strong><p>Generate this set again.</p></div>}
+        {!showNotes ? <div className="notes-hidden" data-testid="text-summary-hidden">Notes are hidden. Recall what you can, then reveal them.</div>
+          : set.summary ? <div className="doc doc-summary"><RichNotes text={clean(set.summary)} testId="text-summary" /></div> : <div className="empty-state"><strong>No notes returned</strong><p>Build this set again to get notes.</p></div>}
       </>);
       case 'timed': return <TimedExam key={`exam-${key}`} title={set.title || 'Examination'} questions={set.questions} theory={set.theoryQuestions ?? []} minutes={minutes} storageKey={`jaguar-exam-${key}`} clean={clean} />;
       case 'objective': return <ObjectivePractice questions={set.questions} clean={clean} setId={set.id} />;
       case 'theory': return <TheoryTest key={`theory-${key}`} questions={set.theoryQuestions ?? []} storageKey={`jaguar-theory-${key}`} clean={clean} />;
-      case 'terms': return set.keyTerms.length ? <div className="term-grid">{set.keyTerms.map((t, i) => <article className="term-card" key={i} data-testid={`term-card-${i}`}><strong>{clean(t.term)}</strong><p>{clean(t.definition)}</p></article>)}</div> : <div className="empty-state"><strong>No key terms</strong></div>;
+      case 'terms': return set.keyTerms.length ? <div className="term-grid">{set.keyTerms.map((t, i) => <article className="term-card" key={i} data-testid={`term-card-${i}`}><strong>{clean(t.term)}</strong><p>{clean(t.definition)}</p></article>)}</div> : <div className="empty-state"><strong>No key terms in this set</strong></div>;
       case 'flashcards': return <Flashcards terms={set.keyTerms} mastered={set.masteredTerms ?? []} onRate={onRate} clean={clean} setId={set.id} />;
-      case 'cram': return set.cramPoints.length ? <ul className="cram-list doc doc-cram">{set.cramPoints.map((p, i) => <li key={i} data-testid={`cram-point-${i}`}><span className="cram-dot">{String(i + 1).padStart(2, '0')}</span><span><StudyText text={clean(p)} /></span></li>)}</ul> : <div className="empty-state"><strong>No cram points</strong></div>;
+      case 'cram': return set.cramPoints.length ? <ul className="cram-list doc doc-cram">{set.cramPoints.map((p, i) => <li key={i} data-testid={`cram-point-${i}`}><span className="cram-dot">{i + 1}.</span><span><StudyText text={clean(p)} /></span></li>)}</ul> : <div className="empty-state"><strong>No cram points in this set</strong></div>;
       case 'tutor': return set.tutorLesson ? <div className="doc doc-tutor"><RichNotes text={clean(set.tutorLesson)} testId="text-tutor-lesson" /></div> : <div className="empty-state"><strong>No tutor lesson in this set</strong><p>Build a new set with Tutor Lesson selected.</p></div>;
     }
   };
@@ -150,30 +135,30 @@ export function StudyOutput({ set, userId, synced, clean, sources, onReattach, o
   );
 
   return (
-    <section className={`output-area${full ? ' is-full' : ''}`} aria-labelledby="output-heading" data-testid="section-study-output" {...(full ? { role: 'dialog', 'aria-modal': true } : {})}>
+    <section className={`output-area${full ? ' is-full' : ''}`} aria-labelledby="output-heading" data-testid="section-study-output" {...(full ? { role: 'dialog', 'aria-modal': true, 'aria-label': `${label}, fullscreen` } : {})}>
       <div className="output-head">
-        <div>
-          <div className="eyebrow">{full ? `Focus view - ${label}` : synced ? 'Synced to your account' : 'Saved on this browser'}</div>
+        <div className="output-title">
           <h2 id="output-heading" data-testid="text-set-title">{clean(set.title) || 'Study set'}</h2>
-          {!full && <p>From {clean(set.sourceName) || 'your notes'}</p>}
+          <p><span className="output-source" title={clean(set.sourceName) || undefined}>{clean(set.sourceName) || 'Your notes'}</span><span aria-hidden="true"> · </span>{synced ? 'Synced' : 'Saved on this browser'}</p>
         </div>
         <div className="output-actions">
-          {tab !== 'timed' && !full && <>
+          {full && <label className="view-select">
+            <span className="sr-only">Study view</span>
+            <select value={tab} onChange={(e) => setTab(e.target.value as OutputTab)} data-testid="select-fullscreen-view">
+              {tabs.map((t) => <option key={t.id} value={t.id}>{t.label}</option>)}
+            </select>
+          </label>}
+          {tab !== 'timed' && <>
           <button className="quiet-button" type="button" onClick={() => void copy()} data-testid="button-copy-output"><Copy size={13} /> Copy</button>
           <button className="quiet-button" type="button" onClick={download} data-testid="button-download-output"><ArrowDownToLine size={13} /> Download</button>
           </>}
           {full
-            ? <button ref={closeRef} className="quiet-button" type="button" onClick={() => setFull(false)} data-testid="button-close-fullscreen"><Minimize2 size={13} /> Exit fullscreen <kbd>Esc</kbd></button>
+            ? <button ref={closeRef} className="quiet-button" type="button" onClick={() => setFull(false)} data-testid="button-close-fullscreen"><Minimize2 size={13} /> Exit <kbd>Esc</kbd></button>
             : <button className="quiet-button" type="button" onClick={() => setFull(true)} data-testid="button-fullscreen"><Maximize2 size={13} /> Fullscreen</button>}
           {!full && <button className="icon-button" type="button" onClick={onClose} aria-label="Close study set" data-testid="button-close-output"><X size={14} /></button>}
         </div>
       </div>
       <div className="study-toolbar">
-        <div className="tabs" role="tablist" aria-label="Study views">
-          {tabs.map(([id, l, Icon]) => (
-            <button key={id} type="button" role="tab" id={`tab-${id}`} aria-controls={`panel-${id}`} aria-selected={tab === id} className={`tab-button${tab === id ? ' selected' : ''}`} onClick={() => setTab(id)} data-testid={`tab-${id}`}><Icon size={13} /> {l}</button>
-          ))}
-        </div>
         <div className="split-controls">
           {reading && <div className="read-size" role="group" aria-label="Text size">
             <button className="quiet-button" type="button" onClick={() => setReadIdx(readIdx - 1)} disabled={readIdx === 0} aria-label="Smaller text" data-testid="button-text-smaller">A-</button>
@@ -191,7 +176,7 @@ export function StudyOutput({ set, userId, synced, clean, sources, onReattach, o
       <div ref={bodyRef} className={`study-split${showSource ? ' with-source' : ''}`} style={{ ['--src' as string]: `${srcPct}%` }} data-testid="layout-study-split">
         <div className={`panel output-card study-pane${reading ? ' is-reading' : ''}`} style={{ ['--read-size' as string]: `${READ_SIZES[readIdx]}px` }}>
           {mounted.map((id) => (
-            <div key={id} role="tabpanel" id={`panel-${id}`} aria-labelledby={`tab-${id}`} hidden={id !== tab} data-testid={`panel-${id}`}>{panel(id)}</div>
+            <div key={id} role="region" id={`panel-${id}`} aria-label={tabs.find((t) => t.id === id)?.label ?? 'Study'} hidden={id !== tab} data-testid={`panel-${id}`}>{panel(id)}</div>
           ))}
         </div>
         {showSource && <div className="split-divider" role="separator" aria-orientation="vertical" aria-label="Resize slideshow and study" aria-valuemin={100 - MAX_SRC} aria-valuemax={100 - MIN_SRC} aria-valuenow={100 - srcPct} aria-valuetext={`Study ${100 - srcPct} percent`} tabIndex={0} onPointerDown={onDragStart} onKeyDown={onDividerKey} onDoubleClick={() => setSrcPct(30)} data-testid="divider-split"><span /></div>}

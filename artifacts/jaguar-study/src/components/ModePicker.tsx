@@ -18,8 +18,8 @@ export function ModeGrid({ modes, onModes }: { modes: StudyMode[]; onModes: (m: 
   const toggle = (id: StudyMode) => onModes(modes.includes(id) ? modes.filter((m) => m !== id) : ALL_MODES.filter((m) => m === id || modes.includes(m)));
   return (
     <fieldset className="mode-picker">
+      <legend className="mode-legend">Study modes</legend>
       <div className="mode-picker-head">
-        <legend>What do you want?</legend>
         <label className="select-all">
           <input type="checkbox" checked={all} onChange={() => onModes(all ? [] : [...ALL_MODES])} data-testid="toggle-select-all" />
           <span className="tick"><Check size={11} /></span> Select all
@@ -31,7 +31,7 @@ export function ModeGrid({ modes, onModes }: { modes: StudyMode[]; onModes: (m: 
           return (
             <label key={id} className={`mode-chip${on ? ' on' : ''}`} data-testid={`toggle-mode-${id}`}>
               <input type="checkbox" className="sr-only" checked={on} onChange={() => toggle(id)} />
-              <span className="mode-icon"><Icon size={15} /></span>
+              <Icon size={15} className="mode-icon-plain" aria-hidden="true" />
               <span className="mode-text"><strong>{label}</strong></span>
               <span className="tick"><Check size={11} /></span>
             </label>
@@ -73,22 +73,33 @@ type DialogProps = NumProps & { open: boolean; onModes: (m: StudyMode[]) => void
 
 export function ModeDialog({ open, modes, onModes, onClose, onGenerate, busy, error, ...nums }: DialogProps) {
   const ref = useRef<HTMLButtonElement>(null);
+  const card = useRef<HTMLDivElement>(null);
   const closeRef = useRef(onClose);
   closeRef.current = onClose;
   useEffect(() => {
     if (!open) return;
+    const back = document.activeElement as HTMLElement | null;
     ref.current?.focus();
-    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') closeRef.current(); };
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') { closeRef.current(); return; }
+      if (e.key !== 'Tab' || !card.current) return;
+      const items = Array.from(card.current.querySelectorAll<HTMLElement>('button:not(:disabled), input:not(:disabled), select, textarea, [tabindex]:not([tabindex="-1"])'));
+      if (!items.length) return;
+      const first = items[0], last = items[items.length - 1];
+      if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+      else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+      else if (!card.current.contains(document.activeElement)) { e.preventDefault(); first.focus(); }
+    };
     document.addEventListener('keydown', onKey);
-    return () => document.removeEventListener('keydown', onKey);
+    return () => { document.removeEventListener('keydown', onKey); if (back?.isConnected) back.focus(); };
   }, [open]);
   if (!open) return null;
   return (
     <div className="modal-scrim" onMouseDown={(e) => { if (e.target === e.currentTarget) onClose(); }}>
-      <div className="modal-card" role="dialog" aria-modal="true" aria-labelledby="mode-dialog-title" data-testid="dialog-mode-picker">
+      <div ref={card} className="modal-card" role="dialog" aria-modal="true" aria-labelledby="mode-dialog-title" data-testid="dialog-mode-picker">
         <div className="modal-head">
-          <div><span className="eyebrow">Build it your way</span><h2 id="mode-dialog-title">How do you want to study it?</h2></div>
-          <button className="icon-button" type="button" onClick={onClose} aria-label="Close" data-testid="button-close-modes"><X size={14} /></button>
+          <div><h2 id="mode-dialog-title">How do you want to study it?</h2><p className="modal-sub">Pick one or more. Larger files may take longer.</p></div>
+          <button className="icon-button" type="button" onClick={onClose} aria-label="Close study modes" data-testid="button-close-modes"><X size={14} /></button>
         </div>
         <ModeGrid modes={modes} onModes={onModes} />
         <ModeNumbers modes={modes} {...nums} />
