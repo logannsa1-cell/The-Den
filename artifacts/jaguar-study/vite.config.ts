@@ -31,6 +31,20 @@ export default defineConfig({
   base: basePath,
   plugins: [
     react(),
+    {
+      name: 'single-query-client-context',
+      apply: 'build',
+      generateBundle() {
+        // pnpm can install identical versions under different React peer sets.
+        // A second context makes generated hooks unable to see the app provider.
+        const contexts = [...this.getModuleIds()].filter((id) =>
+          /\/@tanstack\/react-query\/build\/[^/]+\/QueryClientProvider\.js$/.test(id),
+        );
+        if (contexts.length !== 1) {
+          this.error(`Expected one React Query context, found ${contexts.length}. Check resolve.dedupe.`);
+        }
+      },
+    },
     tailwindcss({ optimize: false }),
     runtimeErrorOverlay(),
     ...(process.env.NODE_ENV !== 'production' &&
@@ -57,7 +71,7 @@ export default defineConfig({
         'attached_assets',
       ),
     },
-    dedupe: ['react', 'react-dom'],
+    dedupe: ['react', 'react-dom', '@tanstack/react-query'],
   },
   root: path.resolve(import.meta.dirname),
   build: {
