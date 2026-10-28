@@ -370,7 +370,7 @@ components:
       properties:
         tutorLesson:
           type: string
-          maxLength: 60000
+          maxLength: 240000
         title:
           type: string
           minLength: 1
@@ -385,7 +385,7 @@ components:
           maxLength: 180000
         summary:
           type: string
-          maxLength: 60000
+          maxLength: 240000
         keyTerms:
           type: array
           maxItems: 100

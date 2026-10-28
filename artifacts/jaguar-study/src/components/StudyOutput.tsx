@@ -189,7 +189,7 @@ export function StudyOutput({ set, userId, synced, clean, sources, onReattach, o
       </div>
 
       <div ref={bodyRef} className={`study-split${showSource ? ' with-source' : ''}`} style={{ ['--src' as string]: `${srcPct}%` }} data-testid="layout-study-split">
-        <div className="panel output-card study-pane" style={{ ['--read-size' as string]: `${READ_SIZES[readIdx]}px` }}>
+        <div className={`panel output-card study-pane${reading ? ' is-reading' : ''}`} style={{ ['--read-size' as string]: `${READ_SIZES[readIdx]}px` }}>
           {mounted.map((id) => (
             <div key={id} role="tabpanel" id={`panel-${id}`} aria-labelledby={`tab-${id}`} hidden={id !== tab} data-testid={`panel-${id}`}>{panel(id)}</div>
           ))}

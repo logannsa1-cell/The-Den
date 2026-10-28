@@ -4,7 +4,7 @@ import { useClerk, useUser } from '@clerk/react';
 import { AlertCircle, ArrowLeft, BookOpen, CheckCircle2, ChevronRight, Cloud, FolderOpen, LogOut, Plus, RotateCcw, Settings, SlidersHorizontal, Trash2 } from 'lucide-react';
 import {
   getListStudySetsQueryKey, useDeleteStudySet, useGenerateStudyMaterials, useListStudySets, useUpsertStudySet,
-  type StudyGeneration, type StudySetInput,
+  type StudyGeneration,
 } from '@workspace/api-client-react';
 import { sanitizeStudyText, type StudyMode, type StudySet } from '@/study';
 import { BrandLockup, RosetteCorners, ThemeSwitcher, basePath } from '@/components/Brand';
@@ -17,6 +17,7 @@ import { SourceUploader, combineSources, MAX_SOURCE_CHARS, type SourceEntry } fr
 import { StudyOutput, setModes, type OutputTab } from '@/components/StudyOutput';
 import { deleteSources, loadSources, saveSources, sourceKey, type StoredSource } from '@/lib/source-store';
 import { readMigrationPreference } from '@/lib/migration-preference';
+import { toInput } from '@/lib/study-input';
 
 const STORAGE_KEY = 'jaguar-study-sets-v1';
 
@@ -27,16 +28,6 @@ function clean(value: string) {
 }
 function safeReadSets(userId?: string): StudySet[] {
   try { const p: unknown = JSON.parse(localStorage.getItem(userId ? `${STORAGE_KEY}-${userId}` : STORAGE_KEY) ?? '[]'); return Array.isArray(p) ? (p as StudySet[]) : []; } catch { return []; }
-}
-function toInput(set: StudySet): StudySetInput {
-  return {
-    title: set.title.slice(0, 160) || 'Study set', sourceName: set.sourceName.slice(0, 160) || 'Notes', sourceText: set.sourceText, summary: set.summary.slice(0, 60000),
-    keyTerms: set.keyTerms, cramPoints: set.cramPoints, questions: set.questions, studyPlan: set.studyPlan, masteredTerms: set.masteredTerms ?? [],
-    ...(set.theoryQuestions ? { theoryQuestions: set.theoryQuestions } : {}),
-    ...(set.modes ? { modes: set.modes } : {}),
-    ...(set.examMinutes ? { examMinutes: set.examMinutes } : {}),
-    ...(set.tutorLesson ? { tutorLesson: set.tutorLesson.slice(0, 60000) } : {}),
-  };
 }
 function sourceLabel(files: SourceEntry[]) {
   const names = files.filter((f) => f.status === 'ready').map((f) => f.file.name);
@@ -96,6 +87,7 @@ export default function Workspace() {
   const [view, setView] = useState<'builder' | 'study'>('builder');
   const [pendingModes, setPendingModes] = useState<StudyMode[]>([]);
   const [studyError, setStudyError] = useState('');
+  const [saveWarning, setSaveWarning] = useState('');
   const [studyTab, setStudyTab] = useState<OutputTab | undefined>(undefined);
   const submitting = useRef(false);
   const [generating, setGenerating] = useState(false);
@@ -120,7 +112,7 @@ export default function Workspace() {
   }, []);
   // Clear all user-specific working state whenever the signed-in user changes.
   useEffect(() => {
-    setActive(null); setActiveSources(null); setFiles([]); setView('builder'); setStudyError(''); setError(''); setTried(false);
+    setActive(null); setActiveSources(null); setFiles([]); setView('builder'); setStudyError(''); setSaveWarning(''); setError(''); setTried(false);
     setModesRaw(userId ? readModes(userId) : [...ALL_MODES]); readyCount.current = 0;
     if (!userId) { setMigration(null); return; }
     const stored = readMigrationPreference(`jaguar-study-migration-${userId}`, (key) => localStorage.getItem(key));
@@ -177,7 +169,7 @@ export default function Workspace() {
     const sourceName = sourceLabel(files);
     submitting.current = true;
     setGenerating(true);
-    setModeDialog(false); setStudyError(''); setActive(null); setPendingModes(modes); setStudyTab(undefined); setView('study');
+    setModeDialog(false); setStudyError(''); setSaveWarning(''); setActive(null); setPendingModes(modes); setStudyTab(undefined); setView('study');
     window.scrollTo({ top: 0, behavior: 'smooth' });
     try {
       const result: StudyGeneration = await generate.mutateAsync({
@@ -197,11 +189,17 @@ export default function Workspace() {
         setError('Your study materials were generated, but this browser could not save the original files. Reattach the files to preview them after reloading.');
       });
       if (!alive.current) return;
-      persist([created, ...safeReadSets(userId).filter((s) => s.id !== created.id)]);
+      const backedUp = persist([created, ...safeReadSets(userId).filter((s) => s.id !== created.id)]);
       let synced = false;
       if (userId) {
         try { const saved = await upsert.mutateAsync({ id: created.id, data: toInput(created) }); if (!alive.current) return; removeBackup(saved.id); putRemote(saved as StudySet); synced = true; }
-        catch { setNotice('Saved on this browser only. Sync it when you are back online.'); }
+        catch (cause) {
+          const status = (cause as { status?: number })?.status;
+          const reason = status === 400 || status === 413
+            ? 'The server could not accept this set within its save limits. No shortened copy was saved.'
+            : 'Account saving failed.';
+          setSaveWarning(`${reason} ${backedUp ? 'The complete set is saved in this browser. Retry sync or download your notes.' : 'This browser could not save a backup either. Keep this page open and download each mode now.'}`);
+        }
       }
       setActive(created);
       if (synced) setNotice('Ready and synced to your account.');
@@ -213,7 +211,7 @@ export default function Workspace() {
     }
   };
 
-  const openSet = (set: StudySet) => { if (generating) return; setStudyError(''); setStudyTab(undefined); setActive(set); setView('study'); window.scrollTo({ top: 0, behavior: 'smooth' }); };
+  const openSet = (set: StudySet) => { if (generating) return; setStudyError(''); setSaveWarning(''); setStudyTab(undefined); setActive(set); setView('study'); window.scrollTo({ top: 0, behavior: 'smooth' }); };
   const backToBuilder = () => { setView('builder'); setStudyError(''); };
   const studyModes: StudyMode[] = generate.isPending || studyError || !active ? pendingModes : setModes(active);
 
@@ -236,7 +234,7 @@ export default function Workspace() {
   };
 
   const syncOne = async (set: StudySet) => {
-    try { const saved = await upsert.mutateAsync({ id: set.id, data: toInput(set) }); if (!alive.current) return; removeBackup(saved.id); putRemote(saved as StudySet); setNotice('Synced to your account.'); }
+    try { const saved = await upsert.mutateAsync({ id: set.id, data: toInput(set) }); if (!alive.current) return; removeBackup(saved.id); putRemote(saved as StudySet); setSaveWarning(''); setNotice('Synced to your account.'); }
     catch { setNotice('Could not sync. It is still on this browser.'); }
   };
   const syncAll = async () => {
@@ -354,7 +352,13 @@ export default function Workspace() {
                   </div>
                 </div>
               ) : active ? (
-                <StudyOutput set={active} userId={userId} synced={remoteIds.has(active.id)} clean={clean} sources={activeSources} onReattach={(f) => void reattach(f)} onRate={rate} onClose={() => { setActive(null); setView('builder'); }} notify={setNotice} tab={studyTab} onTab={setStudyTab} />
+                <>
+                  {saveWarning && <div className="error-message" role="alert" data-testid="warning-save">
+                    <span>{saveWarning}</span>
+                    <button className="quiet-button" disabled={upsert.isPending} onClick={() => void syncOne(active)}>Retry sync</button>
+                  </div>}
+                  <StudyOutput set={active} userId={userId} synced={remoteIds.has(active.id)} clean={clean} sources={activeSources} onReattach={(f) => void reattach(f)} onRate={rate} onClose={() => { setActive(null); setView('builder'); }} notify={setNotice} tab={studyTab} onTab={setStudyTab} />
+                </>
               ) : (
                 <div className="empty-state"><div><strong>Nothing open</strong><p>Pick a saved set or build a new one.</p></div></div>
               )}
