@@ -1,0 +1,606 @@
+(() => {
+  "use strict";
+  const $ = (s, root = document) => root.querySelector(s);
+  const $$ = (s, root = document) => [...root.querySelectorAll(s)];
+  const modesInfo = [
+    ["summary", "Note summary"], ["tutor", "Tutor lesson"], ["cram", "Cram sheet"],
+    ["objective", "Objective questions"], ["theory", "Theory"], ["timed", "Time-based exam"]
+  ];
+  const state = { signedIn: false, sets: [], selected: null, mode: "summary", files: [], working: false, loadingSets: false, pendingAuth: false, answers: {}, exam: null, sourceFiles: [], sourceLoaded: false, sourceIndex: 0, sourceUrls: [] };
+  const storage = {
+    read(key, fallback = "") { try { return localStorage.getItem("jaguar-" + key) || fallback; } catch { return fallback; } },
+    write(key, value) { try { localStorage.setItem("jaguar-" + key, value); return true; } catch { return false; } }
+  };
+  const sourceDb = (() => {
+    let opening;
+    return () => {
+      if (!("indexedDB" in window)) return Promise.reject(new Error("IndexedDB is unavailable."));
+      if (!opening) opening = new Promise((resolve, reject) => {
+        const request = indexedDB.open("jaguar-original-sources", 1);
+        request.onupgradeneeded = () => {
+          const db = request.result;
+          if (!db.objectStoreNames.contains("studySets")) db.createObjectStore("studySets", { keyPath:"studySetId" });
+        };
+        request.onsuccess = () => resolve(request.result);
+        request.onerror = () => reject(request.error || new Error("Could not open local source storage."));
+      });
+      return opening;
+    };
+  })();
+  async function saveOriginals(studySetId, files) {
+    const originals = files.filter(item => /\.(pdf|pptx)$/i.test(item.name)).map(item => ({
+      name:item.name, type:item.file.type || (/\.pdf$/i.test(item.name) ? "application/pdf" : "application/vnd.openxmlformats-officedocument.presentationml.presentation"),
+      blob:item.file, slides:item.slides || []
+    }));
+    if (!originals.length) return;
+    const db = await sourceDb();
+    await new Promise((resolve, reject) => {
+      const tx = db.transaction("studySets","readwrite");
+      tx.objectStore("studySets").put({ studySetId:String(studySetId), files:originals });
+      tx.oncomplete = resolve; tx.onerror = () => reject(tx.error); tx.onabort = () => reject(tx.error);
+    });
+  }
+  async function getOriginals(studySetId) {
+    const db = await sourceDb();
+    return new Promise((resolve, reject) => {
+      const request = db.transaction("studySets","readonly").objectStore("studySets").get(String(studySetId));
+      request.onsuccess = () => resolve(request.result?.files || []);
+      request.onerror = () => reject(request.error || new Error("Could not restore original documents."));
+    });
+  }
+  async function removeOriginals(studySetId) {
+    try {
+      const db = await sourceDb();
+      await new Promise((resolve, reject) => {
+        const tx = db.transaction("studySets","readwrite");
+        tx.objectStore("studySets").delete(String(studySetId));
+        tx.oncomplete = resolve; tx.onerror = () => reject(tx.error);
+      });
+    } catch {}
+  }
+  const safeText = (value) => String(value ?? "").replace(/<\?xml[\s\S]*?\?>/gi, "").replace(/<\/?(?:w|a|r|p|m|xml):[^>]*>/gi, "").replace(/<[^>]*>/g, "").trim();
+  const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"&#39;" })[c]);
+  const toast = (message) => { const el = $("#toast"); el.textContent = message; el.hidden = false; clearTimeout(toast.timer); toast.timer = setTimeout(() => { el.hidden = true; }, 3000); };
+  const setError = (message) => { const el = $("#builder-error"); el.textContent = message; el.hidden = !message; };
+  const api = async (url, options = {}) => {
+    const response = await fetch(url, { credentials: "include", ...options, cache:"no-store", headers: { ...(options.body ? { "Content-Type":"application/json" } : {}), ...(options.headers || {}) } });
+    if (response.status === 401 || response.status === 403) {
+      state.signedIn = false;
+      $("#public-home").hidden = false; $("#workspace").hidden = true;
+      throw new Error("Please sign in to open your study workspace.");
+    }
+    if (!response.ok) {
+      let reason = `Request failed (${response.status}).`;
+      try { const body = await response.json(); reason = body.detail || body.error || reason; } catch {}
+      throw new Error(reason);
+    }
+    if (response.status === 204) return null;
+    return response.json();
+  };
+  function modeList(set) {
+    const allowed = new Set((set.modes || []).map(String));
+    return modesInfo.filter(([id]) => allowed.has(id));
+  }
+  function sourceName(set) { return safeText(set.sourceName || "Course notes"); }
+  function title(set) { return safeText(set.title || sourceName(set)); }
+  function subjectOf(set) {
+    const label = title(set);
+    return label.split(/\s+(?:—|–|-|:)\s+/)[0].trim() || label;
+  }
+  function setModesView(items, target) {
+    const container = $(target);
+    container.innerHTML = "";
+    items.forEach(([id,label]) => {
+      const button = document.createElement("button");
+      button.type = "button"; button.className = "nav-button" + (state.mode === id ? " active" : "");
+      button.textContent = label; button.addEventListener("click", () => { state.mode = id; renderStudy(); });
+      container.append(button);
+    });
+  }
+  function showView(view) {
+    ["home","saved","study","settings"].forEach((name) => { $("#view-" + name).hidden = name !== view; });
+    $$(".nav-button[data-view]").forEach((b) => b.classList.toggle("active", b.dataset.view === view));
+    $("#top-context").textContent = view === "study" && state.selected ? title(state.selected) : view === "home" ? "Study sets" : view === "saved" ? "Your library" : "Preferences";
+    if (view === "saved") renderSaved();
+    if (view === "study") renderStudy();
+    $("#main-content").focus({ preventScroll:true });
+  }
+  function markdown(source) {
+    let text = safeText(source);
+    if (!text) return '<p class="muted">This study mode has no content yet.</p>';
+    // Strip accidental serialization fragments; source material is never rendered as markup.
+    text = text.replace(/<\?xml[\s\S]*?\?>/gi, "").replace(/<[^>]+>/g, "");
+    const inline = (s) => {
+      let out = esc(s);
+      out = out.replace(/`([^`]+)`/g, "<code>$1</code>")
+        .replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>")
+        .replace(/\*([^*]+)\*/g, "<em>$1</em>")
+        .replace(/\[([^\]]+)\]\((https?:\/\/[^)\s]+)\)/g, '<a href="$2" rel="noopener noreferrer">$1</a>');
+      return out;
+    };
+    const lines = text.replace(/\r/g,"").split("\n");
+    let html = "", list = null, paragraph = [];
+    const closeList = () => { if (list) { html += `</${list}>`; list = null; } };
+    const flushParagraph = () => { if (paragraph.length) { html += `<p>${paragraph.map(inline).join("<br>")}</p>`; paragraph = []; } };
+    for (const line of lines) {
+      const trimmed = line.trim();
+      if (!trimmed) { flushParagraph(); closeList(); continue; }
+      const heading = trimmed.match(/^(#{1,4})\s+(.+)$/);
+      if (heading) { flushParagraph(); closeList(); html += `<h${Math.min(4, heading[1].length)}>${inline(heading[2])}</h${Math.min(4, heading[1].length)}>`; continue; }
+      if (/^\$\$.*\$\$$/.test(trimmed) || /^\\\[.*\\\]$/.test(trimmed)) {
+        flushParagraph(); closeList(); html += `<div class="math-line" role="math" aria-label="${esc(trimmed.replace(/^\$\$|^\s*\\\[|\$\$$|\\\]\s*$/g,""))}">${inline(trimmed.replace(/^\$\$|^\s*\\\[|\$\$$|\\\]\s*$/g,""))}</div>`; continue;
+      }
+      const item = trimmed.match(/^([-*+]|\d+[.)])\s+(.+)$/);
+      if (item) {
+        flushParagraph(); const nextList = /^\d/.test(item[1]) ? "ol" : "ul";
+        if (list !== nextList) { closeList(); html += `<${nextList}>`; list = nextList; }
+        html += `<li>${inline(item[2])}</li>`; continue;
+      }
+      const quote = trimmed.match(/^>\s?(.*)$/);
+      if (quote) { flushParagraph(); closeList(); html += `<blockquote>${inline(quote[1])}</blockquote>`; continue; }
+      closeList(); paragraph.push(trimmed);
+    }
+    flushParagraph(); closeList();
+    return html;
+  }
+  function renderSaved() {
+    const target = $("#saved-page-list");
+    if (!state.sets.length) {
+      target.innerHTML = '<div class="empty"><strong>No saved study sets yet</strong><p>Once you make materials from your notes, your sets will appear here.</p></div>';
+      return;
+    }
+    const groups = new Map();
+    state.sets.forEach((set) => { const subject = subjectOf(set); if (!groups.has(subject)) groups.set(subject, []); groups.get(subject).push(set); });
+    target.innerHTML = [...groups].sort(([a],[b]) => a.localeCompare(b)).map(([subject,sets]) => `
+      <section class="subject-group"><h2>${esc(subject)}</h2><table class="set-table"><tbody>${sets.map(set => `
+        <tr><td><button class="set-title-button" data-open="${esc(set.id)}">${esc(title(set))}</button><div class="faint">${esc(sourceName(set))} · ${esc((set.modes || []).map(m => modesInfo.find(x=>x[0]===m)?.[1] || m).join(", "))}</div></td>
+        <td><button class="quiet" data-open="${esc(set.id)}">Open</button> <button class="danger-button" data-delete="${esc(set.id)}" aria-label="Delete ${esc(title(set))}">Delete</button></td></tr>`).join("")}</tbody></table></section>`).join("");
+    $$("[data-open]", target).forEach((button) => button.addEventListener("click", () => openSet(button.dataset.open)));
+    $$("[data-delete]", target).forEach((button) => button.addEventListener("click", () => deleteSet(button.dataset.delete)));
+  }
+  function renderHomeSets() {
+    const target = $("#home-saved-list");
+    $("#saved-count").textContent = state.sets.length ? `(${state.sets.length})` : "";
+    if (!state.sets.length) {
+      target.innerHTML = '<div class="empty"><strong>Your library is ready when you are</strong><p>There are no saved study sets yet.</p></div>'; return;
+    }
+    target.innerHTML = state.sets.slice(0,5).map(set => `<article class="saved-row"><button class="saved-open" data-open="${esc(set.id)}"><strong>${esc(title(set))}</strong><span>${esc(sourceName(set))} · ${(set.modes || []).map(m => modesInfo.find(x=>x[0]===m)?.[1] || m).map(esc).join(", ")}</span></button><div class="saved-actions"><button class="icon-button" data-delete="${esc(set.id)}" aria-label="Delete ${esc(title(set))}">×</button></div></article>`).join("");
+    $$("[data-open]", target).forEach(b => b.addEventListener("click", () => openSet(b.dataset.open)));
+    $$("[data-delete]", target).forEach(b => b.addEventListener("click", () => deleteSet(b.dataset.delete)));
+  }
+  async function loadSets() {
+    if (state.loadingSets) return;
+    state.loadingSets = true;
+    try {
+      const data = await api("/api/study-sets");
+      state.sets = Array.isArray(data) ? data : Array.isArray(data?.items) ? data.items : [];
+      state.signedIn = true;
+      $("#public-home").hidden = true; $("#workspace").hidden = false;
+      $("#public-load-error").hidden = true;
+      $("#top-signin").hidden = true;
+      renderHomeSets(); renderSaved();
+      const initial = storage.read("profile-picture");
+      const initialName = storage.read("display-name", "Study workspace");
+      $("#sidebar-user").textContent = initialName;
+      setAvatar(initial, initialName);
+    } catch (error) {
+      if (error.message.includes("sign in")) return;
+      $("#public-load-message").textContent = error.message;
+      $("#public-load-error").hidden = false;
+    } finally { state.loadingSets = false; }
+  }
+  function setAvatar(data, fallback = "Jaguar") {
+    const initial = (fallback.trim()[0] || "J").toUpperCase();
+    ["#sidebar-avatar","#profile-preview"].forEach(sel => {
+      const el = $(sel); if (!el) return;
+      el.innerHTML = data ? `<img alt="" src="${data}">` : esc(initial);
+    });
+  }
+  function openSet(id) {
+    const found = state.sets.find(set => String(set.id) === String(id));
+    if (!found) { toast("That study set is no longer in your library."); return; }
+    state.sourceUrls.forEach(url => URL.revokeObjectURL(url)); state.sourceUrls = [];
+    state.selected = found; state.mode = modeList(found)[0]?.[0] || "summary"; state.answers = {};
+    state.sourceFiles = []; state.sourceLoaded = false; state.sourceIndex = 0; state.sourceSlide = 0;
+    state.exam = null;
+    $("#mode-navigation").hidden = false;
+    setModesView(modeList(found), "#side-modes"); setModesView(modeList(found), "#mobile-modes");
+    showView("study");
+    getOriginals(found.id).then(files => {
+      if (state.selected?.id !== found.id) return;
+      state.sourceFiles = files; state.sourceLoaded = true; sourcePane(found);
+    }).catch(() => {
+      if (state.selected?.id !== found.id) return;
+      state.sourceFiles = []; state.sourceLoaded = true; sourcePane(found);
+    });
+  }
+  function sourcePane(set) {
+    const source = safeText(set.sourceText || "");
+    const previewable = state.sourceFiles;
+    if (!state.sourceLoaded) {
+      $("#study-sources").innerHTML = `<div class="source-name">${esc(sourceName(set))}</div><div class="source-empty" role="status">Checking this browser for the original documents…</div>`;
+      return;
+    }
+    if (!previewable.length) {
+      $("#study-sources").innerHTML = `<div class="source-name">${esc(sourceName(set))}</div><div class="source-empty"><div><strong>Original preview unavailable</strong><p class="helper">No original PDF or PowerPoint file is saved in this browser. The extracted source text remains available below.</p></div></div><details class="source-extracted"><summary>Read extracted source text</summary><div class="source-text">${esc(source || "Source text is not available in this saved set.")}</div></details>`;
+      return;
+    }
+    state.sourceIndex = Math.min(state.sourceIndex, previewable.length-1);
+    const selected = previewable[state.sourceIndex];
+    const selector = previewable.length > 1
+      ? `<label class="sr-only" for="source-doc-select">Choose original source</label><select id="source-doc-select" class="field" aria-label="Choose original source">${previewable.map((file,index)=>`<option value="${index}" ${index===state.sourceIndex?"selected":""}>${esc(file.name)}</option>`).join("")}</select>`
+      : `<span class="source-name" style="flex:1">${esc(selected.name)}</span>`;
+    let preview = "";
+    if (/\.pdf$/i.test(selected.name)) {
+      let url = selected._objectUrl;
+      if (!url) { url = URL.createObjectURL(selected.blob); selected._objectUrl = url; state.sourceUrls.push(url); }
+      preview = `<div class="source-preview"><iframe src="${url}#toolbar=1&navpanes=0" title="PDF preview: ${esc(selected.name)}"></iframe></div>`;
+    } else {
+      const slides = selected.slides || [];
+      if (!slides.length) preview = '<div class="source-empty">No readable slides were found in this PowerPoint file.</div>';
+      else {
+        state.sourceSlide = Math.min(state.sourceSlide, slides.length-1);
+        const slide = slides[state.sourceSlide];
+        preview = `<div class="source-preview"><article class="slide-preview" aria-label="Extracted text from slide ${state.sourceSlide+1} of ${slides.length}"><h3>${esc(slide.title || `Slide ${state.sourceSlide+1}`)}</h3><div class="slide-preview-text">${esc(slide.text || "No text on this slide.")}</div></article></div><div class="slide-caption"><span>Slide text preview</span><span>Original layout and graphics are not reconstructed.</span></div><div class="source-actions"><button type="button" data-slide="prev" ${state.sourceSlide===0?"disabled":""} aria-label="Previous slide">Previous</button><span class="faint" aria-live="polite">Slide ${state.sourceSlide+1} of ${slides.length}</span><button type="button" data-slide="next" ${state.sourceSlide>=slides.length-1?"disabled":""} aria-label="Next slide">Next</button></div>`;
+      }
+    }
+    $("#study-sources").innerHTML = `<div class="source-name">${esc(sourceName(set))}</div><div class="source-tools">${selector}</div>${preview}<details class="source-extracted"><summary>Read extracted source text</summary><div class="source-text">${esc(source || "Source text is not available in this saved set.")}</div></details>`;
+    $("#source-doc-select")?.addEventListener("change", event => { state.sourceIndex=Number(event.target.value); state.sourceSlide=0; sourcePane(set); });
+    $$("[data-slide]", $("#study-sources")).forEach(button=>button.addEventListener("click",()=>{
+      state.sourceSlide += button.dataset.slide==="next" ? 1 : -1; sourcePane(set);
+    }));
+  }
+  function renderTerms(set) {
+    const terms = Array.isArray(set.keyTerms) ? set.keyTerms : [];
+    if (!terms.length) return '<p class="empty">No terms were saved for this set.</p>';
+    return `<div class="term-list">${terms.map((term,i) => {
+      const word = safeText(term.term || term.name || `Term ${i+1}`);
+      const definition = safeText(term.definition || term.meaning || "");
+      const mastered = (set.masteredTerms || []).includes(word);
+      return `<article class="term"><button type="button" data-master="${esc(word)}" aria-pressed="${mastered}">${mastered ? "Mastered" : "Mark learned"}</button><div><strong>${esc(word)}</strong><p>${esc(definition)}</p></div></article>`;
+    }).join("")}</div>`;
+  }
+  function questionsHtml(set, isExam = false) {
+    const questions = Array.isArray(set.questions) ? set.questions : [];
+    if (!questions.length) return '<p class="empty">No objective questions were saved for this set.</p>';
+    return questions.map((q,i) => {
+      const choices = Array.isArray(q.choices) ? q.choices : [];
+      const chosen = state.answers[i] ?? state.exam?.answers?.[i];
+      const reveal = chosen !== undefined;
+      const answerIndex = Number(q.answerIndex);
+      return `<article class="question"><h3>${i+1}. ${esc(safeText(q.prompt || ""))}</h3><div class="choices">${choices.map((choice,j)=>`<button class="choice ${chosen===j?"selected":""}" type="button" data-answer="${i}:${j}" aria-pressed="${chosen===j}"><span class="choice-letter">${String.fromCharCode(65+j)}</span>${esc(safeText(choice))}</button>`).join("")}</div>${reveal ? `<p class="feedback">${chosen===answerIndex ? "Correct." : `The answer is ${String.fromCharCode(65+answerIndex)}.`} ${esc(safeText(q.explanation || ""))}</p>` : ""}</article>`;
+    }).join("");
+  }
+  function theoryHtml(set) {
+    const items = Array.isArray(set.theoryQuestions) ? set.theoryQuestions : [];
+    if (!items.length) return '<p class="empty">No theory questions were saved for this set.</p>';
+    return items.map((q,i) => `<article class="theory-card"><h3>${i+1}. ${esc(safeText(q.prompt || ""))}</h3>${(q.parts || []).map(part=>{ const key=`${i}-${part.label}`; return `<div class="theory-part"><label for="theory-${i}-${esc(part.label)}">${esc(safeText(part.question || ""))}</label><textarea class="field" id="theory-${i}-${esc(part.label)}" data-written="${esc(key)}" placeholder="Write your answer...">${esc(state.exam?.written?.[key] || "")}</textarea>${part.modelAnswer ? `<details style="margin-top:8px"><summary class="muted">Show model answer</summary><div class="answer-block"><p>${esc(safeText(part.modelAnswer))}</p></div></details>` : ""}</div>`; }).join("")}</article>`).join("");
+  }
+  function timedHtml(set) {
+    const questions = Array.isArray(set.questions) ? set.questions : [];
+    const theory = Array.isArray(set.theoryQuestions) ? set.theoryQuestions : [];
+    const duration = Math.max(1, Number(set.examMinutes) || 60);
+    if (!questions.length || !theory.length) return '<div class="empty"><strong>This set does not contain both parts of a combined paper.</strong><p>Choose Time-based exam when creating a new set to generate the combined paper.</p></div>';
+    if (!state.exam || state.exam.status === "idle") {
+      return `<div class="exam-intro"><h2>Combined examination paper</h2><p class="muted">Time allowed: ${duration} minutes. Complete the objective section and written theory practice in one sitting.</p><ul class="helper"><li>One clock covers both sections.</li><li>Objective answers are scored after submission.</li><li>Theory responses can be reviewed against the saved model answers.</li></ul><button class="primary" id="start-exam" type="button">Start paper</button></div>`;
+    }
+    if (state.exam.status === "running") {
+      const remain = Math.max(0, state.exam.deadline-Date.now());
+      const mins = Math.floor(remain/60000), secs = Math.floor(remain/1000)%60;
+      if (remain <= 0) {
+        state.exam.status = "done";
+        state.exam.score = questions.reduce((n,q,i)=>n+(state.answers[i]===Number(q.answerIndex)?1:0),0);
+        storage.write(`exam-${set.id}`, JSON.stringify(state.exam));
+        return timedHtml(set);
+      }
+      return `<div class="exam-bar"><strong>Paper in progress</strong><span id="live-timer" class="timer" role="timer">${String(mins).padStart(2,"0")}:${String(secs).padStart(2,"0")} remaining</span></div><h3 style="margin:22px 0 8px">Section A · Objective</h3>${questionsHtml(set,true)}<h3 style="margin:28px 0 8px">Section B · Theory</h3>${theoryHtml(set)}<div class="exam-bar"><span class="helper">${Object.keys(state.answers).length}/${questions.length} objective answers</span><button id="submit-exam" class="primary" type="button">Submit paper</button></div>`;
+    }
+    return `<div class="empty"><strong>Paper submitted · score ${state.exam.score}/${questions.length}</strong><p>Theory answers are self-reviewed against the model answers below.</p><button id="restart-exam" class="quiet" type="button">Start a fresh attempt</button></div>${questionsHtml(set)}${theoryHtml(set)}`;
+  }
+  function renderStudy() {
+    const set = state.selected;
+    if (!set) { showView("saved"); return; }
+    $("#study-title").textContent = title(set);
+    $("#study-source").textContent = `${sourceName(set)}${set.createdAt ? " · " + new Date(set.createdAt).toLocaleDateString() : ""}`;
+    sourcePane(set);
+    const modes = modeList(set);
+    if (!modes.some(([id]) => id === state.mode)) state.mode = modes[0]?.[0] || "summary";
+    $("#study-tabs").innerHTML = modes.map(([id,label])=>`<button type="button" role="tab" class="tab" aria-selected="${state.mode===id}" data-mode="${id}">${esc(label)}</button>`).join("");
+    const content = $("#study-content");
+    if (state.mode === "summary") content.innerHTML = `<article class="markdown">${markdown(set.summary)}</article>`;
+    else if (state.mode === "tutor") content.innerHTML = `<article class="markdown">${markdown(set.tutorLesson)}</article>`;
+    else if (state.mode === "cram") content.innerHTML = (set.cramPoints || []).length ? `<ol class="cram-list">${set.cramPoints.map(x=>`<li>${markdown(x)}</li>`).join("")}</ol>` : '<p class="empty">No cram points were saved for this set.</p>';
+    else if (state.mode === "objective") content.innerHTML = questionsHtml(set);
+    else if (state.mode === "theory") content.innerHTML = theoryHtml(set);
+    else if (state.mode === "timed") content.innerHTML = timedHtml(set);
+    $$("#study-tabs [data-mode]").forEach(b => b.addEventListener("click", () => { state.mode = b.dataset.mode; renderStudy(); }));
+    $$("[data-answer]", content).forEach(b => b.addEventListener("click", () => {
+      const [i,j] = b.dataset.answer.split(":").map(Number); state.answers[i] = j;
+      if (state.exam?.status === "running") { state.exam.answers = { ...state.answers }; storage.write(`exam-${set.id}`, JSON.stringify(state.exam)); }
+      renderStudy();
+    }));
+    $$("[data-written]", content).forEach(input => input.addEventListener("input", () => {
+      if (state.exam?.status !== "running") return;
+      state.exam.written = { ...(state.exam.written || {}), [input.dataset.written]:input.value };
+      storage.write(`exam-${set.id}`, JSON.stringify(state.exam));
+    }));
+    $$("[data-master]", content).forEach(b => b.addEventListener("click", () => { void toggleMaster(b.dataset.master); }));
+    $("#start-exam")?.addEventListener("click", () => {
+      state.exam = { status:"running", deadline:Date.now()+(Number(set.examMinutes)||60)*60000, score:0, answers:{}, written:{} };
+      state.answers = {};
+      storage.write(`exam-${set.id}`, JSON.stringify(state.exam));
+      renderStudy(); startTimer();
+    });
+    $("#submit-exam")?.addEventListener("click", () => {
+      if (!confirm("Submit this paper now?")) return;
+      state.exam.status = "done"; state.exam.score = (set.questions||[]).reduce((n,q,i)=>n+(state.answers[i]===Number(q.answerIndex)?1:0),0);
+      storage.write(`exam-${set.id}`, JSON.stringify(state.exam)); renderStudy();
+    });
+    $("#restart-exam")?.addEventListener("click", () => { state.exam = null; state.answers = {}; storage.write(`exam-${set.id}`,""); renderStudy(); });
+    $("#mode-navigation").hidden = !modes.length;
+    setModesView(modes, "#side-modes"); setModesView(modes, "#mobile-modes");
+  }
+  function startTimer() {
+    clearInterval(startTimer.interval);
+    startTimer.interval = setInterval(() => {
+      if (state.mode !== "timed" || state.exam?.status !== "running") { clearInterval(startTimer.interval); return; }
+      const time = $("#live-timer");
+      if (!time) { renderStudy(); return; }
+      const remain = Math.max(0,state.exam.deadline-Date.now());
+      if (remain <= 0) {
+        const set = state.selected;
+        state.exam.status = "done";
+        state.exam.score = (set.questions||[]).reduce((n,q,i)=>n+(state.answers[i]===Number(q.answerIndex)?1:0),0);
+        storage.write(`exam-${set.id}`,JSON.stringify(state.exam)); renderStudy(); clearInterval(startTimer.interval); return;
+      }
+      time.textContent = `${String(Math.floor(remain/60000)).padStart(2,"0")}:${String(Math.floor(remain/1000)%60).padStart(2,"0")} remaining`;
+    }, 1000);
+  }
+  async function toggleMaster(term) {
+    const set = state.selected;
+    const mastered = new Set(set.masteredTerms || []);
+    mastered.has(term) ? mastered.delete(term) : mastered.add(term);
+    const updated = { ...set, masteredTerms:[...mastered] };
+    try {
+      await api(`/api/study-sets/${encodeURIComponent(set.id)}`, { method:"PUT", body:JSON.stringify(toInput(updated)) });
+      state.selected = updated; state.sets = state.sets.map(s=>s.id===set.id?updated:s);
+      renderStudy(); toast("Study progress saved.");
+    } catch (error) { toast(error.message); }
+  }
+  function toInput(set) {
+    const keys = ["title","sourceName","sourceText","modes","summary","tutorLesson","keyTerms","cramPoints","questions","theoryQuestions","studyPlan","examMinutes","masteredTerms"];
+    const out = {};
+    keys.forEach(key => { if (set[key] !== undefined) out[key] = set[key]; });
+    return out;
+  }
+  async function deleteSet(id) {
+    const set = state.sets.find(s => String(s.id) === String(id));
+    if (!set || !confirm(`Delete “${title(set)}” from your saved study sets?`)) return;
+    try {
+      await api(`/api/study-sets/${encodeURIComponent(set.id)}`, { method:"DELETE" });
+      await removeOriginals(set.id);
+      state.sets = state.sets.filter(s => s.id !== set.id);
+      if (state.selected?.id === set.id) { state.selected = null; $("#mode-navigation").hidden = true; showView("saved"); }
+      renderHomeSets(); renderSaved(); toast("Study set deleted.");
+    } catch (error) { toast(error.message); }
+  }
+  async function readFile(file) {
+    const ext = file.name.split(".").pop().toLowerCase();
+    if (ext === "txt" || ext === "md" || ext === "csv" || file.type.startsWith("text/")) return await file.text();
+    if (ext === "pdf") {
+      try {
+        const pdfjs = await import("https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.4.168/pdf.min.mjs");
+        pdfjs.GlobalWorkerOptions.workerSrc = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.4.168/pdf.worker.min.mjs";
+        const pdf = await pdfjs.getDocument({ data:new Uint8Array(await file.arrayBuffer()) }).promise;
+        let text = "";
+        for (let i=1;i<=pdf.numPages;i++) {
+          const page = await pdf.getPage(i), content = await page.getTextContent();
+          text += content.items.map(item=>item.str || "").join(" ") + "\n";
+        }
+        return text;
+      } catch { throw new Error(`Could not extract readable text from ${file.name}. Try a text-based PDF or export it as text.`); }
+    }
+    if (ext === "docx") {
+      try {
+        const mammoth = await import("https://cdn.jsdelivr.net/npm/mammoth@1.8.0/+esm");
+        const result = await mammoth.extractRawText({ arrayBuffer:await file.arrayBuffer() });
+        return result.value;
+      } catch { throw new Error(`Could not extract text from ${file.name}. Try a plain-text export.`); }
+    }
+    if (ext === "pptx") return await readPowerPoint(file);
+    throw new Error(`${file.name} is not a supported text document.`);
+  }
+  async function readPowerPoint(file) {
+    try {
+      const module = await import("https://cdn.jsdelivr.net/npm/jszip@3.10.1/+esm");
+      const JSZip = module.default || module;
+      const zip = await JSZip.loadAsync(await file.arrayBuffer());
+      const presentationFile = zip.file("ppt/presentation.xml");
+      if (!presentationFile) throw new Error("The PowerPoint package has no presentation document.");
+      const parser = new DOMParser();
+      const parseXml = async part => {
+        const entry = zip.file(part);
+        if (!entry) return null;
+        const xml = parser.parseFromString(await entry.async("text"), "application/xml");
+        if (xml.querySelector("parsererror")) throw new Error("A slide could not be read.");
+        return xml;
+      };
+      const presentation = await parseXml("ppt/presentation.xml");
+      const relDoc = await parseXml("ppt/_rels/presentation.xml.rels");
+      const rels = new Map();
+      for (const node of [...(relDoc?.getElementsByTagName("*") || [])]) {
+        if ((node.localName || "").toLowerCase() !== "relationship") continue;
+        const id = node.getAttribute("Id"), target = node.getAttribute("Target");
+        if (id && target && node.getAttribute("TargetMode") !== "External") rels.set(id, target);
+      }
+      const resolveTarget = target => {
+        const parts = (target.startsWith("/") ? target.slice(1) : `ppt/${target}`).split("/");
+        const resolved = [];
+        for (const part of parts) { if (part === "..") resolved.pop(); else if (part && part !== ".") resolved.push(part); }
+        return resolved.join("/");
+      };
+      const ordered = [];
+      for (const node of [...(presentation?.getElementsByTagName("*") || [])]) {
+        if ((node.localName || "").toLowerCase() !== "sldid") continue;
+        const rid = node.getAttributeNS("http://schemas.openxmlformats.org/officeDocument/2006/relationships", "id") || node.getAttribute("r:id");
+        const target = rid && rels.get(rid);
+        if (target) ordered.push(resolveTarget(target));
+      }
+      if (!ordered.length) {
+        ordered.push(...Object.keys(zip.files).filter(path=>/^ppt\/slides\/slide\d+\.xml$/i.test(path))
+          .sort((a,b)=>Number(a.match(/slide(\d+)/i)?.[1])-Number(b.match(/slide(\d+)/i)?.[1])));
+      }
+      const slides = [];
+      for (const path of ordered) {
+        const xml = await parseXml(path);
+        if (!xml) continue;
+        const shapes = [...xml.getElementsByTagName("*")].filter(node=>(node.localName || "").toLowerCase()==="sp");
+        const blocks = [];
+        for (const shape of shapes) {
+          const paragraphs = [...shape.getElementsByTagName("*")].filter(node=>(node.localName || "").toLowerCase()==="p");
+          const lines = paragraphs.map(paragraph => [...paragraph.getElementsByTagName("*")]
+            .filter(node=>(node.localName || "").toLowerCase()==="t")
+            .map(node=>node.textContent || "").join("")).map(line=>line.trim()).filter(Boolean);
+          if (lines.length) blocks.push(lines.join("\n"));
+        }
+        // A few presentations put visible text in unsupported shape types; retain that readable text.
+        if (!blocks.length) {
+          const lines = [...xml.getElementsByTagName("*")].filter(node=>(node.localName || "").toLowerCase()==="t")
+            .map(node=>(node.textContent || "").trim()).filter(Boolean);
+          if (lines.length) blocks.push(lines.join("\n"));
+        }
+        const text = blocks.join("\n\n");
+        slides.push({ title:blocks[0]?.split("\n")[0] || `Slide ${slides.length+1}`, text });
+      }
+      if (!slides.length) throw new Error("No readable slide text was found.");
+      return { text:slides.map((slide,index)=>`Slide ${index+1}: ${slide.text}`).join("\n\n"), slides };
+    } catch (error) {
+      const reason = error instanceof Error && error.message ? ` ${error.message}` : "";
+      throw new Error(`Could not read the slides in ${file.name}.${reason}`);
+    }
+  }
+  const fileSize = (n) => n < 1048576 ? `${Math.max(1,Math.round(n/1024))} KB` : `${(n/1048576).toFixed(1)} MB`;
+  async function addFiles(list) {
+    const files = [...list];
+    for (const file of files) {
+      const record = { file, name:file.name, status:"reading", text:"", error:"" };
+      state.files.push(record); renderFiles();
+      try {
+        const parsed = await readFile(file);
+        if (typeof parsed === "string") record.text = parsed.trim();
+        else { record.text = parsed.text.trim(); record.slides = parsed.slides; }
+        if (!record.text) throw new Error("No readable text was found.");
+        record.status = "ready";
+      } catch(error) { record.status = "error"; record.error = error.message; }
+      renderFiles();
+    }
+  }
+  function renderFiles() {
+    $("#file-list").innerHTML = state.files.map((f,i)=>`<div class="file-row"><span>${esc(f.name)} · ${fileSize(f.file.size)} · ${f.status==="reading"?"Reading…":f.status==="error"?esc(f.error):"Text ready"}</span><button type="button" data-remove-file="${i}" aria-label="Remove ${esc(f.name)}">Remove</button></div>`).join("");
+    $$("[data-remove-file]").forEach(b=>b.addEventListener("click",()=>{state.files.splice(Number(b.dataset.removeFile),1);renderFiles();}));
+  }
+  async function generate() {
+    if (state.working) return;
+    setError("");
+    const modes = $$('input[name="mode"]:checked').map(input=>input.value);
+    if (!modes.length) return setError("Choose at least one study format.");
+    const count = Number($("#question-count").value), minutes = Number($("#exam-minutes").value);
+    if ((modes.includes("objective") || modes.includes("timed")) && (!Number.isInteger(count)||count<1||count>50)) return setError("Objective question count must be a whole number from 1 to 50.");
+    if (modes.includes("timed") && (!Number.isInteger(minutes)||minutes<1||minutes>180)) return setError("Exam duration must be a whole number from 1 to 180 minutes.");
+    if (!state.files.length) return setError("Add at least one source document first.");
+    if (state.files.some(f=>f.status==="reading")) return setError("Wait for all source documents to finish reading.");
+    if (state.files.some(f=>f.status==="error")) return setError("Remove any source document that could not be read.");
+    const sourceText = state.files.map(f=>`=== Source: ${f.name} ===\n${f.text}`).join("\n\n");
+    const readable = sourceText.replace(/=== Source[^\n]*===/g,"").trim();
+    if (readable.length < 120) return setError("There is not enough readable text in these documents. Add a longer note or a text-based PDF.");
+    if (sourceText.length > 180000) return setError("The combined source text exceeds 180,000 characters. Remove a document or choose smaller files.");
+    const sourceName = state.files.map(f=>f.name).join(", ").slice(0,160);
+    state.working = true;
+    $("#generate-button").disabled = true; $("#generate-button").textContent = "Making your materials…";
+    $("#builder-status").textContent = "Reading your sources and preparing the selected formats.";
+    try {
+      const payload = { sourceName, sourceText, hoursPerDay:1, questionCount:(modes.includes("objective")||modes.includes("timed"))?count:10, modes, ...(modes.includes("timed")?{examMinutes:minutes}:{}) };
+      const result = await api("/api/study/generate", { method:"POST", body:JSON.stringify(payload) });
+      const set = { ...result, id:result.id || (crypto.randomUUID ? crypto.randomUUID() : `${Date.now().toString(36)}-${Math.random().toString(36).slice(2,8)}`), createdAt:result.createdAt || new Date().toISOString(), modes:result.modes || modes, sourceName, sourceText, examMinutes:result.examMinutes || (modes.includes("timed")?minutes:undefined), masteredTerms:result.masteredTerms || [] };
+      const saved = await api(`/api/study-sets/${encodeURIComponent(set.id)}`, { method:"PUT", body:JSON.stringify(toInput(set)) });
+      const finalSet = saved && typeof saved === "object" ? { ...set, ...saved, sourceName, sourceText } : set;
+      try { await saveOriginals(finalSet.id, state.files); }
+      catch { toast("The study set was saved, but original previews could not be kept in this browser."); }
+      state.sets = [finalSet, ...state.sets.filter(s=>s.id!==finalSet.id)];
+      state.files = []; renderFiles(); renderHomeSets(); renderSaved();
+      openSet(finalSet.id); toast("Your study materials are ready.");
+    } catch(error) {
+      setError(error.message || "We could not generate this study set. Try again.");
+    } finally {
+      state.working = false; $("#generate-button").disabled = false; $("#generate-button").textContent = "Make study materials"; $("#builder-status").textContent = "";
+    }
+  }
+  function initSettings() {
+    const accent = storage.read("accent","rose");
+    document.documentElement.dataset.accent = accent;
+    $("#accent-rose").setAttribute("aria-pressed",String(accent==="rose"));
+    $("#accent-violet").setAttribute("aria-pressed",String(accent==="violet"));
+    const picture = storage.read("profile-picture"), banner = storage.read("profile-banner");
+    setAvatar(picture, storage.read("display-name","Jaguar"));
+    if (banner) $("#banner-preview").style.backgroundImage = `url("${banner}")`;
+    [["rose","#accent-rose"],["violet","#accent-violet"]].forEach(([value,selector])=>$(selector).addEventListener("click",()=>{
+      storage.write("accent",value); document.documentElement.dataset.accent = value;
+      $("#accent-rose").setAttribute("aria-pressed",String(value==="rose")); $("#accent-violet").setAttribute("aria-pressed",String(value==="violet"));
+    }));
+    $("#profile-picture").addEventListener("change", e=>storeImage(e.target.files?.[0],"profile-picture"));
+    $("#profile-banner").addEventListener("change", e=>storeImage(e.target.files?.[0],"profile-banner"));
+  }
+  function storeImage(file,key) {
+    if (!file) return;
+    if (!file.type.startsWith("image/")) { $("#settings-status").textContent="Choose an image file."; return; }
+    if (file.size > 4*1024*1024) { $("#settings-status").textContent="Please choose an image under 4 MB."; return; }
+    const reader = new FileReader();
+    reader.onload = () => {
+      const data = String(reader.result);
+      if (!storage.write(key,data)) { $("#settings-status").textContent="This browser cannot save that image. Try a smaller file."; return; }
+      if (key==="profile-picture") setAvatar(data,storage.read("display-name","Jaguar"));
+      else $("#banner-preview").style.backgroundImage = `url("${data}")`;
+      $("#settings-status").textContent="Saved in this browser.";
+    };
+    reader.readAsDataURL(file);
+  }
+  function bind() {
+    $$("[data-view]").forEach(button=>button.addEventListener("click", e=>{ e.preventDefault(); showView(button.dataset.view); }));
+    $$("[data-auth-link]").forEach(link=>link.addEventListener("click",()=>{state.pendingAuth=true;}));
+    $("#retry-public-load").addEventListener("click",()=>{ void loadSets(); });
+    window.addEventListener("focus",()=>{ if (state.pendingAuth) { state.pendingAuth=false; void loadSets(); } });
+    $("#study-back").addEventListener("click",()=>showView("saved"));
+    $("#study-delete").addEventListener("click",()=>state.selected && deleteSet(state.selected.id));
+    $("#generate-button").addEventListener("click",generate);
+    $("#source-files").addEventListener("change",e=>{ void addFiles(e.target.files || []); e.target.value=""; });
+    const zone=$("#dropzone");
+    zone.addEventListener("dragover",e=>{e.preventDefault();zone.classList.add("drag");});
+    zone.addEventListener("dragleave",()=>zone.classList.remove("drag"));
+    zone.addEventListener("drop",e=>{e.preventDefault();zone.classList.remove("drag");void addFiles(e.dataTransfer.files);});
+    $("#mode-list").addEventListener("change",()=>{
+      const modes=$$('input[name="mode"]:checked').map(i=>i.value);
+      $("#mode-fields").hidden=!(modes.includes("objective")||modes.includes("timed"));
+      $("#question-count-wrap").hidden=!(modes.includes("objective")||modes.includes("timed"));
+      $("#exam-minutes-wrap").hidden=!modes.includes("timed");
+    });
+  }
+  bind(); initSettings();
+  $("#public-home").hidden = false; $("#workspace").hidden = true;
+  showView("home");
+  void loadSets();
+  // Recover a timed attempt only after the corresponding saved set has loaded.
+  const originalOpenSet = openSet;
+  openSet = function(id) {
+    originalOpenSet(id);
+    if (!state.selected) return;
+    try {
+      const saved = JSON.parse(storage.read(`exam-${state.selected.id}`,"null"));
+      if (saved?.status==="running" && saved.deadline>Date.now()) { state.exam=saved; state.answers=saved.answers || {}; state.mode="timed"; renderStudy(); startTimer(); }
+      else if (saved?.status==="running") {
+        state.exam={...saved,status:"done",score:(state.selected.questions||[]).reduce((n,q,i)=>n+((saved.answers || {})[i]===Number(q.answerIndex)?1:0),0)};
+        storage.write(`exam-${state.selected.id}`,JSON.stringify(state.exam));
+        state.answers=saved.answers || {};
+      } else if (saved?.status==="done") { state.exam=saved; state.answers=saved.answers || {}; }
+    } catch {}
+  };
+})();

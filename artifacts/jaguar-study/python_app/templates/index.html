@@ -1,0 +1,145 @@
+<!doctype html>
+<html lang="en" data-accent="rose">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#151315">
+  <title>Jaguar — Study from your notes</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cpath d='M4 8 9 4l5 3h5l5-3 5 4-2 5 2 6-4 1-2 6-6-2-6 2-2-6-4-1 2-6z' fill='none' stroke='%23c47f9b' stroke-width='2'/%3E%3C/svg%3E">
+  <link rel="stylesheet" href="{{ base_path }}/static/app.css">
+</head>
+<body>
+  <div id="app" class="shell">
+    <section id="public-home" class="public" hidden>
+      <nav class="public-nav" aria-label="Main navigation">
+        <a class="brand" href="{{ base_path }}/" aria-label="Jaguar home">
+          <svg class="mark" viewBox="0 0 32 32" aria-hidden="true"><path d="M4.5 8.5 9 4l4 3.2h6L23 4l4.5 4.5-2.1 4.2 2.8 5.5-3.7 1.2-2.2 5.4-4.1-1.6h-4.4l-4.1 1.6-2.2-5.4-3.7-1.2 2.8-5.5z" fill="none" stroke="currentColor" stroke-width="1.35" stroke-linejoin="round"/><path d="M11 14.2h.1m9.8 0h.1M13 18.7c1.9 1.4 4.1 1.4 6 0M16 13v2.8" fill="none" stroke="currentColor" stroke-width="1.35" stroke-linecap="round"/></svg>
+          <span class="brand-name">Jaguar</span>
+        </a>
+        <a class="quiet" href="/sign-in" target="_blank" rel="noopener" data-auth-link>Sign in</a>
+      </nav>
+      <header class="hero">
+        <h1>Use your notes to study well</h1>
+        <p>Use your notes to study better.</p>
+        <div class="hero-actions"><a class="primary" href="/sign-up" target="_blank" rel="noopener" data-auth-link>Make a study set</a><a class="quiet" href="/sign-in" target="_blank" rel="noopener" data-auth-link>I have an account</a></div>
+        <div id="public-load-error" class="error" role="alert" hidden><span id="public-load-message"></span> <button id="retry-public-load" class="quiet" type="button">Try again</button></div>
+      </header>
+      <section class="public-rule"><h2>Start from your sources</h2><p>Add one document or a small collection. Jaguar works from the text extracted from your own course material, so each study set stays anchored to what you need to learn.</p></section>
+      <section class="public-rule"><h2>Choose the way you study</h2><p>Make several formats together: a concise summary, a tutor lesson, key-term practice, a cram sheet, theory questions, or one timed paper combining objective and theory sections.</p></section>
+      <section class="public-rule"><h2>Keep the work together</h2><p>Open saved sets by subject, switch between study modes, and keep the source alongside your notes while you revise.</p></section>
+      <footer class="public-foot">A focused workspace for learning from your own course documents.</footer>
+    </section>
+
+    <div id="workspace" hidden>
+      <header class="topbar">
+        <a class="brand" href="#" data-view="home" aria-label="Jaguar workspace home">
+          <svg class="mark" viewBox="0 0 32 32" aria-hidden="true"><path d="M4.5 8.5 9 4l4 3.2h6L23 4l4.5 4.5-2.1 4.2 2.8 5.5-3.7 1.2-2.2 5.4-4.1-1.6h-4.4l-4.1 1.6-2.2-5.4-3.7-1.2 2.8-5.5z" fill="none" stroke="currentColor" stroke-width="1.35" stroke-linejoin="round"/><path d="M11 14.2h.1m9.8 0h.1M13 18.7c1.9 1.4 4.1 1.4 6 0M16 13v2.8" fill="none" stroke="currentColor" stroke-width="1.35" stroke-linecap="round"/></svg>
+          <span class="brand-name">Jaguar</span>
+        </a>
+        <div class="topbar-spacer"></div>
+        <span id="top-context" class="faint"></span>
+        <button class="quiet" type="button" data-view="settings">Settings</button>
+        <a class="quiet" href="/sign-in" id="top-signin" hidden>Sign in</a>
+      </header>
+      <div class="layout">
+        <aside class="sidebar" aria-label="Workspace navigation">
+          <nav class="side-nav" aria-label="Workspace sections">
+            <p class="side-label">Your workspace</p>
+            <button class="nav-button active" type="button" data-view="home"><span class="nav-icon" aria-hidden="true">＋</span>New study set</button>
+            <button class="nav-button" type="button" data-view="saved"><span class="nav-icon" aria-hidden="true">▤</span>Saved sets <span id="saved-count" class="faint"></span></button>
+          </nav>
+          <nav id="mode-navigation" class="side-nav" aria-label="Current study set modes" hidden>
+            <p class="side-label">Open set</p>
+            <div id="side-modes"></div>
+          </nav>
+          <div class="sidebar-bottom"><div class="user-chip"><span id="sidebar-avatar" class="avatar">J</span><span id="sidebar-user">Study workspace</span></div><button class="nav-button" type="button" data-view="settings"><span class="nav-icon" aria-hidden="true">⚙</span>Settings</button></div>
+        </aside>
+        <main class="main" id="main-content" tabindex="-1">
+          <div class="mobile-nav" aria-label="Workspace navigation">
+            <button class="quiet" type="button" data-view="home">New set</button><button class="quiet" type="button" data-view="saved">Saved sets</button><button class="quiet" type="button" data-view="settings">Settings</button>
+            <div id="mobile-modes" style="display:flex;gap:6px"></div>
+          </div>
+          <section id="view-home" class="workspace" aria-labelledby="welcome-heading">
+            <header class="welcome"><div><h1 id="welcome-heading">Exam is soon ooo</h1><p>Bring your note so you can study</p></div></header>
+            <div class="builder">
+              <div class="builder-create">
+                <section class="section" aria-labelledby="source-heading">
+                  <div class="section-head"><div><h2 id="source-heading">Your source material</h2><p>Add one or more course documents.</p></div></div>
+                  <div id="dropzone" class="dropzone">
+                    <div><strong>Drop files here, or choose from your device</strong><p>PDF, Word, PowerPoint, text, Markdown, or CSV. PDF and PowerPoint previews are kept in this browser.</p></div>
+                    <label class="quiet" for="source-files">Choose files</label>
+                    <input id="source-files" class="sr-only" type="file" multiple accept=".pdf,.docx,.pptx,.txt,.md,.csv,text/plain,text/markdown,text/csv,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.openxmlformats-officedocument.presentationml.presentation">
+                  </div>
+                  <div id="file-list" class="file-list" aria-live="polite"></div>
+                </section>
+                <section class="section" aria-labelledby="mode-heading">
+                  <div class="section-head"><div><h2 id="mode-heading">Choose your study formats</h2><p>Every selected format uses the same source collection.</p></div></div>
+                  <fieldset style="border:0;padding:0;margin:0">
+                    <legend class="sr-only">Study formats</legend>
+                    <div id="mode-list" class="mode-list">
+                      <label class="mode-choice"><input type="checkbox" name="mode" value="summary"><span>Note summary</span><small>Detailed exam reference</small></label>
+                      <label class="mode-choice"><input type="checkbox" name="mode" value="tutor"><span>Tutor lesson</span><small>About 5,000 words for substantial sources</small></label>
+                      <label class="mode-choice"><input type="checkbox" name="mode" value="cram"><span>Cram sheet</span><small>Fast final review</small></label>
+                      <label class="mode-choice"><input type="checkbox" name="mode" value="objective"><span>Objective questions</span><small>Multiple choice · A–E · 1–50</small></label>
+                      <label class="mode-choice"><input type="checkbox" name="mode" value="theory"><span>Theory test</span><small>Written questions with a, b, and c</small></label>
+                      <label class="mode-choice"><input type="checkbox" name="mode" value="timed"><span>Time-based exam</span><small>One combined paper</small></label>
+                    </div>
+                  </fieldset>
+                  <div id="mode-fields" class="fields-row" hidden>
+                    <label class="field-label" id="question-count-wrap" hidden>Objective question count (1–50)
+                      <input id="question-count" class="field" type="number" min="1" max="50" step="1" value="10">
+                    </label>
+                    <label class="field-label" id="exam-minutes-wrap" hidden>Exam duration (1–180 minutes)
+                      <input id="exam-minutes" class="field" type="number" min="1" max="180" step="1" value="60">
+                    </label>
+                  </div>
+                </section>
+                <div id="builder-error" class="error" role="alert" hidden></div>
+                <div class="section-head"><span id="builder-status" class="status" role="status"></span><button id="generate-button" class="primary" type="button">Make study materials</button></div>
+              </div>
+              <aside class="builder-aside">
+                <section class="side-section"><h2>Saved sets</h2><div id="home-saved-list" class="saved-list"><div class="loading-lines" aria-label="Loading saved sets"><i></i><i></i></div></div></section>
+                <p class="helper">Your study library is organized by the subject names in your saved materials. You can open, update, or remove a set at any time.</p>
+              </aside>
+            </div>
+          </section>
+          <section id="view-saved" class="workspace" hidden aria-labelledby="saved-heading">
+            <header class="page-heading"><div><h1 id="saved-heading">Saved study sets</h1><p class="muted">Your generated materials, grouped by subject.</p></div><button class="primary" type="button" data-view="home">Create a set</button></header>
+            <div id="saved-page-list" class="saved-page-list"><div class="loading-lines" aria-label="Loading saved sets"><i></i><i></i><i></i></div></div>
+          </section>
+          <section id="view-study" class="workspace" hidden aria-labelledby="study-title">
+            <header class="study-head"><div><h1 id="study-title">Study set</h1><p id="study-source"></p></div><div><button id="study-back" class="quiet" type="button">Back to sets</button> <button id="study-delete" class="danger-button" type="button">Delete set</button></div></header>
+            <div class="study-layout">
+              <div>
+                <nav id="study-tabs" class="tabs" aria-label="Study mode" role="tablist"></nav>
+                <div id="study-content" class="content" role="tabpanel" tabindex="0"></div>
+              </div>
+              <aside class="source-panel" aria-label="Source documents"><h2>Source documents</h2><div id="study-sources"></div></aside>
+            </div>
+          </section>
+          <section id="view-settings" class="workspace" hidden aria-labelledby="settings-heading">
+            <header class="page-heading"><div><h1 id="settings-heading">Settings</h1><p class="muted">Make this study space feel like yours.</p></div><button class="quiet" type="button" data-view="home">Back to study</button></header>
+            <div class="settings-grid">
+              <div class="profile-edit">
+                <div><h2>Your profile</h2><p class="helper">Choose a picture and a banner for this browser.</p></div>
+                <label class="field-label">Profile picture<input id="profile-picture" class="file-input" type="file" accept="image/*"></label>
+                <label class="field-label">Workspace banner<input id="profile-banner" class="file-input" type="file" accept="image/*"></label>
+                <p id="settings-status" class="status" role="status"></p>
+              </div>
+              <div>
+                <div id="banner-preview" class="profile-banner" aria-label="Banner preview"></div>
+                <div style="display:flex;align-items:center;gap:12px;margin-top:14px"><span id="profile-preview" class="avatar" style="width:48px;height:48px">J</span><span class="muted">Profile picture preview</span></div>
+                <div style="margin-top:26px"><h2>Accent color</h2><p class="helper">A restrained detail for your study workspace.</p>
+                  <div class="accent-options"><button id="accent-rose" class="accent-option" type="button" aria-pressed="true"><span class="swatch"></span>Rose</button><button id="accent-violet" class="accent-option" type="button" aria-pressed="false"><span class="swatch violet"></span>Violet</button></div>
+                </div>
+              </div>
+            </div>
+          </section>
+        </main>
+      </div>
+    </div>
+    <div id="toast" class="toast" role="status" hidden></div>
+  </div>
+  <script src="{{ base_path }}/static/app.js" defer></script>
+</body>
+</html>
