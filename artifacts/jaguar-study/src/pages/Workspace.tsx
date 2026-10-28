@@ -317,7 +317,8 @@ export default function Workspace() {
       <main className="main-area">
         <header className="topbar">
           <div className="mobile-brand"><BrandLockup size={30} /></div>
-          <div className="crumb">{settingsOpen ? 'Settings' : view === 'study' ? 'Study set' : 'Study sets'}</div>
+          {view === 'study' && !settingsOpen && <button className="icon-button topbar-back" type="button" onClick={() => { setView('builder'); window.scrollTo({ top: 0, behavior: 'smooth' }); }} aria-label="Back to study sets" data-testid="button-back-to-sets"><ArrowLeft size={15} /></button>}
+          <div className="crumb">{settingsOpen ? 'Settings' : view === 'study' ? clean(active?.title ?? '') || 'Open set' : 'Study sets'}</div>
           <div className="top-status">
             <span className="mobile-only"><ThemeSwitcher compact /></span>
             <span className="local-pill"><span className="status-dot" /> Account sync</span>
