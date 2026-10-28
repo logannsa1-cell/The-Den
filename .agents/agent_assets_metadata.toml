@@ -1,0 +1,16 @@
+uploads = []
+generated = []
+
+[[outputs]]
+id = "LjXxa3vGbjcTPNqy2hkS6"
+uri = "file://artifacts/jaguar-study/public/jaguar-outline.svg"
+type = "image"
+title = "Jaguar icon"
+description = "The outlined Jaguar logo currently used in the website."
+logical_id = "5d9874c5-e69a-4d8c-b7c3-4eca31f8bf57"
+content_hash = "sha256:8a8d8e835b073a9c390a40d32106920e2736e40725430d554a088ad6403c5e3c"
+size = 1065
+mtime_ms = 1793208692316
+storage_uri = "gcs://replit-rams-assets-spock/rams/assets/repl:60d9cf29-ffa4-4932-a93b-3e5ef4d3b6c2/5d9874c5-e69a-4d8c-b7c3-4eca31f8bf57/fb0467ad-0d87-46d8-9a0b-d1c8d74c5f70"
+storage_version_token = "1793214900072004"
+content_type = "image/svg+xml"
