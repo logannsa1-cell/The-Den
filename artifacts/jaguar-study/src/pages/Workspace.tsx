@@ -16,6 +16,7 @@ import { useProfileMedia } from '@/lib/profile-media';
 import { SourceUploader, combineSources, MAX_SOURCE_CHARS, type SourceEntry } from '@/components/SourceUploader';
 import { StudyOutput, setModes, setViews, studyViews, type OutputTab } from '@/components/StudyOutput';
 import { deleteSources, loadSources, saveSources, sourceKey, type StoredSource } from '@/lib/source-store';
+import { deletePersonalNote } from '@/lib/personal-notes';
 import { readMigrationPreference } from '@/lib/migration-preference';
 import { toInput } from '@/lib/study-input';
 
@@ -227,7 +228,7 @@ export default function Workspace() {
   const deleteSet = (set: StudySet) => {
     const remote = remoteIds.has(set.id);
     if (!window.confirm(`Delete "${clean(set.title)}"${remote ? ' from your account' : ' from this browser'}? This cannot be undone.`)) return;
-    const done = () => { if (active?.id === set.id) { setActive(null); setView('builder'); } if (userId) void deleteSources(sourceKey(userId, set.id)); setNotice('Study set deleted.'); };
+    const done = () => { if (active?.id === set.id) { setActive(null); setView('builder'); } if (userId) { void deleteSources(sourceKey(userId, set.id)); deletePersonalNote(userId, set.id); } setNotice('Study set deleted.'); };
     if (remote) removeRemote.mutate({ id: set.id }, { onSuccess: () => { qc.setQueryData<StudySet[]>(accountQueryKey, (old) => (old ?? []).filter((s) => s.id !== set.id)); removeBackup(set.id); done(); }, onError: () => setError('Could not delete. Try again.') });
     else { persist(localSets.filter((s) => s.id !== set.id)); done(); }
   };

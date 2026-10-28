@@ -7,6 +7,7 @@ import { SourceViewer } from './SourceViewer';
 import { TimedExam } from './TimedExam';
 import { TheoryTest } from './TheoryTest';
 import { Flashcards, ObjectivePractice } from './Practice';
+import { PersonalNotes } from './PersonalNotes';
 import type { StoredSource } from '@/lib/source-store';
 
 import { setViews, type OutputTab } from '@/lib/study-views';
@@ -19,6 +20,7 @@ export function outputText(set: StudySet, tab: OutputTab, clean: (s: string) => 
   if (tab === 'terms' || tab === 'flashcards') return set.keyTerms.map((t) => `${clean(t.term)}\n${clean(t.definition)}`).join('\n\n');
   if (tab === 'cram') return set.cramPoints.map((p) => `- ${clean(p)}`).join('\n');
   if (tab === 'tutor') return clean(set.tutorLesson ?? '');
+  if (tab === 'personal-notes') return '';
   if (tab === 'theory') return (set.theoryQuestions ?? []).map((q, i) => `${i + 1}. ${clean(q.prompt)}\n${q.parts.map((p) => `(${p.label}) ${clean(p.question)}\nModel answer: ${clean(p.modelAnswer)}`).join('\n')}`).join('\n\n');
   return set.questions.map((q, i) => `${i + 1}. ${clean(q.prompt)}\n${q.choices.map((c, j) => `${L(j)}. ${clean(c)}`).join('\n')}\nAnswer: ${L(q.answerIndex)}\n${clean(q.explanation)}`).join('\n\n');
 }
@@ -74,11 +76,29 @@ export function StudyOutput({ set, userId, synced, clean, sources, onReattach, o
 
   useEffect(() => {
     if (!full) return;
-    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setFull(false); };
+    const previousFocus = document.activeElement as HTMLElement | null;
+    const dialog = closeRef.current?.closest<HTMLElement>('.output-area');
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') { setFull(false); return; }
+      if (e.key !== 'Tab' || !dialog) return;
+      const controls = Array.from(dialog.querySelectorAll<HTMLElement>('a[href], button:not(:disabled), input:not(:disabled), select:not(:disabled), textarea:not(:disabled), [tabindex]:not([tabindex="-1"])'))
+        .filter((item) => item.getClientRects().length > 0);
+      if (!controls.length) return;
+      const first = controls[0], last = controls[controls.length - 1];
+      if (e.shiftKey && (document.activeElement === first || !dialog.contains(document.activeElement))) {
+        e.preventDefault(); last.focus();
+      } else if (!e.shiftKey && (document.activeElement === last || !dialog.contains(document.activeElement))) {
+        e.preventDefault(); first.focus();
+      }
+    };
     document.addEventListener('keydown', onKey);
     document.body.style.overflow = 'hidden';
     closeRef.current?.focus();
-    return () => { document.removeEventListener('keydown', onKey); document.body.style.overflow = ''; };
+    return () => {
+      document.removeEventListener('keydown', onKey);
+      document.body.style.overflow = '';
+      if (previousFocus?.isConnected) previousFocus.focus();
+    };
   }, [full]);
 
   const onDragStart = (e: ReactPointerEvent<HTMLDivElement>) => {
@@ -125,6 +145,7 @@ export function StudyOutput({ set, userId, synced, clean, sources, onReattach, o
       case 'flashcards': return <Flashcards terms={set.keyTerms} mastered={set.masteredTerms ?? []} onRate={onRate} clean={clean} setId={set.id} />;
       case 'cram': return set.cramPoints.length ? <ul className="cram-list doc doc-cram">{set.cramPoints.map((p, i) => <li key={i} data-testid={`cram-point-${i}`}><span className="cram-dot">{i + 1}.</span><span><StudyText text={clean(p)} /></span></li>)}</ul> : <div className="empty-state"><strong>No cram points in this set</strong></div>;
       case 'tutor': return set.tutorLesson ? <div className="doc doc-tutor"><RichNotes text={clean(set.tutorLesson)} testId="text-tutor-lesson" /></div> : <div className="empty-state"><strong>No tutor lesson in this set</strong><p>Build a new set with Tutor Lesson selected.</p></div>;
+      case 'personal-notes': return <PersonalNotes key={`personal-notes-${key}`} userId={userId} setId={set.id} />;
     }
   };
 
@@ -148,7 +169,7 @@ export function StudyOutput({ set, userId, synced, clean, sources, onReattach, o
               {tabs.map((t) => <option key={t.id} value={t.id}>{t.label}</option>)}
             </select>
           </label>}
-          {tab !== 'timed' && <>
+          {tab !== 'timed' && tab !== 'personal-notes' && <>
           <button className="quiet-button" type="button" onClick={() => void copy()} data-testid="button-copy-output"><Copy size={13} /> Copy</button>
           <button className="quiet-button" type="button" onClick={download} data-testid="button-download-output"><ArrowDownToLine size={13} /> Download</button>
           </>}

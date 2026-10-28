@@ -2,9 +2,9 @@
 name: Jaguar product direction
 description: User-specified branding and exam-preparation behavior
 ---
-The product name is just "Jaguar", with black and purple as the default, Rose/Ocean/Jungle alternatives and subtle jaguar spots. The user now wants a stylized vector jaguar similar to their SVG, not the earlier realistic face. Remove decorative star/sparkle icons.
+The product name is just "Jaguar", with dark surfaces and two muted selectable accents: Rose and Violet. Keep both restrained rather than bright or glowy. The user wants a stylized vector jaguar similar to their SVG, not the earlier realistic face. Remove decorative star/sparkle icons.
 
-**Why:** The user explicitly requested this direction and replaced the earlier green design.
+**Why:** The user most recently asked to switch between Rose and Violet while keeping the accents less intense.
 
 Avoid the stacked generated-app appearance: violet glow, huge tight headlines, tiny all-caps monospace labels, and repeated large rounded cards with tinted icon squares. The user wants the compact outlined jaguar logo and interface cues from their dashboard reference.
 
