@@ -1,16 +1,19 @@
 {
   "expo": {
-    "name": "Jaguar Mobile",
-    "slug": "jaguar-mobile",
+    "name": "Jaguar",
+    "slug": "jaguar",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "jaguar-mobile",
+    "scheme": "jaguar",
     "userInterfaceStyle": "automatic",
     "ios": {
-      "supportsTablet": false
+      "supportsTablet": false,
+      "bundleIdentifier": "com.jaguar.app"
     },
-    "android": {},
+    "android": {
+      "package": "com.jaguar.app"
+    },
     "web": {
       "favicon": "./assets/images/icon.png"
     },
@@ -18,11 +21,14 @@
       "expo-router",
       "expo-secure-store",
       "expo-sharing",
-      ["expo-image-picker", {
-        "photosPermission": "Choose a profile picture or banner for your Jaguar account.",
-        "cameraPermission": false,
-        "microphonePermission": false
-      }]
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Choose a profile picture or banner for your Jaguar account.",
+          "cameraPermission": false,
+          "microphonePermission": false
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true,
