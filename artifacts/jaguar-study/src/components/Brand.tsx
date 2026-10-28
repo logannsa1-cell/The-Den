@@ -34,23 +34,28 @@ export function ThemeSwitcher({ compact = false }: { compact?: boolean }) {
   const ref = useRef<HTMLDivElement>(null);
   useEffect(() => {
     if (!open) return;
-    const onDown = (e: MouseEvent) => { if (!ref.current?.contains(e.target as Node)) setOpen(false); };
-    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setOpen(false); };
+    const onDown = (event: MouseEvent) => { if (!ref.current?.contains(event.target as Node)) setOpen(false); };
+    const onKey = (event: KeyboardEvent) => { if (event.key === 'Escape') setOpen(false); };
     document.addEventListener('mousedown', onDown);
     document.addEventListener('keydown', onKey);
-    return () => { document.removeEventListener('mousedown', onDown); document.removeEventListener('keydown', onKey); };
+    return () => {
+      document.removeEventListener('mousedown', onDown);
+      document.removeEventListener('keydown', onKey);
+    };
   }, [open]);
   return (
-    <div className="theme-switch" ref={ref}>
-      <button type="button" className="theme-trigger" aria-haspopup="true" aria-expanded={open} onClick={() => setOpen((v) => !v)} data-testid="button-theme">
-        <Palette size={14} aria-hidden="true" /><span className="theme-swatch" style={{ background: theme.accent }} />{!compact && <span>{theme.label}</span>}
+    <div className="theme-switch" ref={ref} data-open={open}>
+      <button type="button" className="theme-trigger" aria-haspopup="true" aria-expanded={open} aria-label={`Color theme: ${theme.label}`} onClick={() => setOpen((value) => !value)} data-testid="button-theme">
+        <Palette size={14} aria-hidden="true" />
+        <span className="theme-swatch" style={{ background: theme.accent }} />
+        {!compact && <span>{theme.label}</span>}
       </button>
       {open && (
-        <div className="theme-menu" role="menu">
-          {THEMES.map((t) => (
-            <button key={t.id} type="button" role="menuitemradio" aria-checked={theme.id === t.id} className="theme-option" onClick={() => { setTheme(t.id); setOpen(false); }} data-testid={`button-theme-${t.id}`}>
-              <span className="theme-swatch lg" style={{ background: `linear-gradient(135deg, ${t.bg} 50%, ${t.accent} 50%)` }} />
-              {t.label}{theme.id === t.id && <Check size={13} className="ml-auto" />}
+        <div className="theme-menu" role="menu" aria-label="Choose a color theme">
+          {THEMES.map((option) => (
+            <button key={option.id} type="button" role="menuitemradio" aria-checked={theme.id === option.id} className="theme-option" onClick={() => { setTheme(option.id); setOpen(false); }} data-testid={`button-theme-${option.id}`}>
+              <span className="theme-swatch lg" style={{ background: option.accent }} />
+              {option.label}{theme.id === option.id && <Check size={14} className="ml-auto" aria-hidden="true" />}
             </button>
           ))}
         </div>

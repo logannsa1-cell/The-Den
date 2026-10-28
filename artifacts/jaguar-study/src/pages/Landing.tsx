@@ -2,7 +2,6 @@ import { useState } from 'react';
 import { Link } from 'wouter';
 import { ArrowRight } from 'lucide-react';
 import { BrandLockup, ThemeSwitcher } from '@/components/Brand';
-import { THEMES, useTheme } from '@/lib/theme';
 
 type SampleMode = 'summary' | 'tutor' | 'cram' | 'objective';
 const SAMPLE_SOURCE = `Photosynthesis happens in the chloroplast. The light-dependent reactions take place on the thylakoid membrane: light energy splits water, releasing oxygen, and produces ATP and NADPH. The Calvin cycle takes place in the stroma, where ATP and NADPH are used to fix carbon dioxide into glucose.`;
@@ -41,7 +40,6 @@ function SampleBody({ mode }: { mode: SampleMode }) {
 }
 
 export default function Landing() {
-  const { setTheme, theme } = useTheme();
   const [mode, setMode] = useState<SampleMode>('summary');
   return (
     <main className="landing-page calm">
@@ -56,7 +54,7 @@ export default function Landing() {
 
       <section className="calm-hero">
         <h1 data-testid="text-landing-heading">Use your notes to study well</h1>
-        <p>Upload your course PDFs and slides. Jaguar turns them into summaries, lessons, cram sheets and exam papers, with your original pages kept beside every explanation.</p>
+        <p>Bring a PDF or slide deck. Read a summary or lesson, then try questions with the original page close by.</p>
         <div className="hero-actions">
           <Link href="/sign-up" className="landing-cta" data-testid="link-start-studying">Start studying <ArrowRight size={15} /></Link>
           <Link href="/sign-in" className="hero-secondary" data-testid="link-returning-student">I have an account</Link>
@@ -64,7 +62,7 @@ export default function Landing() {
       </section>
 
       <section className="sample-preview" aria-labelledby="sample-heading">
-        <div className="sample-label"><h2 id="sample-heading">Example study view</h2><span>Sample text, not your material</span></div>
+        <div className="sample-label"><h2 id="sample-heading">Preview: Photosynthesis</h2><span>Example content</span></div>
         <div className="sample-tabs" role="tablist" aria-label="Example modes">
           {SAMPLE_TABS.map((t) => <button key={t.id} type="button" role="tab" aria-selected={mode === t.id} className={mode === t.id ? 'on' : ''} onClick={() => setMode(t.id)} data-testid={`tab-sample-${t.id}`}>{t.label}</button>)}
         </div>
@@ -75,7 +73,7 @@ export default function Landing() {
       </section>
 
       <section className="calm-section">
-        <h2>What you can make from one upload</h2>
+        <h2>Choose how to study</h2>
         <dl className="calm-list">
           <div><dt>Note Summary</dt><dd>Long, detailed notes with headings. Hide them, recall, then reveal.</dd></div>
           <div><dt>Tutor Lesson</dt><dd>A teaching walk-through with examples, written from your material.</dd></div>
@@ -83,17 +81,6 @@ export default function Landing() {
           <div><dt>Timed exam</dt><dd>Section A objective and Section B theory on a running clock. Answers stay hidden until you submit.</dd></div>
           <div><dt>Objective and theory practice</dt><dd>A to E questions with explanations, and a/b/c theory parts with model answers.</dd></div>
         </dl>
-      </section>
-
-      <section className="calm-section">
-        <h2>Colour</h2>
-        <div className="theme-row">
-          {THEMES.map((t) => (
-            <button key={t.id} type="button" className={`theme-tile${theme.id === t.id ? ' on' : ''}`} onClick={() => setTheme(t.id)} aria-pressed={theme.id === t.id} data-testid={`button-landing-theme-${t.id}`}>
-              <span style={{ background: t.accent }} />{t.label}
-            </button>
-          ))}
-        </div>
       </section>
 
       <footer className="landing-footer"><BrandLockup size={24} /><Link href="/sign-up" data-testid="link-create-account-bottom">Create an account</Link><Link href="/sign-in" data-testid="link-footer-sign-in">Sign in</Link></footer>
