@@ -166,3 +166,41 @@
 .app-shell .jaguar-track { width: 150px; height: 46px; }
 @keyframes jag-cross { from { transform: translateX(54px); } to { transform: translateX(0); } }
 .sample-doc ul { list-style: disc; } .cram-doc { list-style: decimal; } .sample-doc li::marker { color: var(--accent); }
+
+/* Reader: wide document, plain sans, bold hierarchy */
+.app-shell.in-study .workspace { width: 100%; max-width: none; padding: 18px 24px 24px; }
+.app-shell .output-head { padding-block: 10px; gap: 12px; }
+.app-shell .output-head h2 { font-size: 20px; line-height: 1.25; }
+.app-shell .output-head p { margin: 2px 0 0; font-size: 12px; }
+.app-shell .study-toolbar { gap: 8px; padding-block: 4px; }
+.app-shell .study-pane.is-reading { padding: 24px clamp(18px, 3vw, 36px) 48px; border: 0; border-radius: 0; background: transparent; }
+.app-shell .is-reading .doc { max-width: 92ch; margin: 0 auto; }
+.app-shell .is-reading :is(.doc-summary, .doc-tutor) .rich-notes { font-family: var(--app-font-sans); font-size: var(--read-size, 16.5px); line-height: 1.8; max-width: none; color: var(--text); }
+.app-shell .is-reading .rich-notes :is(h1, h2, h3, h4) { font-family: var(--app-font-sans); font-weight: 700; letter-spacing: -.015em; color: var(--text); border: 0; }
+.app-shell .is-reading .rich-notes h1 { font-size: 1.85em; line-height: 1.2; margin: 0 0 .7em; }
+.app-shell .is-reading .rich-notes h2 { font-size: 1.4em; line-height: 1.25; margin: 1.6em 0 .55em; }
+.app-shell .is-reading .rich-notes h3 { font-size: 1.15em; line-height: 1.3; margin: 1.3em 0 .45em; }
+.app-shell .is-reading .rich-notes h4 { font-size: 1em; margin: 1.1em 0 .35em; }
+.app-shell .is-reading .rich-notes p { margin: 0 0 1.05em; color: color-mix(in srgb, var(--text) 86%, var(--muted)); }
+.app-shell .is-reading .rich-notes :is(strong, b) { color: var(--text); font-weight: 700; }
+.app-shell .is-reading .rich-notes :is(ul, ol) { margin: 0 0 1.05em; padding-left: 1.4em; }
+.app-shell .is-reading .rich-notes li { margin: .3em 0; }
+.app-shell .is-reading .rich-notes li::marker { color: var(--accent); }
+.app-shell .is-reading .doc-cram { max-width: 92ch; font-size: var(--read-size, 16.5px); line-height: 1.7; }
+
+/* Exam: sticky timer, reserved bottom submit bar */
+.app-shell .exam-run { position: relative; padding-bottom: 0; }
+.app-shell .exam-sticky { position: sticky; top: 0; z-index: 5; display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 8px 0; background: var(--surface); border-bottom: 1px solid var(--line); }
+.app-shell .exam-sticky .exam-clock { margin-left: auto; min-width: 0; padding: 4px 10px; border: 1px solid var(--line); border-radius: 6px; background: var(--bg-2); }
+.app-shell .exam-sticky .countdown { font-size: 13px; font-variant-numeric: tabular-nums; }
+.app-shell .exam-submit-bar { position: sticky; bottom: 0; z-index: 5; display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 28px; padding: 10px 0 calc(10px + env(safe-area-inset-bottom)); background: var(--surface); border-top: 1px solid var(--line); }
+.app-shell .exam-submit-status { color: var(--muted); font: 12px var(--app-font-sans); min-width: 0; }
+.app-shell .output-area.is-full .exam-sticky { top: 0; }
+@media (max-width: 700px) {
+  .app-shell.in-study .workspace { padding: 12px 14px 24px; }
+  .app-shell .exam-sticky { flex-wrap: wrap; top: 66px; }
+  .app-shell .study-pane { max-height: none; }
+  .app-shell .exam-submit-bar { position: static; flex-direction: column; align-items: stretch; }
+  .app-shell .exam-submit-bar .small-primary { width: 100%; justify-content: center; min-height: 44px; }
+  .app-shell .study-pane.is-reading { padding: 20px 16px 48px; }
+}

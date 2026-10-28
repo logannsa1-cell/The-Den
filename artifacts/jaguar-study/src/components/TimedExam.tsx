@@ -102,7 +102,7 @@ export function TimedExam({ title, questions, theory, minutes, storageKey, clean
     const togglePartB = (qi: number) => set((s) => ({ partB: s.partB.includes(qi) ? s.partB.filter((x) => x !== qi) : s.partB.length >= 3 ? s.partB : [...s.partB, qi] }));
     return (
       <div className="exam-run paper" data-testid="exam-running">
-        <div className="exam-top">
+        <div className="exam-top exam-sticky">
           <div className="section-switch" role="tablist">
             <button type="button" role="tab" aria-selected={state.section === 'A'} className={state.section === 'A' ? 'on' : ''} onClick={() => set(() => ({ section: 'A' }))} data-testid="tab-section-a">Section A <small>{answered}/{questions.length}</small></button>
             <button type="button" role="tab" aria-selected={state.section === 'B'} className={state.section === 'B' ? 'on' : ''} onClick={() => set(() => ({ section: 'B' }))} data-testid="tab-section-b">Section B <small>{picks.length}/4</small></button>
@@ -112,7 +112,6 @@ export function TimedExam({ title, questions, theory, minutes, storageKey, clean
             <span className="clock-bar" aria-hidden="true"><span style={{ transform: `scaleX(${Math.max(0, Math.min(1, remaining / (minutes * 60000)))})` }} /></span>
             {low && <span className="sr-only" role="status">{critical ? 'Less than one minute left' : 'Less than five minutes left'}</span>}
           </div>
-          <button className="small-primary" type="button" onClick={() => { if (!incomplete.length || window.confirm(`Your paper is incomplete: ${incomplete.join('; ')}. Submit anyway?`)) submit(false); }} data-testid="button-submit-exam"><Send size={13} /> Submit</button>
         </div>
         {header}
 
@@ -167,6 +166,10 @@ export function TimedExam({ title, questions, theory, minutes, storageKey, clean
             ))}
           </div>
         )}
+        <div className="exam-submit-bar" data-testid="bar-exam-submit">
+          <span className="exam-submit-status" data-testid="text-exam-progress">{incomplete.length ? `${answered}/${questions.length} objective · ${picks.length}/4 theory chosen` : 'All sections complete'}</span>
+          <button className="small-primary" type="button" onClick={() => { if (!incomplete.length || window.confirm(`Your paper is incomplete: ${incomplete.join('; ')}. Submit anyway?`)) submit(false); }} data-testid="button-submit-exam"><Send size={13} /> Submit paper</button>
+        </div>
       </div>
     );
   }

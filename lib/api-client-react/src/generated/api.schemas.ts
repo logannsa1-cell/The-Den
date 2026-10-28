@@ -162,7 +162,7 @@ export const StudySetInputModesItem = {
 } as const;
 
 export interface StudySetInput {
-  /** @maxLength 60000 */
+  /** @maxLength 240000 */
   tutorLesson?: string;
   /**
      * @minLength 1
@@ -179,7 +179,7 @@ export interface StudySetInput {
      * @maxLength 180000
      */
   sourceText: string;
-  /** @maxLength 60000 */
+  /** @maxLength 240000 */
   summary: string;
   /** @maxItems 100 */
   keyTerms: StudyTerm[];

@@ -118,7 +118,7 @@ export const GenerateStudyMaterialsResponse = zod.object({
 /**
  * @summary List the signed-in user's saved study sets
  */
-export const listStudySetsResponseOneTutorLessonMax = 60000;
+export const listStudySetsResponseOneTutorLessonMax = 240000;
 
 export const listStudySetsResponseOneTitleMax = 160;
 
@@ -127,7 +127,7 @@ export const listStudySetsResponseOneSourceNameMax = 160;
 export const listStudySetsResponseOneSourceTextMin = 120;
 export const listStudySetsResponseOneSourceTextMax = 180000;
 
-export const listStudySetsResponseOneSummaryMax = 60000;
+export const listStudySetsResponseOneSummaryMax = 240000;
 
 export const listStudySetsResponseOneKeyTermsMax = 100;
 
@@ -206,7 +206,7 @@ export const UpsertStudySetParams = zod.object({
   "id": zod.coerce.string().min(1)
 })
 
-export const upsertStudySetBodyTutorLessonMax = 60000;
+export const upsertStudySetBodyTutorLessonMax = 240000;
 
 export const upsertStudySetBodyTitleMax = 160;
 
@@ -215,7 +215,7 @@ export const upsertStudySetBodySourceNameMax = 160;
 export const upsertStudySetBodySourceTextMin = 120;
 export const upsertStudySetBodySourceTextMax = 180000;
 
-export const upsertStudySetBodySummaryMax = 60000;
+export const upsertStudySetBodySummaryMax = 240000;
 
 export const upsertStudySetBodyKeyTermsMax = 100;
 
@@ -279,7 +279,7 @@ export const UpsertStudySetBody = zod.object({
   "examMinutes": zod.number().int().min(1).max(upsertStudySetBodyExamMinutesMax).optional()
 })
 
-export const upsertStudySetResponseOneTutorLessonMax = 60000;
+export const upsertStudySetResponseOneTutorLessonMax = 240000;
 
 export const upsertStudySetResponseOneTitleMax = 160;
 
@@ -288,7 +288,7 @@ export const upsertStudySetResponseOneSourceNameMax = 160;
 export const upsertStudySetResponseOneSourceTextMin = 120;
 export const upsertStudySetResponseOneSourceTextMax = 180000;
 
-export const upsertStudySetResponseOneSummaryMax = 60000;
+export const upsertStudySetResponseOneSummaryMax = 240000;
 
 export const upsertStudySetResponseOneKeyTermsMax = 100;
 

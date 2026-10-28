@@ -48,9 +48,11 @@ Mode selection belongs in the upload popup, not a duplicate "Build it your way" 
 
 Tutor Lesson should be medium-length and detailed; Note Summary should be long and very detailed; Cram Sheet should be short and concise for last-minute test preparation. Do not make them interchangeable copies.
 
-The user subsequently requested twice the word count for both Note Summary and Tutor Lesson, leaving other modes unchanged. Keep source grounding and avoid filler for short notes.
+The user requested a second doubling of Note Summary and Tutor Lesson, and now also doubled Cram Sheet. Approved targets for substantial sources are summary 11,200–18,000 words, tutor 7,200–12,800 words, and concise cram bullets up to 360 words. Keep source grounding and avoid filler for short notes.
 
-**Why:** The user explicitly asked to multiply both prose modes' word counts by two.
+**Why:** The user explicitly approved these new targets after being told the earlier doubling was already in place.
+
+**How to apply:** Treat these as generation targets, not guaranteed output lengths; preserve completed work and explain provider limits. Do not automatically regenerate saved sets.
 
 The later Studley reference clarifies that "medium" is relative: substantial multi-topic tutor lessons should resemble the supplied ~3,200-word, 14-page teaching document, not a 500–800-word overview. Keep summaries more comprehensive and cram sheets brief.
 
@@ -83,6 +85,12 @@ Retry fast transient provider failures with a bounded budget. Permit just one re
 Optional depth expansion must not discard already generated study materials on transient service failure. Preserve the original generated section with an explicit visible notice that extra detail was unavailable; keep strict validation of requested exam questions.
 
 Give optional expansion a separate short deadline and stop the entire expansion pass on service failure, including in-flight siblings and unscheduled sections. Preserve completed expansions and remaining drafts.
+
+Share expansion time across selected prose modes rather than finishing one whole document before starting the next.
+
+**Why:** A live reference check expanded the tutor lesson while a slow transient provider failure exhausted the shared budget before summary expansion, leaving the summary near its short initial draft.
+
+**How to apply:** Alternate modes while respecting original section order, bounded concurrency and the overall deadline. Larger token budgets and prompts alone do not prove that larger output targets were reached.
 
 **Why:** Limiting concurrency alone can extend serial waits, and rejecting a Promise.all does not cancel sibling provider requests. Optional detail must not keep work running after the usable initial material is ready and the provider is failing.
 
