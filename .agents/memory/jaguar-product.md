@@ -8,9 +8,9 @@ The product name is just "Jaguar", with dark surfaces and two muted selectable a
 
 Avoid the stacked generated-app appearance: violet glow, huge tight headlines, tiny all-caps monospace labels, and repeated large rounded cards with tinted icon squares. The user wants the compact outlined jaguar logo and interface cues from their dashboard reference.
 
-**Why:** The user said people were calling the interface “AI slop” and specifically identified these combined habits.
+**Why:** The user has repeatedly asked for Jaguar’s interface and copy to feel less AI-generated.
 
-**How to apply:** Retain Jaguar identity and study functionality while using restrained accents, ordinary sentence-case labels, and varied, less boxed layouts.
+**How to apply:** Retain Jaguar identity and study functionality while using restrained accents, ordinary sentence-case labels, and varied, less boxed layouts. Keep copy plain, specific, and conversational; avoid generic product slogans and generator jargon.
 
 The user approved the refined dashboard direction: matte dark surfaces, a compact outlined jaguar mark, serif headline, and unboxed upload area with exam/saved-set information alongside it.
 

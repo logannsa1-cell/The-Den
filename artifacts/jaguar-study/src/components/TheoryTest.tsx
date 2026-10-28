@@ -10,12 +10,12 @@ const EMPTY: Draft = { answers: {}, revealed: {}, marks: {} };
 export function TheoryTest({ questions, storageKey, clean }: { questions: TheoryQuestion[]; storageKey: string; clean: (s: string) => string }) {
   const [draft, setDraft] = useState<Draft>(() => ({ ...EMPTY, ...readJson<Draft>(storageKey, EMPTY) }));
   useEffect(() => { writeJson(storageKey, draft); }, [storageKey, draft]);
-  if (!questions.length) return <div className="empty-state"><strong>No theory questions in this set</strong><p>Generate again with Theory Test selected.</p></div>;
+  if (!questions.length) return <div className="empty-state"><strong>No theory questions here</strong><p>Choose Theory test when you make the set.</p></div>;
   const marks = Object.values(draft.marks);
   return (
     <div className="theory" data-testid="theory-test">
-      <p className="helper">Write your own answer for each part. Drafts save on this device. Reveal the model answer when ready and mark yourself honestly. Nothing is graded automatically.</p>
-      {marks.length > 0 && <p className="self-tally" data-testid="text-self-tally">Self review: {marks.filter((m) => m === 'got').length} got it · {marks.filter((m) => m === 'partly').length} partly · {marks.filter((m) => m === 'missed').length} missed</p>}
+      <p className="helper">Write your answer for each part. Your draft saves on this device. Reveal the sample answer when you’re ready, then mark how you did.</p>
+      {marks.length > 0 && <p className="self-tally" data-testid="text-self-tally">Your check: {marks.filter((m) => m === 'got').length} right · {marks.filter((m) => m === 'partly').length} partly right · {marks.filter((m) => m === 'missed').length} missed</p>}
       {questions.map((q, qi) => {
         const shown = !!draft.revealed[qi];
         return (

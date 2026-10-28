@@ -43,7 +43,7 @@ function readModes(userId: string): StudyMode[] {
 function friendlyError(cause: unknown) {
   const msg = cause instanceof Error ? cause.message : '';
   if (/^429\b/.test(msg)) return 'Too many generation requests. Wait before retrying; if this continues, the app owner should check the service quota. Your files are retained.';
-  return msg || 'Generation failed. Your notes and files are still here. Try again.';
+  return msg || 'Couldn’t make your study materials just yet. Your files are still here. Try again.';
 }
 
 export default function Workspace() {
@@ -164,7 +164,7 @@ export default function Workspace() {
     if (reading) return setError('Wait for your files to finish reading.');
     if (files.some((file) => file.status === 'error')) return setError('Remove or replace files that could not be read before generating. All included files must be readable.');
     const sourceText = combineSources(files);
-    if (sourceText.replace(/=== Source[^\n]*===/g, '').trim().length < 120) return setError('Upload a readable file containing at least 120 characters of course material.');
+    if (sourceText.replace(/=== Source[^\n]*===/g, '').trim().length < 120) return setError('There isn’t enough readable text in these files. Try a longer note or a text-based PDF.');
     if (sourceText.length > MAX_SOURCE_CHARS) return setError(`Combined sources are over ${MAX_SOURCE_CHARS.toLocaleString()} characters. Remove a file or upload a smaller document.`);
     const sourceName = sourceLabel(files);
     submitting.current = true;
@@ -317,7 +317,7 @@ export default function Workspace() {
       <main className="main-area">
         <header className="topbar">
           <div className="mobile-brand"><BrandLockup size={30} /></div>
-          <div className="crumb">{settingsOpen ? 'Settings' : view === 'study' ? 'Your study set' : 'Account-connected study sets'}</div>
+          <div className="crumb">{settingsOpen ? 'Settings' : view === 'study' ? 'Study set' : 'Study sets'}</div>
           <div className="top-status">
             <span className="mobile-only"><ThemeSwitcher compact /></span>
             <span className="local-pill"><span className="status-dot" /> Account sync</span>
@@ -347,7 +347,7 @@ export default function Workspace() {
             </nav>
             <div className="study-stage" ref={outputRef}>
               {generating ? (
-                <div className="panel"><JaguarRunner label={`Reading your notes and writing ${pendingModes.length} ${pendingModes.length === 1 ? 'mode' : 'modes'}. Larger files may take longer.`} /></div>
+                <div className="panel"><JaguarRunner label={`Putting your notes into ${pendingModes.length} ${pendingModes.length === 1 ? 'format' : 'formats'}. Larger files can take a little longer.`} /></div>
               ) : studyError ? (
                 <div className="panel study-error" role="alert" data-testid="error-generation">
                   <div className="error-message"><AlertCircle size={13} /> {studyError}</div>
@@ -366,7 +366,7 @@ export default function Workspace() {
                   <StudyOutput set={active} userId={userId} synced={remoteIds.has(active.id)} clean={clean} sources={activeSources} onReattach={(f) => void reattach(f)} onRate={rate} onClose={() => { setActive(null); setView('builder'); }} notify={setNotice} tab={studyTab} onTab={setStudyTab} />
                 </>
               ) : (
-                <div className="empty-state"><div><strong>No set is open</strong><p>Open a saved set or bring a new note.</p><button className="quiet-button" type="button" onClick={backToBuilder} data-testid="button-empty-back">Go to your sets</button></div></div>
+                <div className="empty-state"><div><strong>You haven’t opened a set yet</strong><p>Open a saved set, or add a file to make a new one.</p><button className="quiet-button" type="button" onClick={backToBuilder} data-testid="button-empty-back">Go to your sets</button></div></div>
               )}
             </div>
           </div>
@@ -397,8 +397,8 @@ export default function Workspace() {
             </div>
           </section>
           <section className="builder-mode-entry">
-            <h2>Next, choose how you want to study</h2>
-            <button className="primary-button" type="button" onClick={() => setModeDialog(true)} disabled={busy} data-testid="button-open-modes">Choose study modes <ChevronRight size={16} /></button>
+            <h2>Pick what you need</h2>
+            <button className="primary-button" type="button" onClick={() => setModeDialog(true)} disabled={busy} data-testid="button-open-modes">Choose materials <ChevronRight size={16} /></button>
           </section>
           </div>
           <aside className="builder-aside" aria-label="Your exam and saved sets">
@@ -408,7 +408,7 @@ export default function Workspace() {
             <div className="section-heading"><h2 id="saved-heading">Saved sets</h2>{savedSets.length > 0 && <span className="step-label">{savedSets.length} saved</span>}</div>
             {remoteQuery.isLoading ? <div className="loading-saved" role="status" aria-label="Loading"><span /><span /><span /></div>
               : remoteQuery.isError ? <div className="error-message" role="alert">Your account sets could not load. <button className="inline-retry" type="button" onClick={() => void remoteQuery.refetch()} data-testid="button-retry-study-sets">Try again</button></div>
-              : savedSets.length === 0 ? <div className="empty-state" data-testid="empty-saved"><div><strong>Nothing saved yet</strong><p>Sets you build will show up here.</p></div></div>
+              : savedSets.length === 0 ? <div className="empty-state" data-testid="empty-saved"><div><strong>No study sets yet</strong><p>The ones you make will show up here.</p></div></div>
               : (
                 <div className="saved-grid saved-rows">
                   {savedSets.map((set) => {

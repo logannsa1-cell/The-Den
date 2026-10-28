@@ -6,7 +6,7 @@ import { BrandLockup, ThemeSwitcher } from '@/components/Brand';
 type SampleMode = 'summary' | 'tutor' | 'cram' | 'objective';
 const SAMPLE_SOURCE = `Photosynthesis happens in the chloroplast. The light-dependent reactions take place on the thylakoid membrane: light energy splits water, releasing oxygen, and produces ATP and NADPH. The Calvin cycle takes place in the stroma, where ATP and NADPH are used to fix carbon dioxide into glucose.`;
 const SAMPLE_TABS: { id: SampleMode; label: string }[] = [
-  { id: 'summary', label: 'Note Summary' }, { id: 'tutor', label: 'Tutor Lesson' }, { id: 'cram', label: 'Cram Sheet' }, { id: 'objective', label: 'Objective' },
+  { id: 'summary', label: 'Note summary' }, { id: 'tutor', label: 'Tutor lesson' }, { id: 'cram', label: 'Cram sheet' }, { id: 'objective', label: 'Objective questions' },
 ];
 
 function SampleBody({ mode }: { mode: SampleMode }) {
@@ -48,21 +48,21 @@ export default function Landing() {
         <div className="landing-nav-actions">
           <ThemeSwitcher compact />
           <Link href="/sign-in" className="landing-signin" data-testid="link-sign-in">Sign in</Link>
-          <Link href="/sign-up" className="landing-cta" data-testid="link-sign-up">Get started</Link>
+          <Link href="/sign-up" className="landing-cta" data-testid="link-sign-up">Create account</Link>
         </div>
       </nav>
 
       <section className="calm-hero">
         <h1 data-testid="text-landing-heading">Use your notes to study well</h1>
-        <p>Bring a PDF or slide deck. Read a summary or lesson, then try questions with the original page close by.</p>
+        <p>Add a PDF or slide deck. Read a summary or lesson, then try questions with the source open beside it.</p>
         <div className="hero-actions">
-          <Link href="/sign-up" className="landing-cta" data-testid="link-start-studying">Start studying <ArrowRight size={15} /></Link>
-          <Link href="/sign-in" className="hero-secondary" data-testid="link-returning-student">I have an account</Link>
+          <Link href="/sign-up" className="landing-cta" data-testid="link-start-studying">Create account <ArrowRight size={15} /></Link>
+          <Link href="/sign-in" className="hero-secondary" data-testid="link-returning-student">Sign in instead</Link>
         </div>
       </section>
 
       <section className="sample-preview" aria-labelledby="sample-heading">
-        <div className="sample-label"><h2 id="sample-heading">Preview: Photosynthesis</h2><span>Example content</span></div>
+        <div className="sample-label"><h2 id="sample-heading">Example: Photosynthesis</h2><span>Sample only</span></div>
         <div className="sample-tabs" role="tablist" aria-label="Example modes">
           {SAMPLE_TABS.map((t) => <button key={t.id} type="button" role="tab" aria-selected={mode === t.id} className={mode === t.id ? 'on' : ''} onClick={() => setMode(t.id)} data-testid={`tab-sample-${t.id}`}>{t.label}</button>)}
         </div>
@@ -75,11 +75,11 @@ export default function Landing() {
       <section className="calm-section">
         <h2>Choose how to study</h2>
         <dl className="calm-list">
-          <div><dt>Note Summary</dt><dd>Long, detailed notes with headings. Hide them, recall, then reveal.</dd></div>
-          <div><dt>Tutor Lesson</dt><dd>A teaching walk-through with examples, written from your material.</dd></div>
-          <div><dt>Cram Sheet</dt><dd>Short points for the night before.</dd></div>
-          <div><dt>Timed exam</dt><dd>Section A objective and Section B theory on a running clock. Answers stay hidden until you submit.</dd></div>
-          <div><dt>Objective and theory practice</dt><dd>A to E questions with explanations, and a/b/c theory parts with model answers.</dd></div>
+          <div><dt>Note summary</dt><dd>Detailed notes, split into sections. Hide them to check what you remember.</dd></div>
+          <div><dt>Tutor lesson</dt><dd>A step-by-step explanation, with examples where they help.</dd></div>
+          <div><dt>Cram sheet</dt><dd>The points to go over before exam day.</dd></div>
+          <div><dt>Timed exam</dt><dd>Multiple choice, then written questions. See the answers after you submit.</dd></div>
+          <div><dt>Practice questions</dt><dd>Choose A–E for multiple choice, or write answers to parts a, b and c.</dd></div>
         </dl>
       </section>
 
