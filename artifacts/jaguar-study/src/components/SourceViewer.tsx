@@ -160,14 +160,13 @@ export function SourceViewer({ sources, onReattach }: Props) {
   useEffect(() => { setPage(1); setCount(0); }, [index]);
   useEffect(() => { setIndex(0); }, [sources]);
 
-  if (sources === null) return <div className="viewer-shell"><div className="viewer-empty"><LoaderCircle size={16} className="spin-icon" /> Looking for your files on this device</div></div>;
+  if (sources === null) return <div className="viewer-shell"><div className="viewer-empty"><LoaderCircle size={16} className="spin-icon" aria-hidden="true" /> Checking this device for your files</div></div>;
   if (!previewable.length) {
     return (
       <div className="viewer-shell">
         <div className="viewer-empty" data-testid="text-reattach">
-          <FileWarning size={20} />
-          <strong>{sources.length ? 'No PDF or slides to preview' : 'Reattach source to preview'}</strong>
-          <span>{sources.length ? 'Text-based files have no page view. Your notes are still on the left.' : 'Original files stay on the device they were added from. Reattach the PDF or PPTX here to see pages beside your notes.'}</span>
+          <strong>{sources.length ? 'No PDF or slides to preview' : 'Source not on this device'}</strong>
+          <span>{sources.length ? 'Text-based files have no page view. Your notes are still on the left.' : 'Original files stay on the device they were added from. Attach the PDF or PPTX to see pages beside your notes.'}</span>
           <button className="quiet-button" type="button" onClick={() => attach.current?.click()} data-testid="button-reattach"><Paperclip size={13} /> Reattach PDF or PPTX</button>
           <input ref={attach} className="sr-only" type="file" multiple accept=".pdf,.pptx" onChange={(e) => { onReattach(Array.from(e.target.files ?? [])); e.target.value = ''; }} data-testid="input-reattach" />
         </div>

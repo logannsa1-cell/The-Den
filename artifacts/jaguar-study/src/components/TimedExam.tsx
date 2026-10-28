@@ -103,9 +103,9 @@ export function TimedExam({ title, questions, theory, minutes, storageKey, clean
     return (
       <div className="exam-run paper" data-testid="exam-running">
         <div className="exam-top exam-sticky">
-          <div className="section-switch" role="tablist">
-            <button type="button" role="tab" aria-selected={state.section === 'A'} className={state.section === 'A' ? 'on' : ''} onClick={() => set(() => ({ section: 'A' }))} data-testid="tab-section-a">Section A <small>{answered}/{questions.length}</small></button>
-            <button type="button" role="tab" aria-selected={state.section === 'B'} className={state.section === 'B' ? 'on' : ''} onClick={() => set(() => ({ section: 'B' }))} data-testid="tab-section-b">Section B <small>{picks.length}/4</small></button>
+          <div className="section-switch" role="group" aria-label="Exam sections">
+            <button type="button" aria-pressed={state.section === 'A'} className={state.section === 'A' ? 'on' : ''} onClick={() => set(() => ({ section: 'A' }))} data-testid="tab-section-a">Section A <small>{answered}/{questions.length}</small></button>
+            <button type="button" aria-pressed={state.section === 'B'} className={state.section === 'B' ? 'on' : ''} onClick={() => set(() => ({ section: 'B' }))} data-testid="tab-section-b">Section B <small>{picks.length}/4</small></button>
           </div>
           <div className={`exam-clock${low ? ' low' : ''}${critical ? ' critical' : ''}`} data-testid="status-exam-clock">
             <span className="countdown" role="timer" aria-live="off" aria-label={`Time left ${fmt(remaining)}`} data-testid="text-countdown"><Timer size={13} /> {fmt(remaining)}<small>left</small></span>
