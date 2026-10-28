@@ -6,6 +6,12 @@ The product name is just "Jaguar", with black and purple as the default, Rose/Oc
 
 **Why:** The user explicitly requested this direction and replaced the earlier green design.
 
+Avoid the stacked generated-app appearance: violet glow, huge tight headlines, tiny all-caps monospace labels, and repeated large rounded cards with tinted icon squares. The user wants the compact outlined jaguar logo and interface cues from their dashboard reference.
+
+**Why:** The user said people were calling the interface “AI slop” and specifically identified these combined habits.
+
+**How to apply:** Retain Jaguar identity and study functionality while using restrained accents, ordinary sentence-case labels, and varied, less boxed layouts.
+
 Notes must be analyzed and synthesized into readable exam material, not just extracted text shown as notes. Multiple source files should form one study set; summary, timed exam, objective A–E questions (1–50), theory questions with a/b/c parts, Tutor Lesson and Cram Sheet must be selectable together after upload.
 
 Multi-file sets must stay organised by subject, explaining each subject's supplied weeks in order before the next subject. Exams and theory use subject sections in one combined paper, not separate papers.
