@@ -16,6 +16,7 @@ import { useProfileMedia } from '@/lib/profile-media';
 import { SourceUploader, combineSources, MAX_SOURCE_CHARS, type SourceEntry } from '@/components/SourceUploader';
 import { StudyOutput, setModes, type OutputTab } from '@/components/StudyOutput';
 import { deleteSources, loadSources, saveSources, sourceKey, type StoredSource } from '@/lib/source-store';
+import { readMigrationPreference } from '@/lib/migration-preference';
 
 const STORAGE_KEY = 'jaguar-study-sets-v1';
 
@@ -122,8 +123,11 @@ export default function Workspace() {
     setActive(null); setActiveSources(null); setFiles([]); setView('builder'); setStudyError(''); setError(''); setTried(false);
     setModesRaw(userId ? readModes(userId) : [...ALL_MODES]); readyCount.current = 0;
     if (!userId) { setMigration(null); return; }
-    const d = localStorage.getItem(`jaguar-study-migration-${userId}`);
-    setMigration(d === 'sync' ? 'sync' : d === 'local' ? 'local' : 'pending');
+    const stored = readMigrationPreference(`jaguar-study-migration-${userId}`, (key) => localStorage.getItem(key));
+    setMigration(stored.preference);
+    if (!stored.available) {
+      setError('Browser storage is unavailable. Account sets can still load, but new work cannot be backed up on this device. Allow site storage before starting an exam.');
+    }
   }, [userId]);
   useEffect(() => { if (!notice) return; const t = window.setTimeout(() => setNotice(''), 2800); return () => window.clearTimeout(t); }, [notice]);
   useEffect(() => {
