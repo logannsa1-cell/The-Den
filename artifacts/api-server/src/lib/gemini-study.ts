@@ -98,8 +98,8 @@ export async function generateStudyContent(options: {
   // Structured multi-mode responses can compress prose even when asked for depth.
   // Expand only undersized selected prose, independently, with the original source.
   const formats = [
-    { mode: "tutor", field: "tutorLesson", minimum: Math.min(9000, Math.floor(sourceWords * 3.2)), target: "9000–14000", instruction: "Teach every major topic in developed paragraphs, explaining what, why and how. Include step-by-step worked examples, clear definitions, misconceptions, Think About It questions with explained answers later in each section, and a brief recap." },
-    { mode: "summary", field: "summary", minimum: Math.min(6000, Math.floor(sourceWords * 4)), target: "6000–8000", instruction: "Write detailed reference notes covering EVERY major source topic, including later topics. Explain definitions, mechanisms, steps, causes and consequences, relationships, examples, comparisons, exceptions and exam pitfalls in developed prose, not a bullet outline. Stay focused and avoid repeating the same explanation." },
+    { mode: "tutor", field: "tutorLesson", minimum: Math.min(5000, Math.floor(sourceWords * 3.2)), target: "about 5000", instruction: "Teach every major topic in developed paragraphs, explaining what, why and how. Include step-by-step worked examples, clear definitions, misconceptions, Think About It questions with explained answers later in each section, and a brief recap." },
+    { mode: "summary", field: "summary", minimum: Math.min(7000, Math.floor(sourceWords * 4)), target: "about 7000", instruction: "Write detailed reference notes covering EVERY major source topic, including later topics. Explain definitions, mechanisms, steps, causes and consequences, relationships, examples, comparisons, exceptions and exam pitfalls in developed prose, not a bullet outline. Stay focused and avoid repeating the same explanation." },
   ];
   const plans = formats.filter(({ mode, field, minimum }) =>
     options.modes.includes(mode) && sourceWords >= 300 &&
@@ -161,7 +161,7 @@ export async function generateStudyContent(options: {
   }
   for (const { field, expanded, minimum } of plans) {
     const completeText = expanded.join("\n\n");
-    const didNotMeetSubstantialTarget = minimum >= 6000 && wordCount(completeText) < minimum;
+    const didNotMeetSubstantialTarget = minimum >= 5000 && wordCount(completeText) < minimum;
     material[field] = didNotMeetSubstantialTarget
       ? `${completeText}\n\n> **The ${minimum.toLocaleString("en-US")}-word target was not met.** The current notes are preserved; try generating again for a fuller explanation.`
       : completeText;

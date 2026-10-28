@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { generateStudyContent } from "./gemini-study";
 
-test("summary targets 6,000 words and tutor lesson 9,000 for substantial sources", async () => {
+test("summary targets 7,000 words and tutor lesson 5,000 for substantial sources", async () => {
   const originalFetch = globalThis.fetch;
   const configs: { systemInstruction: { parts: { text: string }[] }; generationConfig: { maxOutputTokens: number; responseJsonSchema?: unknown } }[] = [];
   const draft = {
@@ -16,7 +16,7 @@ test("summary targets 6,000 words and tutor lesson 9,000 for substantial sources
       configs.push(request);
       return Response.json({ candidates: [{
         finishReason: "STOP",
-         content: { parts: [{ text: configs.length === 1 ? JSON.stringify(draft) : `## Biology\n${"Expanded ".repeat(9500)}` }] },
+         content: { parts: [{ text: configs.length === 1 ? JSON.stringify(draft) : `## Biology\n${"Expanded ".repeat(configs.length === 2 ? 5100 : 7100)}` }] },
       }] });
     };
     const result = await generateStudyContent({
@@ -26,18 +26,18 @@ test("summary targets 6,000 words and tutor lesson 9,000 for substantial sources
     assert.equal(configs.length, 3, "drafts above the old thresholds still require expansion");
     assert.equal(configs[0].generationConfig.maxOutputTokens, 64000);
     const schema = JSON.stringify(configs[0].generationConfig.responseJsonSchema);
-    assert.match(schema, /6000–8000/);
-    assert.match(schema, /9000–14000/);
+    assert.match(schema, /about 7000 words/);
+    assert.match(schema, /about 5000 words/);
     assert.match(schema, /at most 360 words/);
     assert.match(schema, /Return 16 to 24 items/);
-    assert.match(configs[1].systemInstruction.parts[0].text, /about 9000 words in this section/);
-    assert.match(configs[2].systemInstruction.parts[0].text, /about 6000 words in this section/);
-    assert.match(configs[1].systemInstruction.parts[0].text, /9000 words/);
-    assert.match(configs[2].systemInstruction.parts[0].text, /6000 words/);
+    assert.match(configs[1].systemInstruction.parts[0].text, /about 5000 words in this section/);
+    assert.match(configs[2].systemInstruction.parts[0].text, /about 7000 words in this section/);
+    assert.match(configs[1].systemInstruction.parts[0].text, /5000 words/);
+    assert.match(configs[2].systemInstruction.parts[0].text, /7000 words/);
     assert.equal(configs[1].generationConfig.maxOutputTokens, 24000);
     const material = JSON.parse(result.choices[0].message.content!);
-    assert.ok(material.tutorLesson.split(/\s+/).filter(Boolean).length >= 9000);
-    assert.ok(material.summary.split(/\s+/).filter(Boolean).length >= 6000);
+    assert.ok(material.tutorLesson.split(/\s+/).filter(Boolean).length >= 5000);
+    assert.ok(material.summary.split(/\s+/).filter(Boolean).length >= 7000);
     assert.deepEqual(material.cramPoints, draft.cramPoints);
     configs.length = 0;
     await generateStudyContent({
@@ -89,8 +89,8 @@ test("failed detail expansion retains all drafts and questions with a visible no
     assert.ok(material.tutorLesson.startsWith(draft.tutorLesson));
     assert.match(material.summary, /Detail expansion unavailable/);
     assert.match(material.tutorLesson, /Detail expansion unavailable/);
-    assert.match(material.summary, /The 6,000-word target was not met/);
-    assert.match(material.tutorLesson, /The 9,000-word target was not met/);
+    assert.match(material.summary, /The 7,000-word target was not met/);
+    assert.match(material.tutorLesson, /The 5,000-word target was not met/);
     assert.deepEqual(material.questions, draft.questions);
     assert.deepEqual(material.cramPoints, draft.cramPoints);
   } finally { globalThis.fetch = originalFetch; }
