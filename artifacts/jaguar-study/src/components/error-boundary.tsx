@@ -4,6 +4,7 @@ import {
   type ErrorInfo,
   type ReactNode,
 } from 'react';
+import { crashDiagnostic } from '../lib/crash-diagnostic';
 
 export interface ErrorFallbackProps {
   error: Error;
@@ -43,8 +44,7 @@ function DefaultFallback({ error, resetError }: ErrorFallbackProps) {
           Something went wrong
         </h1>
         <p className="mt-2 text-sm text-gray-600">
-          This part of the app hit an error. The rest of the app is still
-          running.
+          Jaguar could not open this page. Retrying does not delete your saved work.
         </p>
         {/* Dev only: messages can carry API responses and other internals. */}
         {import.meta.env.DEV ? (
@@ -52,6 +52,11 @@ function DefaultFallback({ error, resetError }: ErrorFallbackProps) {
             {error.message || String(error)}
           </pre>
         ) : null}
+        <details className="mt-4 text-left text-gray-800">
+          <summary className="cursor-pointer text-sm">Error details to share</summary>
+          <p className="mt-2 text-xs">Share these details if retrying does not help. They contain no notes or account details.</p>
+          <pre className="mt-2 overflow-x-auto rounded bg-gray-100 p-3 text-xs">{crashDiagnostic(error)}</pre>
+        </details>
         <button
           type="button"
           onClick={resetError}

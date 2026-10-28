@@ -20,7 +20,7 @@
 :root[data-theme="rose"] { --jaguar-hue: 60deg; }
 :root[data-theme="ocean"] { --jaguar-hue: -65deg; }
 :root[data-theme="jungle"] { --jaguar-hue: -145deg; }
-img[src*="jaguar-icon.svg"] { filter: hue-rotate(var(--jaguar-hue)); }
+img[src*="jaguar-icon.svg"], img[src*="jaguar-outline.svg"] { filter: hue-rotate(var(--jaguar-hue)); }
 
 @theme inline {
   --color-background: hsl(var(--background));
