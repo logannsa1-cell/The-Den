@@ -12,6 +12,12 @@ Avoid the stacked generated-app appearance: violet glow, huge tight headlines, t
 
 **How to apply:** Retain Jaguar identity and study functionality while using restrained accents, ordinary sentence-case labels, and varied, less boxed layouts.
 
+The user approved the refined dashboard direction: matte dark surfaces, a compact outlined jaguar mark, serif headline, and unboxed upload area with exam/saved-set information alongside it.
+
+**Why:** The user explicitly approved applying the canvas design to the working website.
+
+**How to apply:** Use that approved direction for future dashboard refinements rather than restoring glow-heavy cards; keep actual account and generation behavior, not mockup placeholders.
+
 Notes must be analyzed and synthesized into readable exam material, not just extracted text shown as notes. Multiple source files should form one study set; summary, timed exam, objective A–E questions (1–50), theory questions with a/b/c parts, Tutor Lesson and Cram Sheet must be selectable together after upload.
 
 Multi-file sets must stay organised by subject, explaining each subject's supplied weeks in order before the next subject. Exams and theory use subject sections in one combined paper, not separate papers.
@@ -35,6 +41,10 @@ Mode selection belongs in the upload popup, not a duplicate "Build it your way" 
 **Why:** The user explicitly requested a Studley-like selection-to-study flow.
 
 Tutor Lesson should be medium-length and detailed; Note Summary should be long and very detailed; Cram Sheet should be short and concise for last-minute test preparation. Do not make them interchangeable copies.
+
+The user subsequently requested twice the word count for both Note Summary and Tutor Lesson, leaving other modes unchanged. Keep source grounding and avoid filler for short notes.
+
+**Why:** The user explicitly asked to multiply both prose modes' word counts by two.
 
 The later Studley reference clarifies that "medium" is relative: substantial multi-topic tutor lessons should resemble the supplied ~3,200-word, 14-page teaching document, not a 500–800-word overview. Keep summaries more comprehensive and cram sheets brief.
 

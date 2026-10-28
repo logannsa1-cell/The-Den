@@ -291,7 +291,7 @@ export default function Workspace() {
     <div className={`app-shell${view === 'study' && !settingsOpen ? ' in-study' : ''}`}>
       <RosetteCorners />
       <aside className="sidebar" aria-label="Jaguar workspace">
-        <BrandLockup size={42} caption="exam prep" />
+        <BrandLockup size={31} />
         <nav className="side-nav" aria-label="Sections" onClick={(event) => {
           if (!settingsOpen) return;
           const target = (event.target as HTMLElement).closest('button')?.dataset.testid;
@@ -315,7 +315,7 @@ export default function Workspace() {
       <main className="main-area">
         <header className="topbar">
           <div className="mobile-brand"><BrandLockup size={30} /></div>
-          <div className="crumb">WORKSPACE <span>/</span> <strong>{settingsOpen ? 'Settings' : view === 'study' ? 'Study view' : 'Study'}</strong></div>
+          <div className="crumb">{settingsOpen ? 'Settings' : view === 'study' ? 'Your study set' : 'Account-connected study sets'}</div>
           <div className="top-status">
             <span className="mobile-only"><ThemeSwitcher compact /></span>
             <span className="local-pill"><span className="status-dot" /> Account sync</span>
@@ -357,8 +357,8 @@ export default function Workspace() {
             </div>
           </div>
         </div>
-        <div className="workspace" hidden={settingsOpen || view !== 'builder'}>
-          <section style={{ marginBottom: 30 }}>
+        <div className="workspace builder-workspace" hidden={settingsOpen || view !== 'builder'}>
+          <section className="builder-welcome">
             <h1 id="welcome-title" data-testid="text-workspace-heading">Exam is soon ooo</h1>
             <p className="welcome-copy">Bring your note so you can study</p>
           </section>
@@ -374,18 +374,25 @@ export default function Workspace() {
             </section>
           )}
 
+          <div className="builder-workbench">
+          <div className="builder-create">
           <section aria-label="Create a study set" className="reveal">
             <div className="panel source-panel">
-              <div className="panel-head"><h2 className="panel-title">Bring your note</h2><button className="quiet-button" type="button" onClick={() => setModeDialog(true)} data-testid="button-open-modes"><SlidersHorizontal size={13} /> Choose modes <ChevronRight size={13} /></button></div>
+              <div className="panel-head"><h2 className="panel-title">Bring your note</h2></div>
               <SourceUploader files={files} onFiles={setFiles} disabled={busy} />
               {error && !modeDialog && <div className="error-message" role="alert" data-testid="error-builder"><AlertCircle size={13} /> {error}</div>}
             </div>
           </section>
-
+          <section className="builder-mode-entry">
+            <h2>Next, choose how you want to study</h2>
+            <button className="primary-button" type="button" onClick={() => setModeDialog(true)} disabled={busy} data-testid="button-open-modes">Choose study modes <ChevronRight size={16} /></button>
+          </section>
+          </div>
+          <aside className="builder-aside" aria-label="Your exam and saved sets">
           <ExamSchedule userId={userId} />
 
           <section id="saved-sets" aria-labelledby="saved-heading">
-            <div className="section-heading"><h2 id="saved-heading">Saved sets</h2>{savedSets.length > 0 && <span className="step-label">{savedSets.length} SAVED</span>}</div>
+            <div className="section-heading"><h2 id="saved-heading">Saved sets</h2>{savedSets.length > 0 && <span className="step-label">{savedSets.length} saved</span>}</div>
             {remoteQuery.isLoading ? <div className="loading-saved" role="status" aria-label="Loading"><span /><span /><span /></div>
               : remoteQuery.isError ? <div className="error-message" role="alert">Your account sets could not load. <button className="inline-retry" type="button" onClick={() => void remoteQuery.refetch()} data-testid="button-retry-study-sets">Try again</button></div>
               : savedSets.length === 0 ? <div className="empty-state" data-testid="empty-saved"><div><span className="empty-state-icon"><Bookmark size={17} /></span><strong>Nothing saved yet</strong><p>Your first set will wait for you here.</p></div></div>
@@ -396,7 +403,7 @@ export default function Workspace() {
                     return (
                       <article className={`saved-card${active?.id === set.id ? ' current' : ''}`} key={set.id} data-testid={`card-study-set-${set.id}`}>
                         <div className="saved-card-top">
-                          <span className={`step-label${remote ? '' : ' local-only-label'}`}>{remote ? 'SYNCED' : 'THIS BROWSER'}</span>
+                           <span className={`step-label${remote ? '' : ' local-only-label'}`}>{remote ? 'Synced' : 'This browser'}</span>
                           <div className="saved-actions">
                             {!remote && <button className="icon-button" type="button" onClick={() => void syncOne(set)} disabled={upsert.isPending} aria-label="Sync to account" data-testid={`button-sync-${set.id}`}><Cloud size={13} /></button>}
                             <button className="icon-button danger" type="button" onClick={() => deleteSet(set)} aria-label={`Delete ${clean(set.title)}`} data-testid={`button-delete-${set.id}`}><Trash2 size={13} /></button>
@@ -413,7 +420,8 @@ export default function Workspace() {
                 </div>
               )}
           </section>
-
+          </aside>
+          </div>
         </div>
       </main>
       <ModeDialog open={modeDialog} modes={modes} onModes={setModesState} onClose={() => setModeDialog(false)} onGenerate={() => void onGenerate()} busy={generating} error={error}
