@@ -145,6 +145,92 @@ body::after { display: none; }
   .calm-list div { grid-template-columns: 1fr; gap: 4px; }
 }
 
+/* Workspace chrome follows the compact, direct Studley study shell. */
+.app-shell {
+  --app-font-sans: 'DM Sans', ui-sans-serif, sans-serif;
+  font-family: var(--app-font-sans);
+}
+.app-shell :is(button, input, textarea, select, h1, h2, h3, h4, p, label, strong, small, .crumb, .saved-meta, .countdown-block strong) {
+  font-family: var(--app-font-sans);
+}
+.app-shell .brand-name { font: 600 22px/1 var(--app-font-sans); letter-spacing: -.045em; }
+.app-shell .sidebar { gap: 34px; }
+.app-shell.in-study .sidebar > .brand-lockup { display: none; }
+.app-shell.in-study .sidebar { gap: 0; padding-top: 14px; }
+.app-shell.in-study .side-nav { gap: 5px; }
+.app-shell.in-study .side-nav { display: flex; flex-direction: column; }
+.app-shell.in-study .side-nav [data-testid='nav-active'] { order: 0; }
+.app-shell.in-study .side-nav .side-modes { order: 1; }
+.app-shell.in-study .side-nav [data-testid='nav-create'] { order: 2; }
+.app-shell.in-study .side-nav [data-testid='nav-saved'] { order: 3; }
+.app-shell.in-study .nav-item { min-height: 40px; border-radius: 6px; }
+.app-shell.in-study .nav-item.active { background: color-mix(in srgb, var(--accent) 13%, transparent); color: var(--text); box-shadow: none; }
+.app-shell.in-study .side-modes { margin-left: 18px; padding-left: 8px; }
+.app-shell.in-study .side-modes .nav-item { min-height: 36px; padding: 7px 9px; }
+.app-shell .topbar { min-height: 58px; padding-inline: clamp(16px, 2.6vw, 34px); background: var(--bg); backdrop-filter: none; }
+.app-shell.in-study .topbar { justify-content: flex-start; }
+.app-shell.in-study .mobile-brand { display: inline-flex; flex: none; }
+.app-shell.in-study .mobile-brand .brand-lockup { gap: 8px; }
+.app-shell.in-study .mobile-brand .emblem { width: 27px !important; height: 27px !important; }
+.app-shell.in-study .mobile-brand .brand-name { font-size: 19px; }
+.app-shell.in-study .crumb { min-width: 0; flex: 1; padding-left: 18px; border-left: 1px solid var(--line); color: var(--text); font-size: 13px; font-weight: 600; letter-spacing: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.app-shell.in-study .top-status { flex: none; margin-left: auto; }
+.app-shell.in-study .topbar-back { flex: none; width: 32px; min-height: 32px; padding: 7px; border-radius: 6px; }
+.app-shell.in-study .output-head h2 { font-family: var(--app-font-sans); font-weight: 600; letter-spacing: -.025em; }
+.app-shell .builder-welcome h1,
+.app-shell #welcome-title,
+.app-shell .builder-workbench :is(.panel-title, h2),
+.app-shell .section-heading h2,
+.app-shell .saved-open h3,
+.app-shell .output-head h2,
+.app-shell .rich-notes :is(h1, h2, h3, h4),
+.app-shell .quiz-prompt,
+.app-shell .theory-card h3,
+.app-shell .flashcard strong,
+.app-shell .paper-head h3,
+.app-shell .exam-intro h3,
+.app-shell .score-card h3,
+.app-shell .profile-copy h1,
+.app-shell .profile-avatar {
+  font-family: var(--app-font-sans);
+}
+
+/* Notes should reflow within the reading pane; only wide tables and equations scroll locally. */
+.app-shell .study-split,
+.app-shell .study-pane,
+.app-shell .study-pane > [role="region"],
+.app-shell .study-pane .doc,
+.app-shell .rich-notes {
+  min-width: 0;
+  max-width: 100%;
+}
+.app-shell .study-pane { overflow-x: hidden; }
+.app-shell .rich-notes,
+.app-shell .rich-notes :is(h1, h2, h3, h4, p, li, blockquote, strong, span) {
+  overflow-wrap: anywhere;
+  word-break: normal;
+}
+.app-shell .rich-notes :is(img, video, svg) { max-width: 100%; height: auto; }
+.app-shell .notes-table-wrap { max-width: 100%; overflow-x: auto; overscroll-behavior-inline: contain; }
+.app-shell .notes-table { width: max-content; min-width: 100%; }
+.app-shell .notes-table th,
+.app-shell .notes-table td { overflow-wrap: anywhere; }
+.app-shell .notes-table thead th { white-space: normal; }
+.app-shell .display-math { max-width: 100%; overflow-x: auto; overflow-y: hidden; overscroll-behavior-inline: contain; }
+.app-shell .display-math .katex-display { width: max-content; min-width: 100%; }
+.app-shell .study-pane.is-reading { overflow-y: auto; overflow-x: hidden; }
+
+@media (max-width: 700px) {
+  .app-shell.in-study .topbar { min-height: 58px; padding-inline: 12px; gap: 8px; }
+  .app-shell.in-study .mobile-brand .brand-name { font-size: 17px; }
+  .app-shell.in-study .crumb { padding-left: 9px; font-size: 11px; }
+  .app-shell.in-study .top-status { gap: 4px; }
+  .app-shell.in-study .top-status .quiet-button { padding-inline: 7px; }
+  .app-shell.in-study .top-status [data-testid='button-settings'] { font-size: 0; gap: 0; }
+  .app-shell.in-study .top-status [data-testid='button-settings'] svg { width: 16px; height: 16px; }
+  .app-shell .rich-notes { max-width: 100%; }
+}
+
 /* Compact saved-set rows */
 .builder-aside .saved-row { display: flex; align-items: flex-start; gap: 8px; padding: 10px 6px; }
 .saved-row .saved-open { flex: 1; min-width: 0; padding: 0; }
