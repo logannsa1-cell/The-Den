@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { useClerk, useUser } from '@clerk/react';
-import { AlertCircle, ArrowLeft, BookOpen, Bookmark, CheckCircle2, ChevronRight, Cloud, FolderOpen, LogOut, Plus, RotateCcw, Settings, SlidersHorizontal, Trash2 } from 'lucide-react';
+import { AlertCircle, ArrowLeft, BookOpen, CheckCircle2, ChevronRight, Cloud, FolderOpen, LogOut, Plus, RotateCcw, Settings, SlidersHorizontal, Trash2 } from 'lucide-react';
 import {
   getListStudySetsQueryKey, useDeleteStudySet, useGenerateStudyMaterials, useListStudySets, useUpsertStudySet,
   type StudyGeneration, type StudySetInput,
@@ -369,8 +369,7 @@ export default function Workspace() {
 
           {(migration === 'pending' || legacySets.length > 0) && localOnly.length > 0 && (
             <section className="sync-choice reveal">
-              <span className="sync-choice-icon"><Cloud size={18} /></span>
-              <div className="sync-choice-copy"><h2>Earlier sets on this browser</h2><p>{localOnly.length} local {localOnly.length === 1 ? 'set' : 'sets'} found. Only import these if they belong to you. Sync them to your account, or keep them locally for this account. Nothing is removed unless saving succeeds.</p></div>
+                            <div className="sync-choice-copy"><h2>Earlier sets on this browser</h2><p>{localOnly.length} local {localOnly.length === 1 ? 'set' : 'sets'} found. Only import these if they belong to you. Sync them to your account, or keep them locally for this account. Nothing is removed unless saving succeeds.</p></div>
               <div className="sync-choice-actions">
                 <button className="primary-button" type="button" onClick={() => void syncAll()} disabled={syncing} data-testid="button-sync-local">{syncing ? 'Syncing...' : 'Sync to my account'}</button>
                 <button className="quiet-button" type="button" onClick={keepLocal} data-testid="button-keep-local">Keep on this browser</button>
@@ -399,25 +398,22 @@ export default function Workspace() {
             <div className="section-heading"><h2 id="saved-heading">Saved sets</h2>{savedSets.length > 0 && <span className="step-label">{savedSets.length} saved</span>}</div>
             {remoteQuery.isLoading ? <div className="loading-saved" role="status" aria-label="Loading"><span /><span /><span /></div>
               : remoteQuery.isError ? <div className="error-message" role="alert">Your account sets could not load. <button className="inline-retry" type="button" onClick={() => void remoteQuery.refetch()} data-testid="button-retry-study-sets">Try again</button></div>
-              : savedSets.length === 0 ? <div className="empty-state" data-testid="empty-saved"><div><span className="empty-state-icon"><Bookmark size={17} /></span><strong>Nothing saved yet</strong><p>Your first set will wait for you here.</p></div></div>
+              : savedSets.length === 0 ? <div className="empty-state" data-testid="empty-saved"><div><strong>Nothing saved yet</strong><p>Your first set will wait for you here.</p></div></div>
               : (
-                <div className="saved-grid">
+                <div className="saved-grid saved-rows">
                   {savedSets.map((set) => {
                     const remote = remoteIds.has(set.id);
                     return (
-                      <article className={`saved-card${active?.id === set.id ? ' current' : ''}`} key={set.id} data-testid={`card-study-set-${set.id}`}>
-                        <div className="saved-card-top">
-                           <span className={`step-label${remote ? '' : ' local-only-label'}`}>{remote ? 'Synced' : 'This browser'}</span>
-                          <div className="saved-actions">
-                            {!remote && <button className="icon-button" type="button" onClick={() => void syncOne(set)} disabled={upsert.isPending} aria-label="Sync to account" data-testid={`button-sync-${set.id}`}><Cloud size={13} /></button>}
-                            <button className="icon-button danger" type="button" onClick={() => deleteSet(set)} aria-label={`Delete ${clean(set.title)}`} data-testid={`button-delete-${set.id}`}><Trash2 size={13} /></button>
-                          </div>
-                        </div>
+                      <article className={`saved-card saved-row${active?.id === set.id ? ' current' : ''}`} key={set.id} data-testid={`card-study-set-${set.id}`}>
                         <button className="saved-open" type="button" onClick={() => openSet(set)} data-testid={`button-open-${set.id}`}>
                           <h3>{clean(set.title) || 'Study set'}</h3>
-                          <div className="saved-meta">{new Date(set.createdAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })} · {set.questions.length} questions{set.theoryQuestions?.length ? ` · ${set.theoryQuestions.length} theory` : ''}</div>
-                          <div className="mode-tags">{setModes(set).map((m) => <span key={m}>{modeLabel(m)}</span>)}</div>
+                          <div className="saved-meta">{clean(set.sourceName) || 'Notes'}</div>
+                          <div className="saved-meta">{new Date(set.createdAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })} · {setModes(set).map(modeLabel).join(', ')}{remote ? '' : ' · This browser only'}</div>
                         </button>
+                        <div className="saved-actions">
+                          {!remote && <button className="icon-button" type="button" onClick={() => void syncOne(set)} disabled={upsert.isPending} aria-label="Sync to account" data-testid={`button-sync-${set.id}`}><Cloud size={13} /></button>}
+                          <button className="icon-button danger" type="button" onClick={() => deleteSet(set)} aria-label={`Delete ${clean(set.title)}`} data-testid={`button-delete-${set.id}`}><Trash2 size={13} /></button>
+                        </div>
                       </article>
                     );
                   })}

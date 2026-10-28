@@ -131,15 +131,15 @@ export function StudyOutput({ set, userId, synced, clean, sources, onReattach, o
       case 'summary': return (<>
         <div className="pane-tools"><button className="quiet-button" type="button" onClick={() => setShowNotes((v) => !v)} aria-expanded={showNotes} data-testid="button-toggle-summary">{showNotes ? <><EyeOff size={13} /> Hide notes</> : <><Eye size={13} /> Reveal notes</>}</button></div>
         {!showNotes ? <div className="notes-hidden" data-testid="text-summary-hidden">Notes hidden. Try recalling the main ideas first, then reveal.</div>
-          : set.summary ? <RichNotes text={clean(set.summary)} testId="text-summary" /> : <div className="empty-state"><strong>No notes returned</strong><p>Generate this set again.</p></div>}
+          : set.summary ? <div className="doc doc-summary"><RichNotes text={clean(set.summary)} testId="text-summary" /></div> : <div className="empty-state"><strong>No notes returned</strong><p>Generate this set again.</p></div>}
       </>);
       case 'timed': return <TimedExam key={`exam-${key}`} title={set.title || 'Examination'} questions={set.questions} theory={set.theoryQuestions ?? []} minutes={minutes} storageKey={`jaguar-exam-${key}`} clean={clean} />;
       case 'objective': return <ObjectivePractice questions={set.questions} clean={clean} setId={set.id} />;
       case 'theory': return <TheoryTest key={`theory-${key}`} questions={set.theoryQuestions ?? []} storageKey={`jaguar-theory-${key}`} clean={clean} />;
       case 'terms': return set.keyTerms.length ? <div className="term-grid">{set.keyTerms.map((t, i) => <article className="term-card" key={i} data-testid={`term-card-${i}`}><strong>{clean(t.term)}</strong><p>{clean(t.definition)}</p></article>)}</div> : <div className="empty-state"><strong>No key terms</strong></div>;
       case 'flashcards': return <Flashcards terms={set.keyTerms} mastered={set.masteredTerms ?? []} onRate={onRate} clean={clean} setId={set.id} />;
-      case 'cram': return set.cramPoints.length ? <ul className="cram-list">{set.cramPoints.map((p, i) => <li key={i} data-testid={`cram-point-${i}`}><span className="cram-dot">{String(i + 1).padStart(2, '0')}</span><span><StudyText text={clean(p)} /></span></li>)}</ul> : <div className="empty-state"><strong>No cram points</strong></div>;
-      case 'tutor': return set.tutorLesson ? <RichNotes text={clean(set.tutorLesson)} testId="text-tutor-lesson" /> : <div className="empty-state"><strong>No tutor lesson in this set</strong><p>Build a new set with Tutor Lesson selected.</p></div>;
+      case 'cram': return set.cramPoints.length ? <ul className="cram-list doc doc-cram">{set.cramPoints.map((p, i) => <li key={i} data-testid={`cram-point-${i}`}><span className="cram-dot">{String(i + 1).padStart(2, '0')}</span><span><StudyText text={clean(p)} /></span></li>)}</ul> : <div className="empty-state"><strong>No cram points</strong></div>;
+      case 'tutor': return set.tutorLesson ? <div className="doc doc-tutor"><RichNotes text={clean(set.tutorLesson)} testId="text-tutor-lesson" /></div> : <div className="empty-state"><strong>No tutor lesson in this set</strong><p>Build a new set with Tutor Lesson selected.</p></div>;
     }
   };
 
