@@ -3,12 +3,12 @@ import { BookOpen, Check, GraduationCap, Layers, ListChecks, PenLine, Timer, X }
 import type { StudyMode } from '@/study';
 
 export const MODE_INFO: { id: StudyMode; label: string; Icon: typeof BookOpen }[] = [
-  { id: 'timed', label: 'Time based exam', Icon: Timer },
-  { id: 'tutor', label: 'Tutor Lesson', Icon: GraduationCap },
-  { id: 'summary', label: 'Note Summary', Icon: BookOpen },
-  { id: 'objective', label: 'Objective', Icon: ListChecks },
-  { id: 'cram', label: 'Cram Sheet', Icon: Layers },
-  { id: 'theory', label: 'Theory', Icon: PenLine },
+  { id: 'timed', label: 'Timed exam', Icon: Timer },
+  { id: 'tutor', label: 'Tutor lesson', Icon: GraduationCap },
+  { id: 'summary', label: 'Note summary', Icon: BookOpen },
+  { id: 'objective', label: 'Objective questions', Icon: ListChecks },
+  { id: 'cram', label: 'Cram sheet', Icon: Layers },
+  { id: 'theory', label: 'Theory test', Icon: PenLine },
 ];
 export const ALL_MODES = MODE_INFO.map((m) => m.id);
 export const modeLabel = (id: string) => MODE_INFO.find((m) => m.id === id)?.label ?? id;
@@ -18,7 +18,7 @@ export function ModeGrid({ modes, onModes }: { modes: StudyMode[]; onModes: (m: 
   const toggle = (id: StudyMode) => onModes(modes.includes(id) ? modes.filter((m) => m !== id) : ALL_MODES.filter((m) => m === id || modes.includes(m)));
   return (
     <fieldset className="mode-picker">
-      <legend className="mode-legend">Study modes</legend>
+       <legend className="mode-legend">Choose formats</legend>
       <div className="mode-picker-head">
         <label className="select-all">
           <input type="checkbox" checked={all} onChange={() => onModes(all ? [] : [...ALL_MODES])} data-testid="toggle-select-all" />
@@ -38,7 +38,7 @@ export function ModeGrid({ modes, onModes }: { modes: StudyMode[]; onModes: (m: 
           );
         })}
       </div>
-      {modes.length === 0 && <p className="field-error" role="alert" data-testid="error-modes">Pick at least one mode.</p>}
+      {modes.length === 0 && <p className="field-error" role="alert" data-testid="error-modes">Choose at least one format.</p>}
     </fieldset>
   );
 }
@@ -54,13 +54,13 @@ export function ModeNumbers({ modes, questionCount, onQuestionCount, examMinutes
   return (
     <div className="mode-numbers">
       <label>
-        <span>Objective questions</span>
+          <span>Number of objective questions (1–50)</span>
         <input className="field" type="number" inputMode="numeric" min={1} max={50} step={1} value={questionCount} onChange={(e) => onQuestionCount(e.target.value)} data-testid="input-question-count" />
         {countError && <em className="field-error" role="alert">{countError}</em>}
       </label>
       {modes.includes('timed') && (
         <label>
-          <span>Exam duration (minutes)</span>
+          <span>Time limit (minutes)</span>
           <input className="field" type="number" inputMode="numeric" min={1} max={180} step={1} value={examMinutes} onChange={(e) => onExamMinutes(e.target.value)} data-testid="input-exam-minutes" />
           {minutesError && <em className="field-error" role="alert">{minutesError}</em>}
         </label>
@@ -98,14 +98,14 @@ export function ModeDialog({ open, modes, onModes, onClose, onGenerate, busy, er
     <div className="modal-scrim" onMouseDown={(e) => { if (e.target === e.currentTarget) onClose(); }}>
       <div ref={card} className="modal-card" role="dialog" aria-modal="true" aria-labelledby="mode-dialog-title" data-testid="dialog-mode-picker">
         <div className="modal-head">
-          <div><h2 id="mode-dialog-title">How do you want to study it?</h2><p className="modal-sub">Pick one or more. Larger files may take longer.</p></div>
+          <div><h2 id="mode-dialog-title">What should I make from these notes?</h2><p className="modal-sub">Pick as many as you like. They’ll all use the files you added.</p></div>
           <button className="icon-button" type="button" onClick={onClose} aria-label="Close study modes" data-testid="button-close-modes"><X size={14} /></button>
         </div>
         <ModeGrid modes={modes} onModes={onModes} />
         <ModeNumbers modes={modes} {...nums} />
         {error && <p className="field-error" role="alert" data-testid="error-dialog-generation">{error}</p>}
         <button ref={ref} className="primary-button generate" type="button" disabled={!modes.length || busy} aria-busy={busy} onClick={() => { if (!busy) onGenerate(); }} data-testid="button-generate">
-          {busy ? 'Starting...' : `Generate ${modes.length} ${modes.length === 1 ? 'mode' : 'modes'}`}
+          {busy ? 'Putting them together…' : 'Make these materials'}
         </button>
       </div>
     </div>

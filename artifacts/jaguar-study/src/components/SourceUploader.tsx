@@ -57,7 +57,7 @@ export function SourceUploader({ files, onFiles, disabled }: Props) {
     <div className="source-uploader">
       <div className={`upload-zone${dragging ? ' dragging' : ''}`} onDragOver={(e) => { e.preventDefault(); setDragging(true); }} onDragLeave={() => setDragging(false)} onDrop={onDrop}>
         <span className="upload-icon"><Upload size={17} /></span>
-        <div className="upload-copy"><strong>Drop course files here</strong><span>PDF, DOCX, PPTX, TXT, MD, CSV. Pick several at once. 15 MB each.</span></div>
+        <div className="upload-copy"><strong>Drop your notes here</strong><span>PDF, Word, PowerPoint, text or CSV. Add several files if you need to; 15 MB each.</span></div>
         <button className="file-button" type="button" disabled={disabled} onClick={() => input.current?.click()} data-testid="button-browse"><Paperclip size={13} /> Add files</button>
         <input ref={input} className="sr-only" type="file" multiple accept={ACCEPTED} onChange={(e) => addFiles(e.target.files)} data-testid="input-file" aria-label="Choose study files" />
       </div>
@@ -73,8 +73,8 @@ export function SourceUploader({ files, onFiles, disabled }: Props) {
                 <span className="file-meta">
                   <strong>{f.file.name}</strong>
                   <small>
-                    {f.status === 'reading' && <><LoaderCircle size={11} className="spin-icon" /> Reading on this device</>}
-                    {f.status === 'ready' && <><CheckCircle2 size={11} /> Ready · {f.text.length.toLocaleString()} characters{f.cleaned ? ' · Office markup removed' : ''}</>}
+                   {f.status === 'reading' && <><LoaderCircle size={11} className="spin-icon" /> Checking file…</>}
+                    {f.status === 'ready' && <><CheckCircle2 size={11} /> Ready · {f.text.length.toLocaleString()} characters{f.cleaned ? ' · Formatting cleaned up' : ''}</>}
                     {f.status === 'error' && <><TriangleAlert size={11} /> {f.error}</>}
                   </small>
                 </span>

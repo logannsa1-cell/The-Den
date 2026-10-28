@@ -55,12 +55,12 @@ export function TimedExam({ title, questions, theory, minutes, storageKey, clean
     return (
       <div className="empty-state compat" data-testid="text-exam-compat">
         <div><span className="empty-state-icon"><CircleAlert size={17} /></span>
-          <strong>This set uses the older exam format</strong>
-          <p>The school paper needs 7 theory questions (2 in Part A, 5 in Part B). This set has {theory.length}. Build a new set with Time based exam selected to sit the full paper. Your Objective and Theory tabs still work.</p></div>
+          <strong>This set has the older exam format</strong>
+          <p>A full paper needs 7 theory questions: 2 in Part A and 5 in Part B. This set has {theory.length}. Make a new set with Timed exam selected. You can still use the objective and theory practice here.</p></div>
       </div>
     );
   }
-  if (!questions.length) return <div className="empty-state"><strong>No objective questions in this set</strong><p>Build a new set with Time based exam selected.</p></div>;
+  if (!questions.length) return <div className="empty-state"><strong>No exam questions here</strong><p>Choose Timed exam when you make the set.</p></div>;
 
   const header = (
     <header className="paper-head">

@@ -10,7 +10,7 @@ export function ObjectivePractice({ questions, clean, setId }: { questions: Stud
   const [picked, setPicked] = useState<Record<number, number>>({});
   useEffect(() => { setIndex(0); setPicked({}); }, [setId]);
   const q = questions[index];
-  if (!q) return <div className="empty-state"><strong>No objective questions yet</strong><p>Generate with Objective Questions selected.</p></div>;
+  if (!q) return <div className="empty-state"><strong>No objective questions here</strong><p>Choose Objective questions when you make the set.</p></div>;
   const chosen = picked[index];
   const answered = chosen !== undefined;
   const correct = Object.entries(picked).filter(([i, a]) => questions[Number(i)]?.answerIndex === a).length;
@@ -41,7 +41,7 @@ export function Flashcards({ terms, mastered, onRate, clean, setId }: { terms: K
   const [flipped, setFlipped] = useState(false);
   useEffect(() => { setIndex(0); setFlipped(false); }, [setId]);
   const term = terms[index];
-  if (!term) return <div className="empty-state"><strong>No flashcards yet</strong><p>This set has no key terms.</p></div>;
+  if (!term) return <div className="empty-state"><strong>No flashcards here yet</strong><p>This set doesn’t have any key terms.</p></div>;
   const rate = (ok: boolean) => { onRate(term.term, ok); setIndex((i) => (i + 1) % terms.length); setFlipped(false); };
   return (
     <div className="flashcards-review">
