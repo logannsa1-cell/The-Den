@@ -18,6 +18,12 @@ The user approved the refined dashboard direction: matte dark surfaces, a compac
 
 **How to apply:** Use that approved direction for future dashboard refinements rather than restoring glow-heavy cards; keep actual account and generation behavior, not mockup placeholders.
 
+Prioritize useful study content over decoration: the user approved a calmer landing page with a clearly labelled interactive example, compact saved-set rows and different document treatments for each study mode.
+
+**Why:** They asked to build the proposed changes that make Jaguar feel less like a generated template.
+
+**How to apply:** Keep the outlined logo and accent themes, avoid invented progress or library metadata, preserve deep source-grounded explanations, and reserve informal humour for home-page copy.
+
 Notes must be analyzed and synthesized into readable exam material, not just extracted text shown as notes. Multiple source files should form one study set; summary, timed exam, objective A–E questions (1–50), theory questions with a/b/c parts, Tutor Lesson and Cram Sheet must be selectable together after upload.
 
 Multi-file sets must stay organised by subject, explaining each subject's supplied weeks in order before the next subject. Exams and theory use subject sections in one combined paper, not separate papers.
