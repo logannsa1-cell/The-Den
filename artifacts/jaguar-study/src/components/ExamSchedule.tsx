@@ -23,11 +23,10 @@ export function ExamSchedule({ userId }: { userId: string }) {
   const hours = Number(s.pace);
   return (
     <section className="panel schedule-panel" aria-labelledby="schedule-title" data-testid="section-exam-schedule">
-      <div className="panel-head"><h2 id="schedule-title" className="panel-title">Set your pace</h2><span className="step-label">SAVED ON THIS DEVICE</span></div>
+      <div className="panel-head"><h2 id="schedule-title" className="panel-title"><CalendarDays size={17} /> Your exam</h2></div>
       <div className="schedule-grid">
         <div className="countdown-block" data-testid="text-days-left">
-          <span className="schedule-icon"><CalendarDays size={18} /></span>
-          {left === null ? <><strong>--</strong><small>Pick your exam date</small></>
+          {left === null ? <small>Pick your exam date to see your countdown.</small>
             : left < 0 ? <><strong>Done</strong><small>That date has passed</small></>
             : <><strong>{left}</strong><small>{left === 1 ? 'day' : 'days'} to {s.subject || 'your exam'}</small></>}
           {left !== null && left >= 0 && <em>{Math.round(left * hours * 10) / 10} study hours at your pace</em>}
@@ -44,6 +43,7 @@ export function ExamSchedule({ userId }: { userId: string }) {
           {(s.date || s.subject) && <button className="text-button" type="button" onClick={() => setS(EMPTY)} data-testid="button-clear-schedule"><Trash2 size={11} /> Clear schedule</button>}
         </div>
       </div>
+      <p className="schedule-footnote">Saved on this device. This schedule is separate from making a study set.</p>
     </section>
   );
 }

@@ -1,0 +1,85 @@
+/* Approved dashboard treatment. Existing study, auth and persistence logic stays intact. */
+.app-shell {
+  --app-font-sans: 'DM Sans', ui-sans-serif, sans-serif;
+  font-family: var(--app-font-sans);
+  grid-template-columns: 220px minmax(0, 1fr);
+  background: var(--bg);
+}
+[data-theme='violet'] .app-shell {
+  --bg: #15131a; --bg-2: #17141c; --surface: #1b1821; --surface-2: #211d29;
+  --line: #332d3a; --line-2: #51485b; --text: #f2eef5; --muted: #b6adbf; --faint: #a399ad;
+  --accent: #b89ae3; --accent-2: #d3c1ef; --accent-soft: #2e2639; --accent-ink: #21172b;
+}
+.app-shell .rosette-layer { display: none; }
+.app-shell .sidebar { padding: 25px 15px 18px; gap: 46px; background: var(--bg-2); }
+.app-shell .brand-name { font: 600 23px/1 'Instrument Serif', Georgia, serif; letter-spacing: .01em; }
+.app-shell .emblem { filter: hue-rotate(var(--jaguar-hue)); }
+.app-shell .nav-item { border-radius: 5px; min-height: 40px; font-size: 12px; }
+.app-shell .nav-item:hover { transform: none; }
+.app-shell .nav-item.active { box-shadow: none; }
+.app-shell .topbar { min-height: 66px; padding-inline: clamp(20px, 5vw, 60px); background: var(--bg); backdrop-filter: none; }
+.app-shell .crumb { font: 12px var(--app-font-sans); letter-spacing: normal; color: var(--faint); }
+.app-shell .local-pill { display: none; }
+.app-shell .quiet-button { font-family: var(--app-font-sans); }
+.app-shell .primary-button { border-radius: 6px; box-shadow: none; transition: background .18s; }
+.app-shell .primary-button:hover:not(:disabled) { box-shadow: none; transform: none; }
+.app-shell .builder-workspace { width: min(1100px, 100%); padding: clamp(40px, 6vw, 72px) clamp(20px, 5vw, 50px) 76px; }
+.builder-welcome { margin-bottom: 42px; }
+.app-shell #welcome-title { font: 400 clamp(36px, 4.5vw, 54px)/1.08 'Instrument Serif', Georgia, serif; letter-spacing: -.025em; margin-bottom: 10px; }
+.app-shell #welcome-title + .welcome-copy { font-size: 15px; }
+.builder-workbench { display: grid; grid-template-columns: minmax(0, 1.55fr) minmax(245px, .8fr); gap: clamp(34px, 6vw, 76px); align-items: start; }
+.builder-create, .builder-aside { min-width: 0; }
+.builder-create .source-panel { background: none; padding: 0 0 31px; border: 0; border-bottom: 1px solid var(--line); border-radius: 0; box-shadow: none; }
+.builder-workbench .panel-title { font: 600 19px/1.4 var(--app-font-sans); letter-spacing: -.025em; }
+.builder-create .upload-zone { min-height: 102px; padding: 18px; gap: 14px; border-radius: 8px; }
+.builder-create .upload-icon { background: none; border-radius: 0; width: 30px; }
+.builder-create .upload-copy span { line-height: 1.5; color: var(--faint); }
+.builder-create .file-button { border-radius: 6px; background: none; padding: 9px 11px; }
+.builder-create .upload-zone.dragging { transform: none; }
+.builder-mode-entry { padding-top: 27px; }
+.builder-mode-entry h2 { margin: 0 0 20px; font: 600 19px/1.4 var(--app-font-sans); letter-spacing: -.025em; }
+.builder-mode-entry .primary-button { justify-content: space-between; font-weight: 600; }
+.builder-aside .schedule-panel { padding: 0 0 26px; margin: 0; border: 0; border-bottom: 1px solid var(--line); border-radius: 0; box-shadow: none; background: none; }
+.builder-aside .schedule-panel .panel-title { display: flex; align-items: center; gap: 10px; }
+.builder-aside .schedule-panel .panel-title svg { color: var(--accent); }
+.builder-aside .schedule-grid { display: flex; flex-direction: column; gap: 14px; }
+.builder-aside .countdown-block { padding: 0; background: none; border-radius: 0; }
+.builder-aside .countdown-block small { font: 12px/1.5 var(--app-font-sans); color: var(--muted); }
+.builder-aside .countdown-block strong { font: 400 40px/1 'Instrument Serif', Georgia, serif; }
+.builder-aside .schedule-fields { width: 100%; }
+.builder-aside .field-row { grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr); gap: 12px; }
+.builder-aside .field { width: 100%; min-width: 0; border-radius: 5px; padding: 10px 9px; font: 12px var(--app-font-sans); color-scheme: dark; }
+.schedule-footnote { margin: 20px 0 0; color: var(--faint); font-size: 11px; line-height: 1.6; }
+.builder-aside #saved-sets { margin-top: 26px; scroll-margin-top: 90px; }
+.builder-aside .section-heading h2 { font: 600 15px var(--app-font-sans); }
+.builder-aside .step-label { font: 11px var(--app-font-sans); letter-spacing: normal; }
+.builder-aside .saved-grid { grid-template-columns: minmax(0, 1fr); gap: 0; }
+.builder-aside .saved-card { border: 0; border-bottom: 1px solid var(--line); border-radius: 0; background: none; box-shadow: none; padding: 14px 0; }
+.builder-aside .saved-card:hover { transform: none; background: var(--surface); }
+.builder-aside .empty-state { min-height: 100px; padding: 6px 0 20px; border: 0; border-bottom: 1px solid var(--line); border-radius: 0; text-align: left; place-items: start; }
+.builder-aside .empty-state-icon { display: none; }
+.builder-aside .empty-state strong { color: var(--muted); font-size: 13px; font-weight: 400; }
+.builder-aside .empty-state p { margin-top: 12px; font-size: 11px; color: var(--faint); }
+.app-shell :is(button, input, select):focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+@media (max-width: 1100px) and (min-width: 701px) {
+  .app-shell { grid-template-columns: 190px minmax(0,1fr); }
+  .builder-workbench { grid-template-columns: minmax(0,1fr); gap: 40px; }
+  .builder-aside { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 30px; }
+  .builder-aside #saved-sets { margin-top: 0; }
+}
+@media (max-width: 700px) {
+  .app-shell { display: block; }
+  .app-shell .sidebar { display: none; }
+  .app-shell .topbar { padding-inline: 16px; gap: 8px; }
+  .app-shell .top-status { gap: 8px; }
+  .app-shell .top-status .quiet-button { padding-inline: 6px; }
+  .app-shell .builder-workspace { padding: 36px 20px 60px; }
+  .builder-workbench { grid-template-columns: minmax(0,1fr); gap: 40px; }
+  .builder-welcome { margin-bottom: 32px; }
+  .builder-create .upload-zone { padding: 16px; }
+  .builder-create .file-button { width: 100%; justify-content: center; min-height: 40px; }
+  .builder-aside .field-row { grid-template-columns: minmax(0,1.2fr) minmax(0,1fr); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .app-shell *, .app-shell *::before, .app-shell *::after { animation: none !important; transition: none !important; scroll-behavior: auto !important; }
+}
