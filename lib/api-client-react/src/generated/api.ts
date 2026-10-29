@@ -29,8 +29,11 @@ import type {
   HealthStatus,
   SourceExtraction,
   SourceUploadInput,
+  StudyActivityInput,
   StudyGeneration,
   StudyGenerationInput,
+  StudyHabitPreferencesInput,
+  StudyHabitState,
   StudySet,
   StudySetInput
 } from './api.schemas';
@@ -602,5 +605,282 @@ export const useDeleteStudySet = <TError = ErrorType<ApiError>,
         TContext
       > => {
       return useMutation(getDeleteStudySetMutationOptions(options), queryClient);
+    }
+
+export const getGetStudyHabitStateUrl = () => {
+
+
+
+
+  return `/api/study-habits`
+}
+
+/**
+ * @summary Get reminder preferences and study streak
+ */
+export const getStudyHabitState = async ( options?: Parameters<typeof customFetch>[1]): Promise<StudyHabitState> => {
+
+  return customFetch<StudyHabitState>(getGetStudyHabitStateUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetStudyHabitStateQueryKey = () => {
+    return [
+    `/api/study-habits`
+    ] as const;
+    }
+
+
+export const getGetStudyHabitStateQueryOptions = <TData = Awaited<ReturnType<typeof getStudyHabitState>>, TError = ErrorType<ApiError>>( options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getStudyHabitState>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetStudyHabitStateQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getStudyHabitState>>> = ({ signal }) => getStudyHabitState({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getStudyHabitState>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetStudyHabitStateQueryResult = NonNullable<Awaited<ReturnType<typeof getStudyHabitState>>>
+export type GetStudyHabitStateQueryError = ErrorType<ApiError>
+
+
+export function useGetStudyHabitState<TData = Awaited<ReturnType<typeof getStudyHabitState>>, TError = ErrorType<ApiError>>(
+  options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getStudyHabitState>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getStudyHabitState>>,
+          TError,
+          Awaited<ReturnType<typeof getStudyHabitState>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetStudyHabitState<TData = Awaited<ReturnType<typeof getStudyHabitState>>, TError = ErrorType<ApiError>>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getStudyHabitState>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getStudyHabitState>>,
+          TError,
+          Awaited<ReturnType<typeof getStudyHabitState>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetStudyHabitState<TData = Awaited<ReturnType<typeof getStudyHabitState>>, TError = ErrorType<ApiError>>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getStudyHabitState>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Get reminder preferences and study streak
+ */
+
+export function useGetStudyHabitState<TData = Awaited<ReturnType<typeof getStudyHabitState>>, TError = ErrorType<ApiError>>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getStudyHabitState>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetStudyHabitStateQueryOptions(options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getUpdateStudyHabitPreferencesUrl = () => {
+
+
+
+
+  return `/api/study-habits`
+}
+
+/**
+ * @summary Update the daily reminder preferences
+ */
+export const updateStudyHabitPreferences = async (studyHabitPreferencesInput: StudyHabitPreferencesInput, options?: Parameters<typeof customFetch>[1]): Promise<StudyHabitState> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<StudyHabitState>(getUpdateStudyHabitPreferencesUrl(),
+  {
+    ...options,
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(studyHabitPreferencesInput)
+  }
+);}
+
+
+
+
+
+export const getUpdateStudyHabitPreferencesMutationKey = () => ['updateStudyHabitPreferences'] as const;
+
+export const getUpdateStudyHabitPreferencesMutationOptions = <TError = ErrorType<ApiError>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateStudyHabitPreferences>>, TError,UpdateStudyHabitPreferencesMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof updateStudyHabitPreferences>>, TError,UpdateStudyHabitPreferencesMutationVariables, TContext> => {
+
+const mutationKey = getUpdateStudyHabitPreferencesMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof updateStudyHabitPreferences>>, UpdateStudyHabitPreferencesMutationVariables> = (props) => {
+          const {data} = props ?? {};
+
+          return  updateStudyHabitPreferences(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UpdateStudyHabitPreferencesMutationResult = NonNullable<Awaited<ReturnType<typeof updateStudyHabitPreferences>>>
+    export type UpdateStudyHabitPreferencesMutationBody = BodyType<StudyHabitPreferencesInput>
+    export type UpdateStudyHabitPreferencesMutationError = ErrorType<ApiError>
+    export type UpdateStudyHabitPreferencesMutationVariables = {data: BodyType<StudyHabitPreferencesInput>}
+
+    /**
+ * @summary Update the daily reminder preferences
+ */
+export const useUpdateStudyHabitPreferences = <TError = ErrorType<ApiError>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateStudyHabitPreferences>>, TError,UpdateStudyHabitPreferencesMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof updateStudyHabitPreferences>>,
+        TError,
+        UpdateStudyHabitPreferencesMutationVariables,
+        TContext
+      > => {
+      return useMutation(getUpdateStudyHabitPreferencesMutationOptions(options), queryClient);
+    }
+
+export const getRecordStudyActivityUrl = () => {
+
+
+
+
+  return `/api/study-habits/activity`
+}
+
+/**
+ * @summary Record one meaningful study day
+ */
+export const recordStudyActivity = async (studyActivityInput: StudyActivityInput, options?: Parameters<typeof customFetch>[1]): Promise<StudyHabitState> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<StudyHabitState>(getRecordStudyActivityUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(studyActivityInput)
+  }
+);}
+
+
+
+
+
+export const getRecordStudyActivityMutationKey = () => ['recordStudyActivity'] as const;
+
+export const getRecordStudyActivityMutationOptions = <TError = ErrorType<ApiError>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof recordStudyActivity>>, TError,RecordStudyActivityMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof recordStudyActivity>>, TError,RecordStudyActivityMutationVariables, TContext> => {
+
+const mutationKey = getRecordStudyActivityMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof recordStudyActivity>>, RecordStudyActivityMutationVariables> = (props) => {
+          const {data} = props ?? {};
+
+          return  recordStudyActivity(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type RecordStudyActivityMutationResult = NonNullable<Awaited<ReturnType<typeof recordStudyActivity>>>
+    export type RecordStudyActivityMutationBody = BodyType<StudyActivityInput>
+    export type RecordStudyActivityMutationError = ErrorType<ApiError>
+    export type RecordStudyActivityMutationVariables = {data: BodyType<StudyActivityInput>}
+
+    /**
+ * @summary Record one meaningful study day
+ */
+export const useRecordStudyActivity = <TError = ErrorType<ApiError>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof recordStudyActivity>>, TError,RecordStudyActivityMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof recordStudyActivity>>,
+        TError,
+        RecordStudyActivityMutationVariables,
+        TContext
+      > => {
+      return useMutation(getRecordStudyActivityMutationOptions(options), queryClient);
     }
 

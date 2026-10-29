@@ -11,6 +11,7 @@ import { BrandLockup, RosetteCorners, ThemeSwitcher, basePath } from '@/componen
 import { ALL_MODES, ModeDialog, intIn, modeLabel } from '@/components/ModePicker';
 import { JaguarRunner } from '@/components/JaguarRunner';
 import { ExamSchedule } from '@/components/ExamSchedule';
+import { StudyHabitPanel } from '@/components/StudyHabitPanel';
 import { SourceUploader, combineSources, MAX_SOURCE_CHARS, type SourceEntry } from '@/components/SourceUploader';
 import { StudyOutput, setModes, setViews, studyViews, type OutputTab } from '@/components/StudyOutput';
 import { deleteSources, loadSources, saveSources, sourceKey, type StoredSource } from '@/lib/source-store';
@@ -393,8 +394,9 @@ export default function Workspace() {
             <button className="primary-button" type="button" onClick={() => setModeDialog(true)} disabled={busy} data-testid="button-open-modes">Choose formats <ChevronRight size={16} /></button>
           </section>
           </div>
-          <aside className="builder-aside" aria-label="Your exam schedule and saved sets">
+          <aside className="builder-aside" aria-label="Your exam schedule, study streak and saved sets">
           <ExamSchedule userId={userId} />
+          <StudyHabitPanel userId={userId} isStudying={view === 'study' && Boolean(active)} />
 
           <button className="home-library-shortcut" type="button" onClick={() => { setView('saved'); window.scrollTo({ top: 0, behavior: 'smooth' }); }} data-testid="button-view-all-saved">
             <FolderOpen size={15} />

@@ -193,6 +193,83 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ApiError"
+  /study-habits:
+    get:
+      operationId: getStudyHabitState
+      tags: [study]
+      summary: Get reminder preferences and study streak
+      responses:
+        "200":
+          description: The signed-in user's reminder and streak state
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StudyHabitState"
+        "401":
+          description: Sign-in required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+    put:
+      operationId: updateStudyHabitPreferences
+      tags: [study]
+      summary: Update the daily reminder preferences
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/StudyHabitPreferencesInput"
+      responses:
+        "200":
+          description: Updated reminder preferences and current streak
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StudyHabitState"
+        "400":
+          description: Invalid reminder preferences
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "401":
+          description: Sign-in required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+  /study-habits/activity:
+    post:
+      operationId: recordStudyActivity
+      tags: [study]
+      summary: Record one meaningful study day
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/StudyActivityInput"
+      responses:
+        "200":
+          description: Updated streak after recording today's activity
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StudyHabitState"
+        "400":
+          description: Invalid time zone
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "401":
+          description: Sign-in required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
 components:
   schemas:
     SourceUploadInput:
@@ -437,6 +514,48 @@ components:
             createdAt:
               type: string
               format: date-time
+    StudyHabitPreferencesInput:
+      type: object
+      required: [reminderEnabled, reminderTime, timeZone]
+      properties:
+        reminderEnabled:
+          type: boolean
+        reminderTime:
+          type: ["string", "null"]
+          pattern: "^(?:[01][0-9]|2[0-3]):[0-5][0-9]$"
+        timeZone:
+          type: string
+          minLength: 1
+          maxLength: 80
+    StudyActivityInput:
+      type: object
+      required: [timeZone]
+      properties:
+        timeZone:
+          type: string
+          minLength: 1
+          maxLength: 80
+    StudyHabitState:
+      type: object
+      required: [currentStreak, bestStreak, studiedToday, lastStudyDate, reminderEnabled, reminderTime, timeZone]
+      properties:
+        currentStreak:
+          type: integer
+          minimum: 0
+        bestStreak:
+          type: integer
+          minimum: 0
+        studiedToday:
+          type: boolean
+        lastStudyDate:
+          type: ["string", "null"]
+          pattern: "^[0-9]{4}-[0-9]{2}-[0-9]{2}$"
+        reminderEnabled:
+          type: boolean
+        reminderTime:
+          type: ["string", "null"]
+        timeZone:
+          type: string
     ApiError:
       type: object
       required: [error]
