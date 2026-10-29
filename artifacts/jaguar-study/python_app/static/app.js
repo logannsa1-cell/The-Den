@@ -438,7 +438,6 @@
     $$("[data-delete]", target).forEach((button) => button.addEventListener("click", () => deleteSet(button.dataset.delete)));
   }
   function renderHomeSets() {
-    const target = $("#home-saved-list");
     $("#saved-count").textContent = state.sets.length ? `(${state.sets.length})` : "";
     $("#activity-total").textContent = String(state.sets.length);
     const weekAgo = Date.now() - 7 * 86400000;
@@ -446,13 +445,6 @@
       const time = createdTime(set);
       return time >= weekAgo && time <= Date.now();
     }).length);
-    if (!state.sets.length) {
-      target.innerHTML = '<div class="empty"><strong>No saved sets yet</strong><p>Sets made from your notes will appear here.</p></div>'; return;
-    }
-    const recent = [...state.sets].sort((a,b) => createdTime(b) - createdTime(a)).slice(0,4);
-    target.innerHTML = recent.map(set => `<article class="saved-row"><button class="saved-open" data-open="${esc(set.id)}"><strong>${esc(title(set))}</strong><span>${esc(sourceName(set))} · ${esc(formatSavedTime(set.createdAt))}</span></button><div class="saved-actions"><button class="icon-button" data-delete="${esc(set.id)}" aria-label="Delete ${esc(title(set))}">×</button></div></article>`).join("");
-    $$("[data-open]", target).forEach(b => b.addEventListener("click", () => openSet(b.dataset.open)));
-    $$("[data-delete]", target).forEach(b => b.addEventListener("click", () => deleteSet(b.dataset.delete)));
   }
   async function loadSets() {
     if (state.loadingSets) return;

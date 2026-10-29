@@ -133,7 +133,6 @@ export default function Workspace() {
   const remoteIds = new Set(remoteSets.map((s) => s.id));
   const savedSets = [...remoteSets, ...localSets.filter((l) => !remoteIds.has(l.id))]
     .sort((a, b) => (Date.parse(b.createdAt) || 0) - (Date.parse(a.createdAt) || 0));
-  const recentSets = savedSets.slice(0, 3);
   const localOnly = [...localSets, ...legacySets.filter((s) => !localSets.some((l) => l.id === s.id))].filter((s) => !remoteIds.has(s.id));
 
   const persist = (sets: StudySet[]) => {
@@ -290,24 +289,22 @@ export default function Workspace() {
   });
 
   const initial = (user?.firstName?.[0] ?? user?.emailAddresses[0]?.emailAddress[0] ?? 'J').toUpperCase();
-  const savedSetRow = (set: StudySet, surface: 'recent' | 'library') => {
+  const savedSetRow = (set: StudySet) => {
     const remote = remoteIds.has(set.id);
-    const suffix = surface === 'recent' ? '-recent' : '';
     return (
-      <article className={`saved-card saved-row${surface === 'library' ? ' library-row' : ''}${active?.id === set.id ? ' current' : ''}`}
-        key={`${surface}-${set.id}`}
-        data-testid={surface === 'library' ? `card-study-set-${set.id}` : `recent-card-${set.id}`}>
+      <article className={`saved-card saved-row library-row${active?.id === set.id ? ' current' : ''}`}
+        key={set.id} data-testid={`card-study-set-${set.id}`}>
         <button className="saved-open" type="button" onClick={() => openSet(set)}
-          data-testid={`button-open-${set.id}${suffix}`}>
+          data-testid={`button-open-${set.id}`}>
           <h3>{clean(set.title) || 'Study set'}</h3>
           <div className="saved-meta">{clean(set.sourceName) || 'Notes'}</div>
           <div className="saved-meta">{new Date(set.createdAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })} · {setModes(set).map(modeLabel).join(', ')}{remote ? '' : ' · This browser only'}</div>
         </button>
         <div className="saved-actions">
           {!remote && <button className="icon-button" type="button" onClick={() => void syncOne(set)} disabled={upsert.isPending}
-            aria-label="Sync to account" data-testid={`button-sync-${set.id}${suffix}`}><Cloud size={13} /></button>}
+            aria-label="Sync to account" data-testid={`button-sync-${set.id}`}><Cloud size={13} /></button>}
           <button className="icon-button danger" type="button" onClick={() => deleteSet(set)} aria-label={`Delete ${clean(set.title)}`}
-            data-testid={`button-delete-${set.id}${suffix}`}><Trash2 size={13} /></button>
+            data-testid={`button-delete-${set.id}`}><Trash2 size={13} /></button>
         </div>
       </article>
     );
@@ -426,25 +423,15 @@ export default function Workspace() {
             <button className="primary-button" type="button" onClick={() => setModeDialog(true)} disabled={busy} data-testid="button-open-modes">Choose formats <ChevronRight size={16} /></button>
           </section>
           </div>
-          <aside className="builder-aside" aria-label="Your exam and recent study sets">
+          <aside className="builder-aside" aria-label="Your exam schedule and saved sets">
           <ExamSchedule userId={userId} />
 
-          <section id="recent-sets" aria-labelledby="recent-heading">
-            <div className="section-heading recent-heading">
-              <div><h2 id="recent-heading">Recent sets</h2>{savedSets.length > 0 && <span className="step-label">{savedSets.length} saved</span>}</div>
-              <button className="library-link" type="button" onClick={() => { setView('saved'); window.scrollTo({ top: 0, behavior: 'smooth' }); }} data-testid="button-view-all-saved">
-                View all <ChevronRight size={14} />
-              </button>
-            </div>
-            {remoteQuery.isLoading ? <div className="loading-saved" role="status" aria-label="Loading"><span /><span /><span /></div>
-              : remoteQuery.isError ? <div className="error-message" role="alert">Your account sets could not load. <button className="inline-retry" type="button" onClick={() => void remoteQuery.refetch()} data-testid="button-retry-study-sets">Try again</button></div>
-              : savedSets.length === 0 ? <div className="empty-state" data-testid="empty-saved"><div><strong>No study sets yet</strong><p>The ones you make will show up here.</p></div></div>
-              : (
-                <div className="saved-grid saved-rows">
-                  {recentSets.map((set) => savedSetRow(set, 'recent'))}
-                </div>
-              )}
-          </section>
+          <button className="home-library-shortcut" type="button" onClick={() => { setView('saved'); window.scrollTo({ top: 0, behavior: 'smooth' }); }} data-testid="button-view-all-saved">
+            <FolderOpen size={15} />
+            <span>Saved sets</span>
+            <span className="home-library-count">{savedSets.length}</span>
+            <ChevronRight size={14} />
+          </button>
           </aside>
           </div>
         </div>
@@ -471,7 +458,7 @@ export default function Workspace() {
                 <section className="library-list" aria-labelledby="library-heading">
                   <div className="library-list-head"><span>Study set</span><span>Actions</span></div>
                   <div className="saved-grid saved-rows">
-                    {savedSets.map((set) => savedSetRow(set, 'library'))}
+                    {savedSets.map((set) => savedSetRow(set))}
                   </div>
                 </section>
               )}

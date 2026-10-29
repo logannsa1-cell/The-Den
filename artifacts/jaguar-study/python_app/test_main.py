@@ -23,6 +23,9 @@ class JaguarAppTests(unittest.TestCase):
         self.assertIn("Let’s get ready.", response.text)
         self.assertIn("Exam planner", response.text)
         self.assertIn("Study activity", response.text)
+        self.assertIn('data-view="saved"', response.text)
+        self.assertIn('id="saved-page-list"', response.text)
+        self.assertNotIn('id="home-saved-list"', response.text)
         self.assertIn('data-accent="violet"', response.text)
 
     def test_static_assets_are_served(self):
