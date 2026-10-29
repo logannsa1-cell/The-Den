@@ -8,7 +8,7 @@ router = "path"
 
 [[services]]
 name = "web"
-paths = ["/sign-in", "/sign-up", "/user-portal", "/assets", "/src", "/@vite", "/@react-refresh", "/@id", "/@fs", "/@replit", "/node_modules/.vite", "/vite-hmr", "/logo.svg", "/favicon.ico", "/jaguar-outline.svg", "/jaguar-icon.svg", "/jaguar-outline.png"]
+paths = ["/sign-in", "/sign-up", "/user-portal", "/assets", "/assets/*", "/src", "/@vite", "/@react-refresh", "/@id", "/@fs", "/@replit", "/node_modules/.vite", "/vite-hmr", "/logo.svg", "/favicon.ico", "/jaguar-outline.svg", "/jaguar-icon.svg", "/jaguar-outline.png"]
 localPort = 24663
 
 [services.development]

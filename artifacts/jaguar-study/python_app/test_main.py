@@ -32,6 +32,14 @@ class JaguarAppTests(unittest.TestCase):
         self.assertIn('id="saved-page-list"', response.text)
         self.assertNotIn('id="home-saved-list"', response.text)
         self.assertIn('data-accent="violet"', response.text)
+        self.assertNotIn('target="_blank"', response.text)
+        self.assertIn('id="mode-dialog"', response.text)
+        self.assertIn('id="choose-formats-button"', response.text)
+        self.assertIn('id="select-all-modes"', response.text)
+        self.assertNotIn('id="mode-heading">Create a study set', response.text)
+        self.assertIn('id="streak-count"', response.text)
+        self.assertIn('id="reminder-time"', response.text)
+        self.assertIn('href="/static/jaguar-outline.svg"', response.text)
 
     def test_static_assets_are_served(self):
         response = self.client.get("/static/app.js")
@@ -41,6 +49,13 @@ class JaguarAppTests(unittest.TestCase):
         self.assertIn("function combinedSourceText()", response.text)
         self.assertIn("aria-valuetext", response.text)
         self.assertIn("MAX_SOURCE_CHARS = 180000", response.text)
+        self.assertIn("function maybeOpenModeDialog()", response.text)
+        self.assertIn("function renderStudyStreak()", response.text)
+        self.assertIn("function scheduleReminder()", response.text)
+
+        icon = self.client.get("/static/jaguar-outline.svg")
+        self.assertEqual(icon.status_code, 200)
+        self.assertIn("<svg", icon.text)
 
 
 if __name__ == "__main__":
