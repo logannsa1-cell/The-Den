@@ -7,7 +7,7 @@
     ["summary", "Note summary"], ["tutor", "Tutor lesson"], ["cram", "Cram sheet"],
     ["objective", "Objective questions"], ["theory", "Theory"], ["timed", "Time-based exam"]
   ];
-  const state = { signedIn: false, sets: [], selected: null, mode: "summary", files: [], working: false, loadingSets: false, pendingAuth: false, answers: {}, exam: null, examScheduleKey: "", examSchedule: { subject:"", date:"", pace:"1" }, sourceFiles: [], sourceLoaded: false, sourceIndex: 0, sourceUrls: [], sourceResizeObserver: null };
+  const state = { signedIn: false, userId: "", sets: [], selected: null, mode: "summary", files: [], working: false, loadingSets: false, pendingAuth: false, answers: {}, exam: null, examScheduleKey: "", examSchedule: { subject:"", date:"", pace:"1" }, sourceFiles: [], sourceLoaded: false, sourceIndex: 0, sourceUrls: [], sourceResizeObserver: null, reminderTimer: null };
   const storage = {
     read(key, fallback = "") { try { return localStorage.getItem("jaguar-" + key) || fallback; } catch { return fallback; } },
     write(key, value) { try { localStorage.setItem("jaguar-" + key, value); return true; } catch { return false; } }
@@ -367,6 +367,134 @@
     });
     renderExamSchedule();
   }
+  function studyDateKey(date = new Date()) {
+    return `${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,"0")}-${String(date.getDate()).padStart(2,"0")}`;
+  }
+  function studyDaysKey(userId = state.userId) {
+    return `jaguar-study-days-${userId}`;
+  }
+  function readStudyDays() {
+    if (!state.userId) return [];
+    try {
+      const value = JSON.parse(localStorage.getItem(studyDaysKey()) || "[]");
+      return Array.isArray(value) ? value.filter(day => /^\d{4}-\d{2}-\d{2}$/.test(day)) : [];
+    } catch { return []; }
+  }
+  function renderStudyStreak() {
+    const days = new Set(readStudyDays());
+    const cursor = new Date();
+    cursor.setHours(0,0,0,0);
+    if (!days.has(studyDateKey(cursor))) cursor.setDate(cursor.getDate()-1);
+    let streak = 0;
+    while (days.has(studyDateKey(cursor)) && streak < 366) {
+      streak += 1;
+      cursor.setDate(cursor.getDate()-1);
+    }
+    $("#streak-count").textContent = `${streak} ${streak === 1 ? "day" : "days"}`;
+    $("#streak-caption").textContent = streak ? "Keep your study days going." : "Open a set to start your streak.";
+  }
+  function recordStudyDay() {
+    if (!state.userId) return;
+    const days = new Set(readStudyDays());
+    days.add(studyDateKey());
+    try { localStorage.setItem(studyDaysKey(), JSON.stringify([...days].sort().slice(-366))); } catch {}
+    renderStudyStreak();
+  }
+  function reminderKey(userId = state.userId) {
+    return `jaguar-reminders-${userId}`;
+  }
+  function readReminderSettings() {
+    const defaults = { enabled:false, time:"19:00", lastSent:"" };
+    if (!state.userId) return defaults;
+    try {
+      const value = JSON.parse(localStorage.getItem(reminderKey()) || "{}");
+      return {
+        enabled: value.enabled === true,
+        time: typeof value.time === "string" && /^([01]\d|2[0-3]):[0-5]\d$/.test(value.time) ? value.time : defaults.time,
+        lastSent: typeof value.lastSent === "string" ? value.lastSent : "",
+      };
+    } catch { return defaults; }
+  }
+  function writeReminderSettings(value) {
+    if (!state.userId) return false;
+    try { localStorage.setItem(reminderKey(), JSON.stringify(value)); return true; } catch { return false; }
+  }
+  function renderReminderStatus() {
+    const status = $("#reminder-status");
+    if (!("Notification" in window)) {
+      status.textContent = "This browser does not support notifications.";
+      return;
+    }
+    const prefs = readReminderSettings();
+    if (Notification.permission === "denied") status.textContent = "Notifications are blocked in your browser settings.";
+    else if (prefs.enabled && Notification.permission === "granted") status.textContent = `Daily reminder set for ${prefs.time}. Jaguar must be open at that time.`;
+    else status.textContent = "Allow browser notifications to receive a daily reminder.";
+  }
+  function scheduleReminder() {
+    if (state.reminderTimer) window.clearTimeout(state.reminderTimer);
+    state.reminderTimer = null;
+    const prefs = readReminderSettings();
+    if (!state.userId || !prefs.enabled || !("Notification" in window) || Notification.permission !== "granted") return;
+    const [hour, minute] = prefs.time.split(":").map(Number);
+    const now = new Date();
+    const target = new Date(now.getFullYear(),now.getMonth(),now.getDate(),hour,minute,0,0);
+    if (target <= now || prefs.lastSent === studyDateKey(target)) target.setDate(target.getDate()+1);
+    state.reminderTimer = window.setTimeout(() => {
+      const current = readReminderSettings();
+      if (current.enabled && Notification.permission === "granted" && current.lastSent !== studyDateKey()) {
+        try {
+          new Notification("Time to study", { body:"Open Jaguar for a focused study session.", tag:"jaguar-daily-study-reminder" });
+          current.lastSent = studyDateKey();
+          writeReminderSettings(current);
+        } catch {}
+      }
+      renderReminderStatus();
+      scheduleReminder();
+    }, Math.max(1000,target.getTime()-now.getTime()));
+  }
+  function initStudyReminders(userId) {
+    if (!userId) return;
+    state.userId = userId;
+    const prefs = readReminderSettings();
+    $("#reminder-enabled").checked = prefs.enabled;
+    $("#reminder-time").value = prefs.time;
+    renderReminderStatus();
+    scheduleReminder();
+  }
+  async function enableStudyReminder(enabled = true) {
+    const checkbox = $("#reminder-enabled");
+    if (!enabled) {
+      const prefs = readReminderSettings();
+      writeReminderSettings({ ...prefs, enabled:false });
+      checkbox.checked = false;
+      renderReminderStatus();
+      scheduleReminder();
+      return;
+    }
+    if (!("Notification" in window)) {
+      checkbox.checked = false;
+      renderReminderStatus();
+      return;
+    }
+    try {
+      const permission = Notification.permission === "granted" ? "granted" : await Notification.requestPermission();
+      if (permission !== "granted") {
+        checkbox.checked = false;
+        const prefs = readReminderSettings();
+        writeReminderSettings({ ...prefs, enabled:false });
+        renderReminderStatus();
+        return;
+      }
+      const prefs = readReminderSettings();
+      writeReminderSettings({ ...prefs, enabled:true, time:$("#reminder-time").value || prefs.time });
+      checkbox.checked = true;
+      renderReminderStatus();
+      scheduleReminder();
+    } catch {
+      checkbox.checked = false;
+      $("#reminder-status").textContent = "Could not enable notifications. Check your browser settings.";
+    }
+  }
   function setModesView(items, target) {
     const container = $(target);
     container.innerHTML = "";
@@ -453,7 +581,10 @@
     try {
       const [data, profile] = await Promise.all([api("/api/study-sets"), api("/api/profile")]);
       state.sets = Array.isArray(data) ? data : Array.isArray(data?.items) ? data.items : [];
+      state.userId = profile?.userId || "";
       initExamSchedule(profile?.userId);
+      initStudyReminders(profile?.userId);
+      renderStudyStreak();
       state.signedIn = true;
       $("#public-home").hidden = true; $("#workspace").hidden = false;
       $("#public-load-error").hidden = true;
@@ -479,6 +610,7 @@
   function openSet(id) {
     const found = state.sets.find(set => String(set.id) === String(id));
     if (!found) { toast("That study set is no longer in your library."); return; }
+    recordStudyDay();
     state.sourceResizeObserver?.disconnect(); state.sourceResizeObserver = null;
     state.sourceUrls.forEach(url => URL.revokeObjectURL(url)); state.sourceUrls = [];
     state.selected = found; state.mode = modeList(found)[0]?.[0] || "summary"; state.answers = {};
@@ -755,13 +887,14 @@
       } catch(error) { record.status = "error"; record.error = error.message; }
       renderFiles();
     }
+    maybeOpenModeDialog();
   }
   function combinedSourceText() {
     return state.files.map(f=>`=== Source: ${f.name} ===\n${f.text}`).join("\n\n");
   }
   function renderFiles() {
     $("#file-list").innerHTML = state.files.map((f,i)=>`<div class="file-row"><span>${esc(f.name)} · ${fileSize(f.file.size)} · ${f.status==="reading"?"Reading…":f.status==="error"?esc(f.error):"Text ready"}</span><button type="button" data-remove-file="${i}" aria-label="Remove ${esc(f.name)}">Remove</button></div>`).join("");
-    $$("[data-remove-file]").forEach(b=>b.addEventListener("click",()=>{state.files.splice(Number(b.dataset.removeFile),1);renderFiles();}));
+    $$("[data-remove-file]").forEach(b=>b.addEventListener("click",()=>{state.files.splice(Number(b.dataset.removeFile),1);renderFiles();maybeOpenModeDialog();}));
     const total = combinedSourceText().length;
     const meter = $("#source-character-meter");
     meter.classList.toggle("over", total > MAX_SOURCE_CHARS);
@@ -769,6 +902,13 @@
     meter.setAttribute("aria-valuetext", `${total.toLocaleString()} of ${MAX_SOURCE_CHARS.toLocaleString()} characters`);
     $("span", meter).style.transform = `scaleX(${Math.min(1, total / MAX_SOURCE_CHARS)})`;
     $("#source-character-count").textContent = `${total.toLocaleString()} / ${MAX_SOURCE_CHARS.toLocaleString()} characters combined`;
+    const allReady = state.files.length > 0 && state.files.every(file => file.status === "ready");
+    $("#choose-formats-button").hidden = !allReady;
+  }
+  function maybeOpenModeDialog() {
+    if (!state.files.length || state.files.some(file => file.status !== "ready") || state.working) return;
+    const dialog = $("#mode-dialog");
+    if (!dialog.open) dialog.showModal();
   }
   async function generate() {
     if (state.working) return;
@@ -799,6 +939,7 @@
       catch { toast("The study set was saved, but original previews could not be kept in this browser."); }
       state.sets = [finalSet, ...state.sets.filter(s=>s.id!==finalSet.id)];
       state.files = []; renderFiles(); renderHomeSets(); renderSaved();
+      if ($("#mode-dialog").open) $("#mode-dialog").close();
       openSet(finalSet.id); toast("Your study materials are ready.");
     } catch(error) {
       setError(error.message || "We could not generate this study set. Try again.");
@@ -843,6 +984,8 @@
     $("#study-back").addEventListener("click",()=>showView("saved"));
     $("#study-delete").addEventListener("click",()=>state.selected && deleteSet(state.selected.id));
     $("#generate-button").addEventListener("click",generate);
+    $("#choose-formats-button").addEventListener("click",maybeOpenModeDialog);
+    $("#close-mode-dialog").addEventListener("click",()=>$("#mode-dialog").close());
     $("#source-files").addEventListener("change",e=>{ void addFiles(e.target.files || []); e.target.value=""; });
     const zone=$("#dropzone");
     zone.addEventListener("dragover",e=>{e.preventDefault();zone.classList.add("drag");});
@@ -853,6 +996,23 @@
       $("#mode-fields").hidden=!(modes.includes("objective")||modes.includes("timed"));
       $("#question-count-wrap").hidden=!(modes.includes("objective")||modes.includes("timed"));
       $("#exam-minutes-wrap").hidden=!modes.includes("timed");
+      const all=$$('input[name="mode"]');
+      $("#select-all-modes").checked=all.length>0 && modes.length===all.length;
+      $("#select-all-modes").indeterminate=modes.length>0 && modes.length<all.length;
+    });
+    $("#select-all-modes").addEventListener("change",event=>{
+      $$('input[name="mode"]').forEach(input=>{ input.checked=event.target.checked; });
+      $("#mode-list").dispatchEvent(new Event("change",{bubbles:true}));
+    });
+    $("#reminder-enabled").addEventListener("change",event=>{ void enableStudyReminder(event.target.checked); });
+    $("#reminder-notifications").addEventListener("click",()=>{ void enableStudyReminder(true); });
+    $("#reminder-time").addEventListener("change",()=>{
+      const prefs=readReminderSettings();
+      const time=$("#reminder-time").value;
+      if (!/^([01]\d|2[0-3]):[0-5]\d$/.test(time)) return;
+      writeReminderSettings({ ...prefs, time });
+      renderReminderStatus();
+      scheduleReminder();
     });
   }
   bind(); initSettings();

@@ -423,6 +423,81 @@ body::after { display: none; }
 .app-shell .term-card { border: 0; border-bottom: 1px solid var(--line); padding: 14px 0; }
 .app-shell .upload-icon { background: none !important; }
 
+/* Keep the navigation rail independent from long study pages. */
+.app-shell {
+  --sidebar-width: 220px;
+  grid-template-columns: var(--sidebar-width) minmax(0, 1fr);
+}
+.app-shell > .sidebar {
+  position: fixed;
+  inset: 0 auto 0 0;
+  z-index: 20;
+  align-self: start;
+  width: var(--sidebar-width);
+  height: 100vh;
+  height: 100dvh;
+  min-height: 0;
+  max-height: 100dvh;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+.app-shell > .main-area {
+  grid-column: 2;
+  min-width: 0;
+}
+@media (max-width: 1100px) and (min-width: 701px) {
+  .app-shell { --sidebar-width: 190px; }
+}
+@media (max-width: 700px) {
+  .app-shell { --sidebar-width: 0px; }
+  .app-shell > .main-area { grid-column: auto; }
+}
+
+/* A reader-first study view with the course title beside Back, as in the reference. */
+.app-shell.in-study .mobile-brand { display: none; }
+.app-shell.in-study .crumb {
+  padding-left: 0;
+  border-left: 0;
+  font-size: 14px;
+}
+.app-shell.in-study .side-modes::before {
+  content: "Study methods";
+  display: block;
+  margin: 8px 0 5px 9px;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.4;
+}
+.app-shell.in-study .output-head h2 {
+  font-size: clamp(22px, 2.2vw, 27px);
+  line-height: 1.25;
+}
+.app-shell.in-study .is-reading .doc { max-width: 76ch; }
+@media (min-width: 701px) {
+  .app-shell.in-study .exam-sticky { top: 58px; }
+}
+
+/* Let the study document use page scrolling; keep the source beside it. */
+.app-shell.in-study .output-area:not(.is-full) .study-split {
+  min-height: 0;
+  align-items: start;
+}
+.app-shell.in-study .output-area:not(.is-full) .study-pane {
+  max-height: none;
+  overflow: visible;
+  align-self: start;
+}
+@media (min-width: 861px) {
+  .app-shell.in-study .output-area:not(.is-full) .study-split.with-source .source-pane {
+    position: sticky;
+    top: 74px;
+    align-self: start;
+    max-height: calc(100dvh - 94px);
+    overflow: auto;
+  }
+}
+
 /* Landing metadata contrast */
 .calm .sample-label span, .calm .sample-source-head, .calm .landing-footer { color: var(--muted); }
 .calm .landing-footer a, .calm .landing-signin { min-height: 40px; display: inline-flex; align-items: center; }

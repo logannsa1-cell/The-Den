@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#0b0b0d">
   <title>Jaguar — Study from your notes</title>
-  <link rel="icon" type="image/svg+xml" href="{{ base_path }}/jaguar-outline.svg">
+  <link rel="icon" type="image/svg+xml" href="{{ base_path }}/static/jaguar-outline.svg">
   <link rel="stylesheet" href="{{ base_path }}/static/app.css">
 </head>
 <body>
@@ -13,15 +13,15 @@
     <section id="public-home" class="public" hidden>
       <nav class="public-nav" aria-label="Main navigation">
         <a class="brand" href="{{ base_path }}/" aria-label="Jaguar home">
-          <img class="mark" src="{{ base_path }}/jaguar-outline.svg" alt="">
+          <img class="mark" src="{{ base_path }}/static/jaguar-outline.svg" alt="">
           <span class="brand-name">Jaguar</span>
         </a>
-        <a class="quiet" href="/sign-in" target="_blank" rel="noopener" data-auth-link>Sign in</a>
+        <a class="quiet" href="/sign-in" data-auth-link>Sign in</a>
       </nav>
       <header class="hero">
         <h1>Use your notes to study <em class="editorial-accent">well</em></h1>
         <p>Use your notes to study better.</p>
-        <div class="hero-actions"><a class="primary" href="/sign-up" target="_blank" rel="noopener" data-auth-link>Make a study set</a><a class="quiet" href="/sign-in" target="_blank" rel="noopener" data-auth-link>I have an account</a></div>
+        <div class="hero-actions"><a class="primary" href="/sign-up" data-auth-link>Make a study set</a><a class="quiet" href="/sign-in" data-auth-link>I have an account</a></div>
         <div id="public-load-error" class="error" role="alert" hidden><span id="public-load-message"></span> <button id="retry-public-load" class="quiet" type="button">Try again</button></div>
       </header>
       <section class="public-rule"><h2>Start from your sources</h2><p>Add one document or a small collection. Jaguar works from the text extracted from your own course material, so each study set stays anchored to what you need to learn.</p></section>
@@ -33,7 +33,7 @@
     <div id="workspace" hidden>
       <header class="topbar">
         <a class="brand" href="#" data-view="home" aria-label="Jaguar workspace home">
-          <img class="mark" src="{{ base_path }}/jaguar-outline.svg" alt="">
+          <img class="mark" src="{{ base_path }}/static/jaguar-outline.svg" alt="">
           <span class="brand-name">Jaguar</span>
         </a>
         <div class="topbar-spacer"></div>
@@ -79,6 +79,7 @@
                   <div id="source-character-meter" class="char-meter" role="progressbar" aria-label="Combined extracted text" aria-valuemin="0" aria-valuemax="180000" aria-valuenow="0">
                     <span></span><em id="source-character-count">0 / 180,000 characters combined</em>
                   </div>
+                  <button id="choose-formats-button" class="choose-formats" type="button" hidden>Choose study formats</button>
                   <details class="source-size-guide">
                     <summary>How much should I upload?</summary>
                     <p><strong>Around 10,000 words</strong> is a useful default per set; 1,000–10,000 words is a comfortable range.</p>
@@ -92,30 +93,6 @@
                     <p>These are estimates, not limits. Diagrams, equations, tables and bullets can make a long document relatively short in words. Larger notes may work within the 15 MB per-file and 180,000-character combined limits, subject to processing limits.</p>
                   </details>
                 </section>
-                <section class="section" aria-labelledby="mode-heading">
-                  <div class="section-head"><div><h2 id="mode-heading">Create a study set</h2><p>Choose one or more formats for these notes.</p></div></div>
-                  <fieldset style="border:0;padding:0;margin:0">
-                    <legend class="sr-only">Study formats</legend>
-                    <div id="mode-list" class="mode-list">
-                      <label class="mode-choice"><input type="checkbox" name="mode" value="summary"><span>Note summary</span><small>Detailed exam reference</small></label>
-                      <label class="mode-choice"><input type="checkbox" name="mode" value="tutor"><span>Tutor lesson</span><small>About 5,000 words for substantial sources</small></label>
-                      <label class="mode-choice"><input type="checkbox" name="mode" value="cram"><span>Cram sheet</span><small>Fast final review</small></label>
-                      <label class="mode-choice"><input type="checkbox" name="mode" value="objective"><span>Objective questions</span><small>Multiple choice · A–E · 1–50</small></label>
-                      <label class="mode-choice"><input type="checkbox" name="mode" value="theory"><span>Theory test</span><small>Written questions with a, b, and c</small></label>
-                      <label class="mode-choice"><input type="checkbox" name="mode" value="timed"><span>Time-based exam</span><small>One combined paper</small></label>
-                    </div>
-                  </fieldset>
-                  <div id="mode-fields" class="fields-row" hidden>
-                    <label class="field-label" id="question-count-wrap" hidden>Objective question count (1–50)
-                      <input id="question-count" class="field" type="number" min="1" max="50" step="1" value="10">
-                    </label>
-                    <label class="field-label" id="exam-minutes-wrap" hidden>Exam duration (1–180 minutes)
-                      <input id="exam-minutes" class="field" type="number" min="1" max="180" step="1" value="60">
-                    </label>
-                  </div>
-                </section>
-                <div id="builder-error" class="error" role="alert" hidden></div>
-                  <div class="section-head"><span id="builder-status" class="status" role="status"></span><button id="generate-button" class="primary" type="button">Generate study materials</button></div>
               </div>
               <aside class="builder-aside">
                 <section class="exam-planner side-section" aria-labelledby="exam-planner-heading">
@@ -137,6 +114,13 @@
                   <p class="exam-footnote">Saved on this device. It won’t change your study sets.</p>
                 </section>
                 <section class="activity-section" aria-labelledby="activity-heading">
+                  <div class="study-streak" aria-live="polite">
+                    <svg class="streak-flame" viewBox="0 0 32 36" role="img" aria-label="Study streak flame">
+                      <path fill="var(--accent)" d="M17.3 1.5c1.1 5.2-1.1 7.5-3.4 10.1C11.4 14.4 8 17.4 8 23.1 8 29 11.8 34 17.2 34c6.1 0 10.1-4.6 10.1-10.7 0-7-4.7-13.1-10-21.8Z"/>
+                      <path fill="var(--bg)" d="M17.7 17.4c.1 2.8-3.7 4.1-3.7 7.7 0 2.5 1.5 4.2 3.7 4.2 2.3 0 3.8-1.8 3.8-4.2 0-2.7-1.8-5.2-3.8-7.7Z"/>
+                    </svg>
+                    <div><strong id="streak-count">0 days</strong><span id="streak-caption">Open a set to start your streak.</span></div>
+                  </div>
                   <h2 id="activity-heading">Study activity</h2>
                   <div class="activity-stats">
                     <div class="activity-stat"><strong id="activity-total">0</strong><span>Saved sets</span></div>
@@ -146,6 +130,34 @@
               </aside>
             </div>
           </section>
+          <dialog id="mode-dialog" class="mode-dialog" aria-labelledby="mode-heading">
+            <div class="mode-dialog-head">
+              <div><p class="dialog-kicker">Study formats</p><h2 id="mode-heading">What do you want to make?</h2><p class="helper">Choose one or more. You can make every format together.</p></div>
+              <button id="close-mode-dialog" class="quiet" type="button">Close</button>
+            </div>
+            <label class="select-all"><input id="select-all-modes" type="checkbox"> Select all formats</label>
+            <fieldset class="mode-fieldset">
+              <legend class="sr-only">Study formats</legend>
+              <div id="mode-list" class="mode-list">
+                <label class="mode-choice"><input type="checkbox" name="mode" value="summary"><span>Note summary</span><small>Detailed exam reference</small></label>
+                <label class="mode-choice"><input type="checkbox" name="mode" value="tutor"><span>Tutor lesson</span><small>About 5,000 words for substantial sources</small></label>
+                <label class="mode-choice"><input type="checkbox" name="mode" value="cram"><span>Cram sheet</span><small>Fast final review</small></label>
+                <label class="mode-choice"><input type="checkbox" name="mode" value="objective"><span>Objective questions</span><small>Multiple choice · A–E · 1–50</small></label>
+                <label class="mode-choice"><input type="checkbox" name="mode" value="theory"><span>Theory test</span><small>Written questions with a, b, and c</small></label>
+                <label class="mode-choice"><input type="checkbox" name="mode" value="timed"><span>Time-based exam</span><small>One combined paper</small></label>
+              </div>
+            </fieldset>
+            <div id="mode-fields" class="fields-row" hidden>
+              <label class="field-label" id="question-count-wrap" hidden>Objective question count (1–50)
+                <input id="question-count" class="field" type="number" min="1" max="50" step="1" value="10">
+              </label>
+              <label class="field-label" id="exam-minutes-wrap" hidden>Exam duration (1–180 minutes)
+                <input id="exam-minutes" class="field" type="number" min="1" max="180" step="1" value="60">
+              </label>
+            </div>
+            <div id="builder-error" class="error" role="alert" hidden></div>
+            <div class="mode-dialog-actions"><span id="builder-status" class="status" role="status"></span><button id="generate-button" class="primary" type="button">Generate study materials</button></div>
+          </dialog>
           <section id="view-saved" class="workspace" hidden aria-labelledby="saved-heading">
             <header class="page-heading"><div><h1 id="saved-heading">Saved study sets</h1><p class="muted">Your generated materials, grouped by subject.</p></div><button class="primary" type="button" data-view="home">Create a set</button></header>
             <div id="saved-page-list" class="saved-page-list"><div class="loading-lines" aria-label="Loading saved sets"><i></i><i></i><i></i></div></div>
@@ -168,6 +180,14 @@
                 <label class="field-label">Profile picture<input id="profile-picture" class="file-input" type="file" accept="image/*"></label>
                 <label class="field-label">Workspace banner<input id="profile-banner" class="file-input" type="file" accept="image/*"></label>
                 <p id="settings-status" class="status" role="status"></p>
+                <section class="reminder-settings" aria-labelledby="reminder-heading">
+                  <h2 id="reminder-heading">Study reminders</h2>
+                  <p class="helper">Choose a daily time for a browser notification. Jaguar needs to be open for it to arrive.</p>
+                  <label class="reminder-toggle"><input id="reminder-enabled" type="checkbox"> Daily reminder</label>
+                  <label class="field-label">Reminder time<input id="reminder-time" class="field" type="time" value="19:00"></label>
+                  <button id="reminder-notifications" class="quiet" type="button">Enable browser notifications</button>
+                  <p id="reminder-status" class="status" role="status" aria-live="polite"></p>
+                </section>
               </div>
               <div>
                 <div id="banner-preview" class="profile-banner" aria-label="Banner preview"></div>
