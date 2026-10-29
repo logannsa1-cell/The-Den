@@ -1,4 +1,5 @@
 import { createContext, type ReactNode, useContext, useEffect, useState } from 'react';
+import { jaguarEmblemDataUri } from '@/lib/jaguar-mark';
 
 export type ThemeName = 'rose' | 'violet';
 export type ThemeSpec = { id: ThemeName; label: string; accent: string; accentInk: string; bg: string; surface: string; text: string; muted: string; line: string };
@@ -30,6 +31,8 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     try { localStorage.setItem(KEY, id); } catch { /* storage blocked */ }
     const meta = document.querySelector('meta[name="theme-color"]');
     meta?.setAttribute('content', theme.bg);
+    document.querySelectorAll<HTMLLinkElement>('link[rel="icon"], link[rel="apple-touch-icon"]')
+      .forEach((link) => { link.href = jaguarEmblemDataUri(theme.accent); });
   }, [id, theme.bg]);
   return <ThemeContext.Provider value={{ theme, setTheme: setId }}>{children}</ThemeContext.Provider>;
 }

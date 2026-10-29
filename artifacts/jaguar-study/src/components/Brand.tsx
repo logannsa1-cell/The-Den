@@ -1,12 +1,15 @@
 import { Check, Palette } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { THEMES, useTheme } from '@/lib/theme';
+import { jaguarEmblemDataUri } from '@/lib/jaguar-mark';
 
 export const basePath = import.meta.env.BASE_URL.replace(/\/$/, '');
 export const EMBLEM = `${basePath}/assets/jaguar-outline.svg`;
 
 export function Emblem({ size = 40, className = '' }: { size?: number; className?: string }) {
-  return <img src={EMBLEM} alt="" width={size} height={size} className={`emblem ${className}`} style={{ width: size, height: size }} />;
+  const { theme } = useTheme();
+  const background = className.split(/\s+/).includes('corner-jaguar') ? null : '#0b0b0d';
+  return <img src={jaguarEmblemDataUri(theme.accent, background)} alt="" width={size} height={size} className={`emblem ${className}`} style={{ width: size, height: size }} />;
 }
 
 export function BrandLockup({ size = 40, caption }: { size?: number; caption?: string }) {
@@ -23,7 +26,7 @@ export function RosetteCorners() {
     <div className="rosette-layer" aria-hidden="true">
       <span className="rosettes rosettes-tl" />
       <span className="rosettes rosettes-br" />
-      <img src={EMBLEM} alt="" className="corner-jaguar" />
+      <Emblem size={300} className="corner-jaguar" />
     </div>
   );
 }
