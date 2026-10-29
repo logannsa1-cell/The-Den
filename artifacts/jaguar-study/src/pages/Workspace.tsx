@@ -84,7 +84,7 @@ export default function Workspace() {
   const [activeSources, setActiveSources] = useState<StoredSource[] | null>(null);
   const [notice, setNotice] = useState('');
   const outputRef = useRef<HTMLDivElement>(null);
-  const [view, setView] = useState<'builder' | 'study'>('builder');
+  const [view, setView] = useState<'builder' | 'saved' | 'study'>('builder');
   const [pendingModes, setPendingModes] = useState<StudyMode[]>([]);
   const [studyError, setStudyError] = useState('');
   const [saveWarning, setSaveWarning] = useState('');
@@ -131,7 +131,9 @@ export default function Workspace() {
   }, [active?.id, userId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const remoteIds = new Set(remoteSets.map((s) => s.id));
-  const savedSets = [...remoteSets, ...localSets.filter((l) => !remoteIds.has(l.id))];
+  const savedSets = [...remoteSets, ...localSets.filter((l) => !remoteIds.has(l.id))]
+    .sort((a, b) => (Date.parse(b.createdAt) || 0) - (Date.parse(a.createdAt) || 0));
+  const recentSets = savedSets.slice(0, 3);
   const localOnly = [...localSets, ...legacySets.filter((s) => !localSets.some((l) => l.id === s.id))].filter((s) => !remoteIds.has(s.id));
 
   const persist = (sets: StudySet[]) => {
@@ -288,6 +290,28 @@ export default function Workspace() {
   });
 
   const initial = (user?.firstName?.[0] ?? user?.emailAddresses[0]?.emailAddress[0] ?? 'J').toUpperCase();
+  const savedSetRow = (set: StudySet, surface: 'recent' | 'library') => {
+    const remote = remoteIds.has(set.id);
+    const suffix = surface === 'recent' ? '-recent' : '';
+    return (
+      <article className={`saved-card saved-row${surface === 'library' ? ' library-row' : ''}${active?.id === set.id ? ' current' : ''}`}
+        key={`${surface}-${set.id}`}
+        data-testid={surface === 'library' ? `card-study-set-${set.id}` : `recent-card-${set.id}`}>
+        <button className="saved-open" type="button" onClick={() => openSet(set)}
+          data-testid={`button-open-${set.id}${suffix}`}>
+          <h3>{clean(set.title) || 'Study set'}</h3>
+          <div className="saved-meta">{clean(set.sourceName) || 'Notes'}</div>
+          <div className="saved-meta">{new Date(set.createdAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })} · {setModes(set).map(modeLabel).join(', ')}{remote ? '' : ' · This browser only'}</div>
+        </button>
+        <div className="saved-actions">
+          {!remote && <button className="icon-button" type="button" onClick={() => void syncOne(set)} disabled={upsert.isPending}
+            aria-label="Sync to account" data-testid={`button-sync-${set.id}${suffix}`}><Cloud size={13} /></button>}
+          <button className="icon-button danger" type="button" onClick={() => deleteSet(set)} aria-label={`Delete ${clean(set.title)}`}
+            data-testid={`button-delete-${set.id}${suffix}`}><Trash2 size={13} /></button>
+        </div>
+      </article>
+    );
+  };
 
   return (
     <div className={`app-shell${view === 'study' && !settingsOpen ? ' in-study' : ''}`}>
@@ -301,13 +325,13 @@ export default function Workspace() {
           setSettingsOpen(false);
           window.location.hash = '';
           window.setTimeout(() => {
-            if (target === 'nav-saved') document.getElementById('saved-sets')?.scrollIntoView({ behavior: 'smooth' });
+            if (target === 'nav-saved') setView('saved');
             else if (target === 'nav-active') setView('study');
             else window.scrollTo({ top: 0, behavior: 'smooth' });
           }, 0);
         }}>
           <button className={`nav-item${view === 'builder' ? ' active' : ''}`} type="button" onClick={() => { setView('builder'); window.scrollTo({ top: 0, behavior: 'smooth' }); }} data-testid="nav-create"><Plus size={16} /> New study set</button>
-          <button className="nav-item" type="button" onClick={() => { setView('builder'); window.setTimeout(() => document.getElementById('saved-sets')?.scrollIntoView({ behavior: 'smooth' }), 0); }} data-testid="nav-saved"><FolderOpen size={16} /> Saved sets <span className="nav-count">{savedSets.length}</span></button>
+          <button className={`nav-item${view === 'saved' ? ' active' : ''}`} type="button" onClick={() => { setView('saved'); window.scrollTo({ top: 0, behavior: 'smooth' }); }} aria-current={view === 'saved' ? 'page' : undefined} data-testid="nav-saved"><FolderOpen size={16} /> Saved sets <span className="nav-count">{savedSets.length}</span></button>
           {(active || generate.isPending || studyError) && <button className={`nav-item${view === 'study' ? ' active' : ''}`} type="button" onClick={() => setView('study')} data-testid="nav-active"><BookOpen size={16} /> Open set</button>}
           {(active || generate.isPending || studyError) && <div className="side-modes" role="group" aria-label="Study modes">{modeLinks()}</div>}
         </nav>
@@ -318,7 +342,7 @@ export default function Workspace() {
         <header className="topbar">
           <div className="mobile-brand"><BrandLockup size={30} /></div>
           {view === 'study' && !settingsOpen && <button className="icon-button topbar-back" type="button" onClick={() => { setView('builder'); window.scrollTo({ top: 0, behavior: 'smooth' }); }} aria-label="Back to study sets" data-testid="button-back-to-sets"><ArrowLeft size={15} /></button>}
-          <div className="crumb">{settingsOpen ? 'Settings' : view === 'study' ? clean(active?.title ?? '') || 'Open set' : 'Study sets'}</div>
+          <div className="crumb">{settingsOpen ? 'Settings' : view === 'study' ? clean(active?.title ?? '') || 'Open set' : view === 'saved' ? 'Saved sets' : 'Study sets'}</div>
           <div className="top-status">
             <span className="mobile-only"><ThemeSwitcher compact /></span>
             <span className="local-pill"><span className="status-dot" /> Account sync</span>
@@ -402,37 +426,55 @@ export default function Workspace() {
             <button className="primary-button" type="button" onClick={() => setModeDialog(true)} disabled={busy} data-testid="button-open-modes">Choose formats <ChevronRight size={16} /></button>
           </section>
           </div>
-          <aside className="builder-aside" aria-label="Your exam and saved sets">
+          <aside className="builder-aside" aria-label="Your exam and recent study sets">
           <ExamSchedule userId={userId} />
 
-          <section id="saved-sets" aria-labelledby="saved-heading">
-            <div className="section-heading"><h2 id="saved-heading">Saved sets</h2>{savedSets.length > 0 && <span className="step-label">{savedSets.length} saved</span>}</div>
+          <section id="recent-sets" aria-labelledby="recent-heading">
+            <div className="section-heading recent-heading">
+              <div><h2 id="recent-heading">Recent sets</h2>{savedSets.length > 0 && <span className="step-label">{savedSets.length} saved</span>}</div>
+              <button className="library-link" type="button" onClick={() => { setView('saved'); window.scrollTo({ top: 0, behavior: 'smooth' }); }} data-testid="button-view-all-saved">
+                View all <ChevronRight size={14} />
+              </button>
+            </div>
             {remoteQuery.isLoading ? <div className="loading-saved" role="status" aria-label="Loading"><span /><span /><span /></div>
               : remoteQuery.isError ? <div className="error-message" role="alert">Your account sets could not load. <button className="inline-retry" type="button" onClick={() => void remoteQuery.refetch()} data-testid="button-retry-study-sets">Try again</button></div>
               : savedSets.length === 0 ? <div className="empty-state" data-testid="empty-saved"><div><strong>No study sets yet</strong><p>The ones you make will show up here.</p></div></div>
               : (
                 <div className="saved-grid saved-rows">
-                  {savedSets.map((set) => {
-                    const remote = remoteIds.has(set.id);
-                    return (
-                      <article className={`saved-card saved-row${active?.id === set.id ? ' current' : ''}`} key={set.id} data-testid={`card-study-set-${set.id}`}>
-                        <button className="saved-open" type="button" onClick={() => openSet(set)} data-testid={`button-open-${set.id}`}>
-                          <h3>{clean(set.title) || 'Study set'}</h3>
-                          <div className="saved-meta">{clean(set.sourceName) || 'Notes'}</div>
-                          <div className="saved-meta">{new Date(set.createdAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })} · {setModes(set).map(modeLabel).join(', ')}{remote ? '' : ' · This browser only'}</div>
-                        </button>
-                        <div className="saved-actions">
-                          {!remote && <button className="icon-button" type="button" onClick={() => void syncOne(set)} disabled={upsert.isPending} aria-label="Sync to account" data-testid={`button-sync-${set.id}`}><Cloud size={13} /></button>}
-                          <button className="icon-button danger" type="button" onClick={() => deleteSet(set)} aria-label={`Delete ${clean(set.title)}`} data-testid={`button-delete-${set.id}`}><Trash2 size={13} /></button>
-                        </div>
-                      </article>
-                    );
-                  })}
+                  {recentSets.map((set) => savedSetRow(set, 'recent'))}
                 </div>
               )}
           </section>
           </aside>
           </div>
+        </div>
+        <div className="workspace library-workspace" hidden={settingsOpen || view !== 'saved'} data-testid="page-saved-sets">
+          <header className="library-heading">
+            <div>
+              <h1 id="library-heading">Saved sets</h1>
+              <p>{savedSets.length === 1 ? '1 set in your library.' : `${savedSets.length} sets in your library.`} Open a set to pick up where you left off.</p>
+            </div>
+            <button className="primary-button" type="button" onClick={() => { setView('builder'); window.scrollTo({ top: 0, behavior: 'smooth' }); }} data-testid="button-new-from-library">
+              <Plus size={15} /> New study set
+            </button>
+          </header>
+          {error && <div className="error-message library-error" role="alert"><AlertCircle size={13} /> {error}</div>}
+          {remoteQuery.isLoading ? <div className="loading-saved library-loading" role="status" aria-label="Loading saved sets"><span /><span /><span /></div>
+            : remoteQuery.isError ? <div className="error-message" role="alert">Your account sets could not load. <button className="inline-retry" type="button" onClick={() => void remoteQuery.refetch()} data-testid="button-retry-library">Try again</button></div>
+              : savedSets.length === 0 ? (
+                <div className="empty-state library-empty" data-testid="empty-library">
+                  <div><strong>No saved sets yet</strong><p>Make your first set and it will be waiting here when you need it.</p>
+                    <button className="quiet-button" type="button" onClick={() => setView('builder')} data-testid="button-empty-library-create">Create a study set</button>
+                  </div>
+                </div>
+              ) : (
+                <section className="library-list" aria-labelledby="library-heading">
+                  <div className="library-list-head"><span>Study set</span><span>Actions</span></div>
+                  <div className="saved-grid saved-rows">
+                    {savedSets.map((set) => savedSetRow(set, 'library'))}
+                  </div>
+                </section>
+              )}
         </div>
       </main>
       <ModeDialog open={modeDialog} modes={modes} onModes={setModesState} onClose={() => setModeDialog(false)} onGenerate={() => void onGenerate()} busy={generating} error={error}
