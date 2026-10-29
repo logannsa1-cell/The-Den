@@ -57,22 +57,11 @@ body::after { display: none; }
 .builder-aside .field-row { grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr); gap: 12px; }
 .builder-aside .field { width: 100%; min-width: 0; border-radius: 5px; padding: 10px 9px; font: 12px var(--app-font-sans); color-scheme: dark; }
 .schedule-footnote { margin: 20px 0 0; color: var(--faint); font-size: 11px; line-height: 1.6; }
-.builder-aside #recent-sets { margin-top: 26px; }
-.builder-aside .section-heading h2 { font: 600 15px var(--app-font-sans); }
-.builder-aside .step-label { font: 11px var(--app-font-sans); letter-spacing: normal; }
-.builder-aside .saved-grid { grid-template-columns: minmax(0, 1fr); gap: 0; }
-.builder-aside .saved-card { border: 0; border-bottom: 1px solid var(--line); border-radius: 0; background: none; box-shadow: none; padding: 14px 0; }
-.builder-aside .saved-card:hover { transform: none; background: var(--surface); }
-.builder-aside .empty-state { min-height: 100px; padding: 6px 0 20px; border: 0; border-bottom: 1px solid var(--line); border-radius: 0; text-align: left; place-items: start; }
-.builder-aside .empty-state-icon { display: none; }
-.builder-aside .empty-state strong { color: var(--muted); font-size: 13px; font-weight: 400; }
-.builder-aside .empty-state p { margin-top: 12px; font-size: 11px; color: var(--faint); }
 .app-shell :is(button, input, select):focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
 @media (max-width: 1100px) and (min-width: 701px) {
   .app-shell { grid-template-columns: 190px minmax(0,1fr); }
   .builder-workbench { grid-template-columns: minmax(0,1fr); gap: 40px; }
   .builder-aside { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 30px; }
-  .builder-aside #recent-sets { margin-top: 0; }
 }
 @media (max-width: 700px) {
   .app-shell { display: block; }
@@ -243,15 +232,15 @@ body::after { display: none; }
 .saved-row .icon-button { opacity: .7; }
 .saved-row .icon-button:hover { opacity: 1; }
 
-/* Keep the home page short and give the full library its own reading space. */
-.recent-heading { align-items: center; margin: 26px 0 10px; }
-.recent-heading > div { display: flex; align-items: baseline; gap: 8px; }
-.recent-heading .step-label { color: var(--faint); }
-.library-link {
-  display: inline-flex; align-items: center; gap: 3px; padding: 5px 0;
-  border: 0; background: none; color: var(--accent-2); font: 500 12px var(--app-font-sans); cursor: pointer;
+/* Keep saved-set count and navigation visible without rendering rows on the home page. */
+.home-library-shortcut {
+  display: flex; align-items: center; gap: 10px; width: 100%; margin-top: 18px; padding: 12px 0;
+  border: 0; border-block: 1px solid var(--line); background: none; color: var(--muted);
+  font: 500 12px var(--app-font-sans); text-align: left; cursor: pointer;
 }
-.library-link:hover { color: var(--text); }
+.home-library-shortcut > span:first-of-type { flex: 1; color: var(--text); }
+.home-library-shortcut:hover { color: var(--accent-2); }
+.home-library-count { color: var(--faint); font-variant-numeric: tabular-nums; }
 .library-workspace {
   width: min(1100px, 100%);
   padding: clamp(28px, 4vw, 48px) clamp(20px, 5vw, 50px) 76px;
