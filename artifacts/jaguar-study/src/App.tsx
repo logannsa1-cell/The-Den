@@ -45,11 +45,11 @@ function AuthShell({ title, line, children }: { title: string; line: string; chi
 }
 
 function SignInPage() {
-  return <AuthShell title="Welcome back" line="Your sets are where you left them."><SignIn routing="path" path={`${basePath}/sign-in`} signUpUrl={`${basePath}/sign-up`} /></AuthShell>;
+  return <AuthShell title="Welcome back" line="Your sets are where you left them."><SignIn routing="path" path={`${basePath}/sign-in`} signUpUrl={`${basePath}/sign-up`} forceRedirectUrl="/" /></AuthShell>;
 }
 
 function SignUpPage() {
-  return <AuthShell title="Exam is soon" line="Make a space for your notes."><SignUp routing="path" path={`${basePath}/sign-up`} signInUrl={`${basePath}/sign-in`} /></AuthShell>;
+  return <AuthShell title="Exam is soon" line="Make a space for your notes."><SignUp routing="path" path={`${basePath}/sign-up`} signInUrl={`${basePath}/sign-in`} forceRedirectUrl="/" /></AuthShell>;
 }
 
 function ClerkQueryClientCacheInvalidator() {

@@ -147,6 +147,14 @@ h3 { font-size:16px; margin:0; }
 .slide-preview h3 { font-size:clamp(17px,2vw,24px); line-height:1.25; margin:0 0 15px; color:#242127; }
 .slide-preview-text { white-space:pre-wrap; font-size:clamp(12px,1.2vw,16px); line-height:1.65; color:#39353b; }
 .slide-caption { display:flex; justify-content:space-between; gap:10px; margin-top:7px; color:var(--faint); font-size:11px; }
+.pptx-slide-frame { position:relative; width:100%; overflow:hidden; border-radius:4px; background:#f6f3fa; box-shadow:0 1px 0 var(--line),0 10px 30px -18px rgba(20,10,30,.45); }
+.pptx-stage { position:absolute; left:0; top:0; transform-origin:0 0; overflow:hidden; color:#1c1622; font-family:Calibri,Carlito,"Segoe UI",system-ui,sans-serif; }
+.pptx-element { position:absolute; transform-origin:50% 50%; }
+.pptx-fill { position:absolute; inset:0; width:100%; height:100%; box-sizing:border-box; overflow:visible; }
+.pptx-image { overflow:hidden; }
+.pptx-text { position:absolute; inset:0; display:flex; flex-direction:column; overflow:hidden; }
+.pptx-text p { position:relative; flex:none; margin:0; }
+.pptx-bullet { display:inline-block; width:.9em; }
 .source-extracted { margin-top:12px; }
 .source-extracted summary { cursor:pointer; color:var(--muted); font-size:12px; padding:8px 0; }
 .term-list { display:grid; gap:0; }

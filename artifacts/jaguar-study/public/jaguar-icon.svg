@@ -1,9 +1,110 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" fill="none">
-  <rect x="1" y="1" width="46" height="46" rx="10" stroke="#9E7BCC" stroke-width="1.5"/>
-  <path d="M12 16.5 9 9l10 4.5M36 16.5 39 9l-10 4.5" stroke="#B89AE3" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
-  <path d="M12 17c2.6-3.1 6.6-4.7 12-4.7s9.4 1.6 12 4.7l-1.3 13.1c-.4 4.1-4.8 7.6-10.7 9.4-5.9-1.8-10.3-5.3-10.7-9.4L12 17Z" stroke="#B89AE3" stroke-width="1.7" stroke-linejoin="round"/>
-  <path d="M15.5 20.8c2.2-1.8 4.5-1.8 6.8 0M25.7 20.8c2.3-1.8 4.6-1.8 6.8 0" stroke="#B89AE3" stroke-width="1.7" stroke-linecap="round"/>
-  <path d="m16.7 18.5 2 2.8m-5.2-1 2.7 2.4m15.1-4.2-2 2.8m5.2-1-2.7 2.4" stroke="#80639F" stroke-width="1.2" stroke-linecap="round"/>
-  <path d="m21 28.1 3-1.3 3 1.3-3 2.4-3-2.4Z" stroke="#C7ADEB" stroke-width="1.5" stroke-linejoin="round"/>
-  <path d="M24 30.5v2.3m0 0c-1.2 1.5-3 2.2-5.2 2m5.2-2c1.2 1.5 3 2.2 5.2 2M16 30l-4-1.5m4.7 4-4.6.2m19.9-2.7 4-1.5m-4.7 4 4.6.2" stroke="#B89AE3" stroke-width="1.25" stroke-linecap="round"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#1a0b2e"/>
+      <stop offset="1" stop-color="#05030a"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="50%" cy="42%" r="50%">
+      <stop offset="0" stop-color="#8b3df5" stop-opacity="0.55"/>
+      <stop offset="1" stop-color="#8b3df5" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="fur" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#23232e"/>
+      <stop offset="0.55" stop-color="#0e0e15"/>
+      <stop offset="1" stop-color="#050508"/>
+    </linearGradient>
+    <linearGradient id="rim" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#c084fc"/>
+      <stop offset="1" stop-color="#6d28d9"/>
+    </linearGradient>
+    <radialGradient id="eye" cx="50%" cy="50%" r="60%">
+      <stop offset="0" stop-color="#e9d5ff"/>
+      <stop offset="0.6" stop-color="#a855f7"/>
+      <stop offset="1" stop-color="#6d28d9"/>
+    </radialGradient>
+
+
+    <g id="ear">
+      <path d="M168 162 C148 132 138 100 148 80 C176 84 202 104 214 134 Z" fill="url(#fur)" stroke="url(#rim)" stroke-width="3" stroke-linejoin="round"/>
+      <path d="M171 142 C161 120 156 104 160 94 C177 98 193 112 202 130 Z" fill="#6d28d9" opacity="0.85"/>
+    </g>
+
+
+    <g id="side">
+
+      <path d="M176 218 Q204 192 236 212 Q206 238 176 218 Z" fill="url(#eye)" stroke="#0b0614" stroke-width="3" stroke-linejoin="round"/>
+      <ellipse cx="208" cy="214" rx="4.5" ry="11" fill="#05030a" transform="rotate(8 208 214)"/>
+      <circle cx="213" cy="209" r="2.4" fill="#fff"/>
+
+      <path d="M172 200 Q205 172 244 196" fill="none" stroke="#8b3df5" stroke-width="3.5" stroke-linecap="round"/>
+
+      <path d="M226 138 L232 162" stroke="#8b3df5" stroke-width="4" stroke-linecap="round"/>
+      <path d="M208 146 L216 168" stroke="#8b3df5" stroke-width="3" stroke-linecap="round"/>
+      <path d="M190 156 L200 174" stroke="#8b3df5" stroke-width="2.5" stroke-linecap="round" opacity="0.8"/>
+
+      <g fill="none" stroke="#a855f7" stroke-width="3" stroke-linecap="round">
+        <path d="M156 236 q8 -10 18 -4 q6 9 -2 15 q-12 3 -16 -11 z"/>
+        <path d="M178 272 q9 -10 20 -3 q6 10 -3 17 q-13 3 -17 -14 z"/>
+        <path d="M204 308 q8 -8 17 -2 q5 8 -2 13 q-11 3 -15 -11 z" opacity="0.85"/>
+      </g>
+      <g fill="#8b3df5">
+        <circle cx="165" cy="241" r="2.8"/>
+        <circle cx="188" cy="277" r="2.8"/>
+        <circle cx="211" cy="311" r="2.3"/>
+        <circle cx="162" cy="190" r="2.6"/>
+        <circle cx="152" cy="212" r="2.2"/>
+        <circle cx="236" cy="178" r="2.2"/>
+      </g>
+
+      <path d="M148 276 L128 290 L152 292 Z" fill="#0e0e15" stroke="url(#rim)" stroke-width="2" stroke-linejoin="round"/>
+
+      <g stroke="#e9d5ff" stroke-width="1.6" stroke-linecap="round" opacity="0.7" fill="none">
+        <path d="M222 300 Q170 292 118 304"/>
+        <path d="M222 310 Q172 312 124 330"/>
+      </g>
+      <g fill="#a855f7">
+        <circle cx="232" cy="296" r="2"/>
+        <circle cx="244" cy="302" r="2"/>
+        <circle cx="228" cy="308" r="2"/>
+      </g>
+    </g>
+  </defs>
+
+
+  <rect x="8" y="8" width="496" height="496" rx="112" fill="url(#bg)"/>
+  <rect x="8" y="8" width="496" height="496" rx="112" fill="url(#glow)"/>
+  <rect x="20" y="20" width="472" height="472" rx="100" fill="none" stroke="url(#rim)" stroke-width="4"/>
+  <rect x="30" y="30" width="452" height="452" rx="90" fill="none" stroke="#8b3df5" stroke-width="1" opacity="0.45" stroke-dasharray="3 7"/>
+
+
+
+
+
+
+  <path d="M256 124 C214 124 178 140 158 176 C138 208 130 244 150 280 C170 318 214 346 256 352 C298 346 342 318 362 280 C382 244 374 208 354 176 C334 140 298 124 256 124 Z" fill="url(#fur)" stroke="url(#rim)" stroke-width="4" stroke-linejoin="round"/>
+
+  <path d="M256 128 L256 176" stroke="#8b3df5" stroke-width="4" stroke-linecap="round"/>
+  <path d="M246 138 L256 150 L266 138" fill="none" stroke="#a855f7" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+
+
+  <ellipse cx="256" cy="298" rx="58" ry="44" fill="#1b1030"/>
+  <ellipse cx="256" cy="298" rx="58" ry="44" fill="none" stroke="#6d28d9" stroke-width="1.5" opacity="0.7"/>
+
+
+
+
+
+
+  <path d="M234 266 Q256 258 278 266 L256 290 Z" fill="#c084fc" stroke="#0b0614" stroke-width="2.5" stroke-linejoin="round"/>
+  <path d="M256 290 L256 308" stroke="#05030a" stroke-width="3" stroke-linecap="round"/>
+  <path d="M256 308 Q240 326 218 316 M256 308 Q272 326 294 316" fill="none" stroke="#05030a" stroke-width="3" stroke-linecap="round"/>
+  <path d="M236 320 L240 336 L246 322 Z M276 320 L272 336 L266 322 Z" fill="#fff"/>
+
+
+  <text x="256" y="410" text-anchor="middle" font-family="'Montserrat','Segoe UI',Arial,sans-serif" font-size="42" font-weight="800" letter-spacing="12" fill="#ffffff">JAGUAR</text>
+  <g stroke="#8b3df5" stroke-width="2" stroke-linecap="round">
+    <path d="M92 440 H150"/>
+    <path d="M362 440 H420"/>
+  </g>
+  <text x="256" y="445" text-anchor="middle" font-family="'Montserrat','Segoe UI',Arial,sans-serif" font-size="12" font-weight="600" letter-spacing="5" fill="#c4a1ff">STUDY SMARTER</text>
 </svg>
