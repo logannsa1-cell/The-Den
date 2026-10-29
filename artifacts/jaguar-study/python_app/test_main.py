@@ -20,7 +20,9 @@ class JaguarAppTests(unittest.TestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertIn("Use your notes to study well", response.text)
-        self.assertIn("Exam is soon ooo", response.text)
+        self.assertIn("Let’s get ready.", response.text)
+        self.assertIn("Exam planner", response.text)
+        self.assertIn("Study activity", response.text)
 
     def test_static_assets_are_served(self):
         response = self.client.get("/static/app.js")

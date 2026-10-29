@@ -4,8 +4,8 @@ export type ThemeName = 'rose' | 'violet';
 export type ThemeSpec = { id: ThemeName; label: string; accent: string; accentInk: string; bg: string; surface: string; text: string; muted: string; line: string };
 
 export const THEMES: ThemeSpec[] = [
-  { id: 'rose', label: 'Rose', accent: '#c88da0', accentInk: '#211318', bg: '#100c0e', surface: '#1a1517', text: '#f1eaed', muted: '#b3a4aa', line: '#342a2e' },
-  { id: 'violet', label: 'Violet', accent: '#a996c2', accentInk: '#19151e', bg: '#101013', surface: '#19181c', text: '#f0edf3', muted: '#b0aab8', line: '#34313a' },
+  { id: 'rose', label: 'Rose', accent: '#c88da0', accentInk: '#211318', bg: '#181719', surface: '#262426', text: '#f1eaed', muted: '#c0b8bc', line: '#3c383a' },
+  { id: 'violet', label: 'Violet', accent: '#a996c2', accentInk: '#19151e', bg: '#18181b', surface: '#262529', text: '#f0edf3', muted: '#c1bdc6', line: '#3d3a40' },
 ];
 
 const KEY = 'jaguar-theme';

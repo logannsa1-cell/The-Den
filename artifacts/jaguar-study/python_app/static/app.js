@@ -6,7 +6,7 @@
     ["summary", "Note summary"], ["tutor", "Tutor lesson"], ["cram", "Cram sheet"],
     ["objective", "Objective questions"], ["theory", "Theory"], ["timed", "Time-based exam"]
   ];
-  const state = { signedIn: false, sets: [], selected: null, mode: "summary", files: [], working: false, loadingSets: false, pendingAuth: false, answers: {}, exam: null, sourceFiles: [], sourceLoaded: false, sourceIndex: 0, sourceUrls: [], sourceResizeObserver: null };
+  const state = { signedIn: false, sets: [], selected: null, mode: "summary", files: [], working: false, loadingSets: false, pendingAuth: false, answers: {}, exam: null, examScheduleKey: "", examSchedule: { subject:"", date:"", pace:"1" }, sourceFiles: [], sourceLoaded: false, sourceIndex: 0, sourceUrls: [], sourceResizeObserver: null };
   const storage = {
     read(key, fallback = "") { try { return localStorage.getItem("jaguar-" + key) || fallback; } catch { return fallback; } },
     write(key, value) { try { localStorage.setItem("jaguar-" + key, value); return true; } catch { return false; } }
@@ -281,6 +281,91 @@
     const label = title(set);
     return label.split(/\s+(?:—|–|-|:)\s+/)[0].trim() || label;
   }
+  function createdTime(set) {
+    const time = Date.parse(set.createdAt || "");
+    return Number.isFinite(time) ? time : 0;
+  }
+  function formatSavedTime(value) {
+    const time = Date.parse(value || "");
+    if (!Number.isFinite(time)) return "Date unavailable";
+    const days = Math.floor((Date.now() - time) / 86400000);
+    if (days < 0) return `Saved ${new Date(time).toLocaleDateString(undefined, { month:"short", day:"numeric" })}`;
+    if (days === 0) return "Today";
+    if (days === 1) return "Yesterday";
+    if (days < 7) return `${days} days ago`;
+    return new Date(time).toLocaleDateString(undefined, { month:"short", day:"numeric" });
+  }
+  function renderExamSchedule() {
+    const schedule = state.examSchedule;
+    const daysLabel = $("#exam-days"), countdown = $("#exam-countdown-text"), estimate = $("#exam-estimate");
+    const clearButton = $("#clear-exam-schedule");
+    $("#exam-subject").value = schedule.subject;
+    $("#exam-date").value = schedule.date;
+    $("#exam-pace").value = schedule.pace;
+    clearButton.hidden = !schedule.subject && !schedule.date;
+    if (!schedule.date) {
+      daysLabel.textContent = "—";
+      countdown.textContent = "Add an exam date to start a countdown.";
+      estimate.hidden = true;
+      return;
+    }
+    const examDay = new Date(`${schedule.date}T00:00:00`);
+    if (Number.isNaN(examDay.getTime())) {
+      daysLabel.textContent = "—";
+      countdown.textContent = "Choose a valid exam date.";
+      estimate.hidden = true;
+      return;
+    }
+    const today = new Date();
+    today.setHours(0,0,0,0);
+    const days = Math.round((examDay.getTime() - today.getTime()) / 86400000);
+    daysLabel.textContent = days < 0 ? "Done" : days === 0 ? "Today" : String(days);
+    countdown.textContent = days < 0
+      ? "That date has passed."
+      : days === 0
+        ? `${schedule.subject || "Your exam"} is today.`
+        : `${days === 1 ? "day" : "days"} to ${schedule.subject || "your exam"}`;
+    if (days < 0) estimate.hidden = true;
+    else {
+      const hours = Math.round(days * Number(schedule.pace || 1) * 10) / 10;
+      estimate.textContent = `${hours} study hours at your pace`;
+      estimate.hidden = false;
+    }
+  }
+  function initExamSchedule(userId) {
+    const key = `jaguar-exam-schedule-${userId}`;
+    if (!userId || state.examScheduleKey === key) return;
+    state.examScheduleKey = key;
+    const validPaces = new Set(["0.5","1","1.5","2","3","4"]);
+    try {
+      const saved = JSON.parse(localStorage.getItem(key) || "{}");
+      state.examSchedule = {
+        subject: typeof saved.subject === "string" ? saved.subject.slice(0,60) : "",
+        date: typeof saved.date === "string" && /^\d{4}-\d{2}-\d{2}$/.test(saved.date) ? saved.date : "",
+        pace: validPaces.has(String(saved.pace)) ? String(saved.pace) : "1",
+      };
+    } catch {
+      state.examSchedule = { subject:"", date:"", pace:"1" };
+    }
+    const save = () => {
+      state.examSchedule = {
+        subject: $("#exam-subject").value.slice(0,60),
+        date: $("#exam-date").value,
+        pace: validPaces.has($("#exam-pace").value) ? $("#exam-pace").value : "1",
+      };
+      try { localStorage.setItem(key, JSON.stringify(state.examSchedule)); } catch {}
+      renderExamSchedule();
+    };
+    $("#exam-subject").addEventListener("input", save);
+    $("#exam-date").addEventListener("change", save);
+    $("#exam-pace").addEventListener("change", save);
+    $("#clear-exam-schedule").addEventListener("click", () => {
+      state.examSchedule = { subject:"", date:"", pace:"1" };
+      try { localStorage.setItem(key, JSON.stringify(state.examSchedule)); } catch {}
+      renderExamSchedule();
+    });
+    renderExamSchedule();
+  }
   function setModesView(items, target) {
     const container = $(target);
     container.innerHTML = "";
@@ -355,10 +440,17 @@
   function renderHomeSets() {
     const target = $("#home-saved-list");
     $("#saved-count").textContent = state.sets.length ? `(${state.sets.length})` : "";
+    $("#activity-total").textContent = String(state.sets.length);
+    const weekAgo = Date.now() - 7 * 86400000;
+    $("#activity-week").textContent = String(state.sets.filter(set => {
+      const time = createdTime(set);
+      return time >= weekAgo && time <= Date.now();
+    }).length);
     if (!state.sets.length) {
-      target.innerHTML = '<div class="empty"><strong>Your library is ready when you are</strong><p>There are no saved study sets yet.</p></div>'; return;
+      target.innerHTML = '<div class="empty"><strong>No saved sets yet</strong><p>Sets made from your notes will appear here.</p></div>'; return;
     }
-    target.innerHTML = state.sets.slice(0,5).map(set => `<article class="saved-row"><button class="saved-open" data-open="${esc(set.id)}"><strong>${esc(title(set))}</strong><span>${esc(sourceName(set))} · ${(set.modes || []).map(m => modesInfo.find(x=>x[0]===m)?.[1] || m).map(esc).join(", ")}</span></button><div class="saved-actions"><button class="icon-button" data-delete="${esc(set.id)}" aria-label="Delete ${esc(title(set))}">×</button></div></article>`).join("");
+    const recent = [...state.sets].sort((a,b) => createdTime(b) - createdTime(a)).slice(0,4);
+    target.innerHTML = recent.map(set => `<article class="saved-row"><button class="saved-open" data-open="${esc(set.id)}"><strong>${esc(title(set))}</strong><span>${esc(sourceName(set))} · ${esc(formatSavedTime(set.createdAt))}</span></button><div class="saved-actions"><button class="icon-button" data-delete="${esc(set.id)}" aria-label="Delete ${esc(title(set))}">×</button></div></article>`).join("");
     $$("[data-open]", target).forEach(b => b.addEventListener("click", () => openSet(b.dataset.open)));
     $$("[data-delete]", target).forEach(b => b.addEventListener("click", () => deleteSet(b.dataset.delete)));
   }
@@ -366,8 +458,9 @@
     if (state.loadingSets) return;
     state.loadingSets = true;
     try {
-      const data = await api("/api/study-sets");
+      const [data, profile] = await Promise.all([api("/api/study-sets"), api("/api/profile")]);
       state.sets = Array.isArray(data) ? data : Array.isArray(data?.items) ? data.items : [];
+      initExamSchedule(profile?.userId);
       state.signedIn = true;
       $("#public-home").hidden = true; $("#workspace").hidden = false;
       $("#public-load-error").hidden = true;
@@ -691,7 +784,7 @@
     if (sourceText.length > 180000) return setError("The combined source text exceeds 180,000 characters. Remove a document or choose smaller files.");
     const sourceName = state.files.map(f=>f.name).join(", ").slice(0,160);
     state.working = true;
-    $("#generate-button").disabled = true; $("#generate-button").textContent = "Making your materials…";
+    $("#generate-button").disabled = true; $("#generate-button").textContent = "Generating…";
     $("#builder-status").textContent = "Reading your sources and preparing the selected formats.";
     try {
       const payload = { sourceName, sourceText, hoursPerDay:1, questionCount:(modes.includes("objective")||modes.includes("timed"))?count:10, modes, ...(modes.includes("timed")?{examMinutes:minutes}:{}) };
@@ -707,7 +800,7 @@
     } catch(error) {
       setError(error.message || "We could not generate this study set. Try again.");
     } finally {
-      state.working = false; $("#generate-button").disabled = false; $("#generate-button").textContent = "Make study materials"; $("#builder-status").textContent = "";
+      state.working = false; $("#generate-button").disabled = false; $("#generate-button").textContent = "Generate study materials"; $("#builder-status").textContent = "";
     }
   }
   function initSettings() {

@@ -34,7 +34,7 @@ Week-level headings must be specified in both generation instructions and struct
 
 **Why:** Live three-subject generation initially combined weeks into subject overviews and later invented a mixed-subject theory question despite the organisation instructions. Field-level constraints and explicit precedence corrected the test output.
 
-Input is file-upload-only: no typed/pasted notes box. A top-right Settings button opens a separate profile view; profile pictures and banners must not appear on the study home page. The jaguar icon must follow the selected accent color.
+Input is file-upload-only: no typed/pasted notes box. A top-right Settings button opens a separate profile view; profile pictures and banners must not appear on the study home page. Keep the user's supplied jaguar-outline logo unchanged; do not redraw, replace, or recolor it when themes change.
 
 Legacy browser-only sets have no known owner and must be imported only through an explicit user choice. New unsynced backups belong to the signed-in account; never silently claim old shared-browser data for whoever signs in next.
 
