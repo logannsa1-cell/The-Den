@@ -50,6 +50,7 @@ export function StudyHabitPanel({ userId, isStudying }: { userId: string; isStud
   );
   const habits = useGetStudyHabitState({
     query: {
+      queryKey,
       enabled: Boolean(userId),
       refetchInterval: 60_000,
       refetchOnWindowFocus: true,
