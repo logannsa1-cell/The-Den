@@ -6,13 +6,13 @@
   background: var(--bg);
 }
 [data-theme='rose'] .app-shell {
-  --bg: #151214; --bg-2: #171416; --surface: #1c1819; --surface-2: #231d20;
-  --line: #342d30; --line-2: #514449; --text: #f2eef0; --muted: #b8adb1; --faint: #a1979b;
+  --bg: #0b0a0c; --bg-2: #111012; --surface: #191619; --surface-2: #211d20;
+  --line: #322d30; --line-2: #4c4348; --text: #f1eaed; --muted: #c0b8bc; --faint: #a39a9e;
   --accent: #c88da0; --accent-2: #d9adba; --accent-soft: #30262a; --accent-ink: #23191d;
 }
 [data-theme='violet'] .app-shell {
-  --bg: #151417; --bg-2: #171619; --surface: #1c1a1e; --surface-2: #232026;
-  --line: #34313a; --line-2: #514c59; --text: #f2eff4; --muted: #b8b2bf; --faint: #a19aa8;
+  --bg: #0b0b0d; --bg-2: #111114; --surface: #19181d; --surface-2: #211f25;
+  --line: #322f37; --line-2: #4b4653; --text: #f0edf3; --muted: #c1bdc6; --faint: #a39ca8;
   --accent: #a996c2; --accent-2: #c2b4d5; --accent-soft: #2d2933; --accent-ink: #221e28;
 }
 .app-shell .rosette-layer { display: none; }

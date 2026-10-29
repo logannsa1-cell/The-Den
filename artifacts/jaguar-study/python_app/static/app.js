@@ -804,7 +804,7 @@
     }
   }
   function initSettings() {
-    const accent = storage.read("accent","rose");
+    const accent = storage.read("accent","violet");
     document.documentElement.dataset.accent = accent;
     $("#accent-rose").setAttribute("aria-pressed",String(accent==="rose"));
     $("#accent-violet").setAttribute("aria-pressed",String(accent==="violet"));
