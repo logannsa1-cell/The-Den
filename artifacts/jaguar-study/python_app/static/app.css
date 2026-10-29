@@ -80,6 +80,10 @@ h3 { font-size:16px; margin:0; }
 .dropzone.drag { border-color:var(--accent); background:var(--accent-soft); }
 .dropzone strong { display:block; font-size:14px; }
 .dropzone p { margin:4px 0 0; color:var(--muted); font-size:12px; }
+.upload-trigger { flex:0 0 auto; min-height:40px; display:inline-flex; align-items:center; justify-content:center; gap:8px; padding:0 14px; border:1px solid var(--line-strong); border-radius:5px; background:transparent; color:var(--text); font-weight:500; white-space:nowrap; cursor:pointer; transition:background .16s,border-color .16s,color .16s; }
+.upload-trigger svg { width:16px; height:16px; color:var(--accent); }
+.upload-trigger:hover { border-color:var(--accent); background:var(--accent-soft); }
+.dropzone:focus-within .upload-trigger { border-color:var(--accent); }
 .file-list { display:grid; gap:7px; margin-top:12px; }
 .file-row { display:flex; justify-content:space-between; align-items:center; gap:10px; padding:9px 10px; border-bottom:1px solid var(--line); font-size:12px; color:var(--muted); }
 .file-row button { border:0; background:none; color:var(--faint); padding:5px 8px; }
@@ -247,6 +251,7 @@ h3 { font-size:16px; margin:0; }
   .workspace { padding:29px 18px 56px; }
   .welcome { display:block; }
   .welcome .primary { margin-top:19px; }
+  .dropzone { align-items:flex-start; flex-direction:column; }
   .builder-aside { display:block; }
   .source-size-guide ul { grid-template-columns:1fr; }
   .page-heading { display:block; }
