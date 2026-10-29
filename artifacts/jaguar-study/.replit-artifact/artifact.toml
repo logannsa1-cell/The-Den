@@ -38,10 +38,10 @@ run = "uv run --project ../.. python python_app/main.py"
 [services.production]
 
 [services.production.build]
-args = ["uv", "run", "--project", "../..", "python", "-m", "compileall", "-q", "python_app"]
+args = ["uv", "run", "--project", ".", "python", "-m", "compileall", "-q", "artifacts/jaguar-study/python_app"]
 
 [services.production.run]
-args = ["uv", "run", "--project", "../..", "python", "python_app/main.py"]
+args = ["uv", "run", "--project", ".", "python", "artifacts/jaguar-study/python_app/main.py"]
 
 [services.production.run.env]
 PORT = "8000"
