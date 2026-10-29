@@ -13,13 +13,13 @@
 .study-math .katex { font-size: 1.08em; }
 .display-math { display: block; overflow-x: auto; padding: .35rem 0; }
 
-:root { --jaguar-hue: 60deg; }
-:root[data-theme='rose'] { --jaguar-hue: 60deg; }
-:root[data-theme='violet'] { --jaguar-hue: 0deg; }
+:root { --jaguar-filter: hue-rotate(74deg) saturate(.72) brightness(1.02); }
+:root[data-theme='rose'] { --jaguar-filter: hue-rotate(74deg) saturate(.72) brightness(1.02); }
+:root[data-theme='violet'] { --jaguar-filter: saturate(.55) brightness(1.04); }
 .workspace[hidden] { display: none; }
 .profile-settings-page .media-editor { position: relative; inset: auto; margin: 24px 0; width: min(100%, 480px); }
 .profile-settings-page > h1 { margin: 24px 0; }
-img[src*="jaguar-outline.svg"] { filter: hue-rotate(var(--jaguar-hue)); }
+img[src*="jaguar-outline.png"]:not(.corner-jaguar) { filter: var(--jaguar-filter); background-color: #000; border-radius: 24%; }
 
 @theme inline {
   --color-background: hsl(var(--background));
