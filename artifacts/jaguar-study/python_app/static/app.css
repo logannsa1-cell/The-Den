@@ -36,7 +36,7 @@ button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visib
 .topbar { height:66px; border-bottom:1px solid var(--line); display:flex; align-items:center; gap:20px; padding:0 clamp(16px,4vw,48px); background:var(--bg); }
 .brand { display:inline-flex; align-items:center; gap:10px; text-decoration:none; flex:none; }
 .mark { width:29px; height:29px; display:block; color:var(--accent); filter:var(--jaguar-filter); }
-img[src*="jaguar-outline.png"] { filter:var(--jaguar-filter); background-color:#000; border-radius:24%; }
+img[src*="jaguar-outline.svg"] { filter:var(--jaguar-filter); background-color:#000; border-radius:24%; }
 .brand-name { font-size:20px; font-weight:600; letter-spacing:-.045em; }
 .topbar-spacer { flex:1; }
 .topnav { display:flex; align-items:center; gap:12px; }

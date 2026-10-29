@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from 'react';
 import { THEMES, useTheme } from '@/lib/theme';
 
 export const basePath = import.meta.env.BASE_URL.replace(/\/$/, '');
-export const EMBLEM = `${basePath}/jaguar-outline.png`;
+export const EMBLEM = `${basePath}/jaguar-outline.svg`;
 
 export function Emblem({ size = 40, className = '' }: { size?: number; className?: string }) {
   return <img src={EMBLEM} alt="" width={size} height={size} className={`emblem ${className}`} style={{ width: size, height: size }} />;
