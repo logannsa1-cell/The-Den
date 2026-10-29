@@ -94,6 +94,18 @@ export function SourceUploader({ files, onFiles, disabled }: Props) {
         <em>{total.toLocaleString()} / {MAX_SOURCE_CHARS.toLocaleString()} characters combined</em>
       </div>
       {over && <p className="field-error" role="alert" data-testid="error-char-limit">Combined sources are {(total - MAX_SOURCE_CHARS).toLocaleString()} characters over the limit. Remove a file or upload a smaller document. Nothing is cut off silently.</p>}
+      <details className="source-size-guide">
+        <summary>How much should I upload?</summary>
+        <p><strong>Around 10,000 words</strong> is a useful default per set; 1,000–10,000 words is a comfortable range.</p>
+        <ul>
+          <li>Short revision notes: 100–500 words</li>
+          <li>One lecture: 500–2,000 words</li>
+          <li>Detailed topic: 2,000–5,000 words</li>
+          <li>Full chapter: 3,000–8,000 words</li>
+          <li>Extensive exam notes: 8,000–15,000+ words</li>
+        </ul>
+        <p>These are estimates, not limits. Diagrams, equations, tables and bullets can make a long document relatively short in words. Larger notes may work within the 15 MB per-file and 180,000-character combined limits, subject to processing limits.</p>
+      </details>
     </div>
   );
 }

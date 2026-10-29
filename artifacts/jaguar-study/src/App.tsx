@@ -31,7 +31,7 @@ function UserPortal() {
   return <><Show when="signed-in"><Workspace key={user?.id} /></Show><Show when="signed-out"><Redirect to="/" /></Show></>;
 }
 
-function AuthShell({ title, line, children }: { title: string; line: string; children: ReactNode }) {
+function AuthShell({ title, line, children }: { title: ReactNode; line: string; children: ReactNode }) {
   return (
     <div className="auth-page">
       <RosetteCorners />
@@ -49,7 +49,7 @@ function SignInPage() {
 }
 
 function SignUpPage() {
-  return <AuthShell title="Exam is soon" line="Make a space for your notes."><SignUp routing="path" path={`${basePath}/sign-up`} signInUrl={`${basePath}/sign-in`} forceRedirectUrl="/" /></AuthShell>;
+  return <AuthShell title={<>Get ready for <em className="editorial-accent">exam day.</em></>} line="Make a space for your notes."><SignUp routing="path" path={`${basePath}/sign-up`} signInUrl={`${basePath}/sign-in`} forceRedirectUrl="/" /></AuthShell>;
 }
 
 function ClerkQueryClientCacheInvalidator() {

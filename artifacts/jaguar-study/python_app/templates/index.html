@@ -19,7 +19,7 @@
         <a class="quiet" href="/sign-in" target="_blank" rel="noopener" data-auth-link>Sign in</a>
       </nav>
       <header class="hero">
-        <h1>Use your notes to study well</h1>
+        <h1>Use your notes to study <em class="editorial-accent">well</em></h1>
         <p>Use your notes to study better.</p>
         <div class="hero-actions"><a class="primary" href="/sign-up" target="_blank" rel="noopener" data-auth-link>Make a study set</a><a class="quiet" href="/sign-in" target="_blank" rel="noopener" data-auth-link>I have an account</a></div>
         <div id="public-load-error" class="error" role="alert" hidden><span id="public-load-message"></span> <button id="retry-public-load" class="quiet" type="button">Try again</button></div>
@@ -60,17 +60,32 @@
             <div id="mobile-modes" style="display:flex;gap:6px"></div>
           </div>
           <section id="view-home" class="workspace" aria-labelledby="welcome-heading">
-            <header class="welcome"><div><h1 id="welcome-heading">Let’s get ready.</h1><p>Upload your notes and turn them into study materials.</p></div></header>
+             <header class="welcome"><div><h1 id="welcome-heading">Get ready for <em class="editorial-accent">exam day.</em></h1><p>Upload your notes and turn them into study materials.</p></div></header>
             <div class="builder">
               <div class="builder-create">
                 <section class="section" aria-labelledby="source-heading">
                   <div class="section-head"><div><h2 id="source-heading">Upload your notes</h2><p>Add the course files you want to study.</p></div></div>
                   <div id="dropzone" class="dropzone">
-                    <div><strong>Drop files here, or choose from your device</strong><p>PDF, Word, PowerPoint, text, Markdown, or CSV. Original PDFs and slides stay beside your materials.</p></div>
+                    <div><strong>Drop files here, or choose from your device</strong><p>PDF, Word, PowerPoint, text, Markdown, or CSV. Up to 15 MB each; original PDFs and slides stay beside your materials.</p></div>
                     <label class="primary" for="source-files">Upload notes</label>
                     <input id="source-files" class="sr-only" type="file" multiple accept=".pdf,.docx,.pptx,.txt,.md,.csv,text/plain,text/markdown,text/csv,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.openxmlformats-officedocument.presentationml.presentation">
                   </div>
                   <div id="file-list" class="file-list" aria-live="polite"></div>
+                  <div id="source-character-meter" class="char-meter" role="progressbar" aria-label="Combined extracted text" aria-valuemin="0" aria-valuemax="180000" aria-valuenow="0">
+                    <span></span><em id="source-character-count">0 / 180,000 characters combined</em>
+                  </div>
+                  <details class="source-size-guide">
+                    <summary>How much should I upload?</summary>
+                    <p><strong>Around 10,000 words</strong> is a useful default per set; 1,000–10,000 words is a comfortable range.</p>
+                    <ul>
+                      <li>Short revision notes: 100–500 words</li>
+                      <li>One lecture: 500–2,000 words</li>
+                      <li>Detailed topic: 2,000–5,000 words</li>
+                      <li>Full chapter: 3,000–8,000 words</li>
+                      <li>Extensive exam notes: 8,000–15,000+ words</li>
+                    </ul>
+                    <p>These are estimates, not limits. Diagrams, equations, tables and bullets can make a long document relatively short in words. Larger notes may work within the 15 MB per-file and 180,000-character combined limits, subject to processing limits.</p>
+                  </details>
                 </section>
                 <section class="section" aria-labelledby="mode-heading">
                   <div class="section-head"><div><h2 id="mode-heading">Create a study set</h2><p>Choose one or more formats for these notes.</p></div></div>

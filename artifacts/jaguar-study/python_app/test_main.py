@@ -19,8 +19,13 @@ class JaguarAppTests(unittest.TestCase):
         response = self.client.get("/")
 
         self.assertEqual(response.status_code, 200)
-        self.assertIn("Use your notes to study well", response.text)
-        self.assertIn("Let’s get ready.", response.text)
+        self.assertIn("Use your notes to study ", response.text)
+        self.assertIn('<em class="editorial-accent">well</em>', response.text)
+        self.assertIn('Get ready for <em class="editorial-accent">exam day.</em>', response.text)
+        self.assertIn("How much should I upload?", response.text)
+        self.assertIn("Around 10,000 words", response.text)
+        self.assertIn("180,000 characters combined", response.text)
+        self.assertIn('id="source-character-meter"', response.text)
         self.assertIn("Exam planner", response.text)
         self.assertIn("Study activity", response.text)
         self.assertIn('data-view="saved"', response.text)
@@ -33,6 +38,9 @@ class JaguarAppTests(unittest.TestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertIn("study/generate", response.text)
+        self.assertIn("function combinedSourceText()", response.text)
+        self.assertIn("aria-valuetext", response.text)
+        self.assertIn("MAX_SOURCE_CHARS = 180000", response.text)
 
 
 if __name__ == "__main__":

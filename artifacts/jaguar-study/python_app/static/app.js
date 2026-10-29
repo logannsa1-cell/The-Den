@@ -2,6 +2,7 @@
   "use strict";
   const $ = (s, root = document) => root.querySelector(s);
   const $$ = (s, root = document) => [...root.querySelectorAll(s)];
+  const MAX_SOURCE_CHARS = 180000;
   const modesInfo = [
     ["summary", "Note summary"], ["tutor", "Tutor lesson"], ["cram", "Cram sheet"],
     ["objective", "Objective questions"], ["theory", "Theory"], ["timed", "Time-based exam"]
@@ -755,9 +756,19 @@
       renderFiles();
     }
   }
+  function combinedSourceText() {
+    return state.files.map(f=>`=== Source: ${f.name} ===\n${f.text}`).join("\n\n");
+  }
   function renderFiles() {
     $("#file-list").innerHTML = state.files.map((f,i)=>`<div class="file-row"><span>${esc(f.name)} · ${fileSize(f.file.size)} · ${f.status==="reading"?"Reading…":f.status==="error"?esc(f.error):"Text ready"}</span><button type="button" data-remove-file="${i}" aria-label="Remove ${esc(f.name)}">Remove</button></div>`).join("");
     $$("[data-remove-file]").forEach(b=>b.addEventListener("click",()=>{state.files.splice(Number(b.dataset.removeFile),1);renderFiles();}));
+    const total = combinedSourceText().length;
+    const meter = $("#source-character-meter");
+    meter.classList.toggle("over", total > MAX_SOURCE_CHARS);
+    meter.setAttribute("aria-valuenow", String(Math.min(total, MAX_SOURCE_CHARS)));
+    meter.setAttribute("aria-valuetext", `${total.toLocaleString()} of ${MAX_SOURCE_CHARS.toLocaleString()} characters`);
+    $("span", meter).style.transform = `scaleX(${Math.min(1, total / MAX_SOURCE_CHARS)})`;
+    $("#source-character-count").textContent = `${total.toLocaleString()} / ${MAX_SOURCE_CHARS.toLocaleString()} characters combined`;
   }
   async function generate() {
     if (state.working) return;
@@ -770,10 +781,10 @@
     if (!state.files.length) return setError("Add at least one source document first.");
     if (state.files.some(f=>f.status==="reading")) return setError("Wait for all source documents to finish reading.");
     if (state.files.some(f=>f.status==="error")) return setError("Remove any source document that could not be read.");
-    const sourceText = state.files.map(f=>`=== Source: ${f.name} ===\n${f.text}`).join("\n\n");
+    const sourceText = combinedSourceText();
     const readable = sourceText.replace(/=== Source[^\n]*===/g,"").trim();
     if (readable.length < 120) return setError("There is not enough readable text in these documents. Add a longer note or a text-based PDF.");
-    if (sourceText.length > 180000) return setError("The combined source text exceeds 180,000 characters. Remove a document or choose smaller files.");
+    if (sourceText.length > MAX_SOURCE_CHARS) return setError(`The combined source text exceeds ${MAX_SOURCE_CHARS.toLocaleString()} characters. Remove a document or choose smaller files.`);
     const sourceName = state.files.map(f=>f.name).join(", ").slice(0,160);
     state.working = true;
     $("#generate-button").disabled = true; $("#generate-button").textContent = "Generating…";
