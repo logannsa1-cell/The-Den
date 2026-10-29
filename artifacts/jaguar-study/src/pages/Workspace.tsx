@@ -374,8 +374,8 @@ export default function Workspace() {
         </div>
         <div className="workspace builder-workspace" hidden={settingsOpen || view !== 'builder'}>
           <section className="builder-welcome">
-            <h1 id="welcome-title" data-testid="text-workspace-heading">Exam is soon ooo</h1>
-            <p className="welcome-copy">Bring your note so you can study</p>
+            <h1 id="welcome-title" data-testid="text-workspace-heading">Let’s get ready.</h1>
+            <p className="welcome-copy">Upload your notes and turn them into study materials.</p>
           </section>
 
           {(migration === 'pending' || legacySets.length > 0) && localOnly.length > 0 && (
@@ -392,14 +392,14 @@ export default function Workspace() {
           <div className="builder-create">
           <section aria-label="Create a study set" className="reveal">
             <div className="panel source-panel">
-              <div className="panel-head"><h2 className="panel-title">Bring your note</h2></div>
+              <div className="panel-head"><h2 className="panel-title">Upload your notes</h2></div>
               <SourceUploader files={files} onFiles={setFiles} disabled={busy} />
               {error && !modeDialog && <div className="error-message" role="alert" data-testid="error-builder"><AlertCircle size={13} /> {error}</div>}
             </div>
           </section>
           <section className="builder-mode-entry">
-            <h2>Pick what you need</h2>
-            <button className="primary-button" type="button" onClick={() => setModeDialog(true)} disabled={busy} data-testid="button-open-modes">Choose materials <ChevronRight size={16} /></button>
+            <h2>Create a study set</h2>
+            <button className="primary-button" type="button" onClick={() => setModeDialog(true)} disabled={busy} data-testid="button-open-modes">Choose formats <ChevronRight size={16} /></button>
           </section>
           </div>
           <aside className="builder-aside" aria-label="Your exam and saved sets">

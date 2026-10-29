@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="theme-color" content="#151315">
+  <meta name="theme-color" content="#181719">
   <title>Jaguar — Study from your notes</title>
   <link rel="icon" type="image/svg+xml" href="{{ base_path }}/jaguar-outline.svg">
   <link rel="stylesheet" href="{{ base_path }}/static/app.css">
@@ -60,20 +60,20 @@
             <div id="mobile-modes" style="display:flex;gap:6px"></div>
           </div>
           <section id="view-home" class="workspace" aria-labelledby="welcome-heading">
-            <header class="welcome"><div><h1 id="welcome-heading">Exam is soon ooo</h1><p>Bring your note so you can study</p></div></header>
+            <header class="welcome"><div><h1 id="welcome-heading">Let’s get ready.</h1><p>Upload your notes and turn them into study materials.</p></div></header>
             <div class="builder">
               <div class="builder-create">
                 <section class="section" aria-labelledby="source-heading">
-                  <div class="section-head"><div><h2 id="source-heading">Your source material</h2><p>Add one or more course documents.</p></div></div>
+                  <div class="section-head"><div><h2 id="source-heading">Upload your notes</h2><p>Add the course files you want to study.</p></div></div>
                   <div id="dropzone" class="dropzone">
-                    <div><strong>Drop files here, or choose from your device</strong><p>PDF, Word, PowerPoint, text, Markdown, or CSV. PDF and PowerPoint previews are kept in this browser.</p></div>
-                    <label class="quiet" for="source-files">Choose files</label>
+                    <div><strong>Drop files here, or choose from your device</strong><p>PDF, Word, PowerPoint, text, Markdown, or CSV. Original PDFs and slides stay beside your materials.</p></div>
+                    <label class="primary" for="source-files">Upload notes</label>
                     <input id="source-files" class="sr-only" type="file" multiple accept=".pdf,.docx,.pptx,.txt,.md,.csv,text/plain,text/markdown,text/csv,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.openxmlformats-officedocument.presentationml.presentation">
                   </div>
                   <div id="file-list" class="file-list" aria-live="polite"></div>
                 </section>
                 <section class="section" aria-labelledby="mode-heading">
-                  <div class="section-head"><div><h2 id="mode-heading">Choose your study formats</h2><p>Every selected format uses the same source collection.</p></div></div>
+                  <div class="section-head"><div><h2 id="mode-heading">Create a study set</h2><p>Choose one or more formats for these notes.</p></div></div>
                   <fieldset style="border:0;padding:0;margin:0">
                     <legend class="sr-only">Study formats</legend>
                     <div id="mode-list" class="mode-list">
@@ -95,11 +95,35 @@
                   </div>
                 </section>
                 <div id="builder-error" class="error" role="alert" hidden></div>
-                <div class="section-head"><span id="builder-status" class="status" role="status"></span><button id="generate-button" class="primary" type="button">Make study materials</button></div>
+                  <div class="section-head"><span id="builder-status" class="status" role="status"></span><button id="generate-button" class="primary" type="button">Generate study materials</button></div>
               </div>
               <aside class="builder-aside">
-                <section class="side-section"><h2>Saved sets</h2><div id="home-saved-list" class="saved-list"><div class="loading-lines" aria-label="Loading saved sets"><i></i><i></i></div></div></section>
-                <p class="helper">Your study library is organized by the subject names in your saved materials. You can open, update, or remove a set at any time.</p>
+                <section class="exam-planner side-section" aria-labelledby="exam-planner-heading">
+                  <div class="section-head"><h2 id="exam-planner-heading">Exam planner</h2></div>
+                  <div class="exam-countdown" role="status" aria-live="polite">
+                    <strong id="exam-days">—</strong>
+                    <div><span id="exam-countdown-text">Add an exam date to start a countdown.</span><small id="exam-estimate" hidden></small></div>
+                  </div>
+                  <div class="exam-fields">
+                    <label class="field-label">Subject<input id="exam-subject" class="field" type="text" maxlength="60" placeholder="e.g. Biology paper 2"></label>
+                    <label class="field-label">Exam date<input id="exam-date" class="field" type="date"></label>
+                    <label class="field-label">Daily study time
+                      <select id="exam-pace" class="field">
+                        <option value="0.5">30 minutes</option><option value="1" selected>1 hour</option><option value="1.5">1.5 hours</option><option value="2">2 hours</option><option value="3">3 hours</option><option value="4">4 hours</option>
+                      </select>
+                    </label>
+                  </div>
+                  <button id="clear-exam-schedule" class="text-link" type="button" hidden>Clear schedule</button>
+                  <p class="exam-footnote">Saved on this device. It won’t change your study sets.</p>
+                </section>
+                <section class="activity-section" aria-labelledby="activity-heading">
+                  <h2 id="activity-heading">Study activity</h2>
+                  <div class="activity-stats">
+                    <div class="activity-stat"><strong id="activity-total">0</strong><span>Saved sets</span></div>
+                    <div class="activity-stat"><strong id="activity-week">0</strong><span>Made in the last 7 days</span></div>
+                  </div>
+                </section>
+                <section class="side-section"><h2>Recent sets</h2><div id="home-saved-list" class="saved-list"><div class="loading-lines" aria-label="Loading recent study sets"><i></i><i></i></div></div></section>
               </aside>
             </div>
           </section>
