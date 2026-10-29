@@ -14,6 +14,7 @@
   --accent: #c88da0;
   --accent-soft: #30262b;
   --accent-ink: #241a1e;
+  --jaguar-filter: hue-rotate(74deg) saturate(.72) brightness(1.02);
   --danger: #d28a88;
   --sans: 'DM Sans', ui-sans-serif, system-ui, sans-serif;
   --serif: 'Instrument Serif', Georgia, serif;
@@ -21,7 +22,7 @@
   background: var(--bg);
   color: var(--text);
 }
-[data-accent="violet"] { --accent:#a996c2; --accent-soft:#2d2933; --accent-ink:#221e28; }
+[data-accent="violet"] { --accent:#a996c2; --accent-soft:#2d2933; --accent-ink:#221e28; --jaguar-filter:saturate(.55) brightness(1.04); }
 * { box-sizing: border-box; }
 html { min-height: 100%; scroll-behavior: smooth; }
 body { margin: 0; min-height: 100dvh; background: var(--bg); color: var(--text); font: 14px/1.55 var(--sans); }
@@ -34,7 +35,8 @@ button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visib
 .shell { min-height:100dvh; }
 .topbar { height:66px; border-bottom:1px solid var(--line); display:flex; align-items:center; gap:20px; padding:0 clamp(16px,4vw,48px); background:var(--bg); }
 .brand { display:inline-flex; align-items:center; gap:10px; text-decoration:none; flex:none; }
-.mark { width:29px; height:29px; display:block; color:var(--accent); }
+.mark { width:29px; height:29px; display:block; color:var(--accent); filter:var(--jaguar-filter); }
+img[src*="jaguar-outline.png"] { filter:var(--jaguar-filter); background-color:#000; border-radius:24%; }
 .brand-name { font-size:20px; font-weight:600; letter-spacing:-.045em; }
 .topbar-spacer { flex:1; }
 .topnav { display:flex; align-items:center; gap:12px; }
