@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { generateStudyContent } from "./gemini-study";
 
-test("summary targets 7,000 words and tutor lesson 5,000 for substantial sources", async () => {
+test("summary targets 8,000–15,000 words and tutor lesson 5,000 for substantial sources", async () => {
   const originalFetch = globalThis.fetch;
   const configs: { systemInstruction: { parts: { text: string }[] }; generationConfig: { maxOutputTokens: number; responseJsonSchema?: unknown } }[] = [];
   const draft = {
@@ -16,7 +16,7 @@ test("summary targets 7,000 words and tutor lesson 5,000 for substantial sources
       configs.push(request);
       return Response.json({ candidates: [{
         finishReason: "STOP",
-         content: { parts: [{ text: configs.length === 1 ? JSON.stringify(draft) : `## Biology\n${"Expanded ".repeat(configs.length === 2 ? 5100 : 7100)}` }] },
+        content: { parts: [{ text: configs.length === 1 ? JSON.stringify(draft) : `## Biology\n${"Expanded ".repeat(configs.length === 2 ? 5100 : 8100)}` }] },
       }] });
     };
     const result = await generateStudyContent({
@@ -26,18 +26,20 @@ test("summary targets 7,000 words and tutor lesson 5,000 for substantial sources
     assert.equal(configs.length, 3, "drafts above the old thresholds still require expansion");
     assert.equal(configs[0].generationConfig.maxOutputTokens, 64000);
     const schema = JSON.stringify(configs[0].generationConfig.responseJsonSchema);
-    assert.match(schema, /about 7000 words/);
+    assert.match(schema, /8000–15000 words/);
     assert.match(schema, /about 5000 words/);
     assert.match(schema, /at most 360 words/);
     assert.match(schema, /Return 16 to 24 items/);
-    assert.match(configs[1].systemInstruction.parts[0].text, /about 5000 words in this section/);
-    assert.match(configs[2].systemInstruction.parts[0].text, /about 7000 words in this section/);
+    assert.match(configs[1].systemInstruction.parts[0].text, /about 5,000 words in this section/);
+    assert.match(configs[2].systemInstruction.parts[0].text, /about 8,000 words in this section/);
     assert.match(configs[1].systemInstruction.parts[0].text, /5000 words/);
-    assert.match(configs[2].systemInstruction.parts[0].text, /7000 words/);
+    assert.match(configs[2].systemInstruction.parts[0].text, /8,000-word floor/);
+    assert.match(configs[2].systemInstruction.parts[0].text, /15,000 words/);
     assert.equal(configs[1].generationConfig.maxOutputTokens, 24000);
     const material = JSON.parse(result.choices[0].message.content!);
     assert.ok(material.tutorLesson.split(/\s+/).filter(Boolean).length >= 5000);
-    assert.ok(material.summary.split(/\s+/).filter(Boolean).length >= 7000);
+    assert.ok(material.summary.split(/\s+/).filter(Boolean).length >= 8000);
+    assert.ok(material.summary.split(/\s+/).filter(Boolean).length <= 15000);
     assert.deepEqual(material.cramPoints, draft.cramPoints);
     configs.length = 0;
     await generateStudyContent({
@@ -89,11 +91,29 @@ test("failed detail expansion retains all drafts and questions with a visible no
     assert.ok(material.tutorLesson.startsWith(draft.tutorLesson));
     assert.match(material.summary, /Detail expansion unavailable/);
     assert.match(material.tutorLesson, /Detail expansion unavailable/);
-    assert.match(material.summary, /The 7,000-word target was not met/);
+    assert.match(material.summary, /The 8,000-word target was not met/);
     assert.match(material.tutorLesson, /The 5,000-word target was not met/);
     assert.deepEqual(material.questions, draft.questions);
     assert.deepEqual(material.cramPoints, draft.cramPoints);
   } finally { globalThis.fetch = originalFetch; }
+});
+
+test("summary never exceeds 15,000 words, even when the initial response is too long", async () => {
+  const originalFetch = globalThis.fetch;
+  try {
+    globalThis.fetch = async () => Response.json({ candidates: [{
+      finishReason: "STOP",
+      content: { parts: [{ text: JSON.stringify({ summary: `## Biology\n${"word ".repeat(16000)}` }) }] },
+    }] });
+    const result = await generateStudyContent({
+      model: "test", modes: ["summary"], questionCount: 5,
+      messages: [{ role: "system", content: "Test" }, { role: "user", content: JSON.stringify({ sourceText: "source ".repeat(100) }) }],
+    });
+    const { summary } = JSON.parse(result.choices[0].message.content!);
+    assert.equal(summary.split(/\s+/).filter(Boolean).length, 15000);
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
 });
 
 test("both reading modes share the expansion budget without reordering subjects", async () => {

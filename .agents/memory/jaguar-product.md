@@ -48,11 +48,11 @@ Mode selection belongs in the upload popup, not a duplicate "Build it your way" 
 
 Tutor Lesson should be medium-length and detailed; Note Summary should be long and very detailed; Cram Sheet should be short and concise for last-minute test preparation. Do not make them interchangeable copies.
 
-The user requested a second doubling of Note Summary and Tutor Lesson, and now also doubled Cram Sheet. Approved targets for substantial sources are summary 11,200–18,000 words, tutor 7,200–12,800 words, and concise cram bullets up to 360 words. Keep source grounding and avoid filler for short notes.
+For substantial sources, target 8,000–15,000 words for Note Summary (hard cap 15,000), about 5,000 for Tutor Lesson, and concise cram bullets up to 360 words. Scale down for short sources and never add unsupported filler.
 
-**Why:** The user explicitly approved these new targets after being told the earlier doubling was already in place.
+**Why:** The user revised the requested lengths after clarifying that Note Summary should be longer than Tutor Lesson.
 
-**How to apply:** Treat these as generation targets, not guaranteed output lengths; preserve completed work and explain provider limits. Do not automatically regenerate saved sets.
+**How to apply:** Treat these as generation targets; enforce the summary maximum while preserving completed work and explain provider limits if the minimum is missed. Do not automatically regenerate saved sets.
 
 The later Studley reference clarifies that "medium" is relative: substantial multi-topic tutor lessons should resemble the supplied ~3,200-word, 14-page teaching document, not a 500–800-word overview. Keep summaries more comprehensive and cram sheets brief.
 
