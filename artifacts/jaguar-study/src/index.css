@@ -19,7 +19,7 @@
 .workspace[hidden] { display: none; }
 .profile-settings-page .media-editor { position: relative; inset: auto; margin: 24px 0; width: min(100%, 480px); }
 .profile-settings-page > h1 { margin: 24px 0; }
-img[src*="jaguar-icon.svg"], img[src*="jaguar-outline.svg"] { filter: hue-rotate(var(--jaguar-hue)); }
+img[src*="jaguar-outline.svg"] { filter: hue-rotate(var(--jaguar-hue)); }
 
 @theme inline {
   --color-background: hsl(var(--background));

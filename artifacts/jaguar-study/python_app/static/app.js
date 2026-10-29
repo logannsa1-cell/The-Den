@@ -6,7 +6,7 @@
     ["summary", "Note summary"], ["tutor", "Tutor lesson"], ["cram", "Cram sheet"],
     ["objective", "Objective questions"], ["theory", "Theory"], ["timed", "Time-based exam"]
   ];
-  const state = { signedIn: false, sets: [], selected: null, mode: "summary", files: [], working: false, loadingSets: false, pendingAuth: false, answers: {}, exam: null, sourceFiles: [], sourceLoaded: false, sourceIndex: 0, sourceUrls: [] };
+  const state = { signedIn: false, sets: [], selected: null, mode: "summary", files: [], working: false, loadingSets: false, pendingAuth: false, answers: {}, exam: null, sourceFiles: [], sourceLoaded: false, sourceIndex: 0, sourceUrls: [], sourceResizeObserver: null };
   const storage = {
     read(key, fallback = "") { try { return localStorage.getItem("jaguar-" + key) || fallback; } catch { return fallback; } },
     write(key, value) { try { localStorage.setItem("jaguar-" + key, value); return true; } catch { return false; } }
@@ -57,6 +57,200 @@
         tx.oncomplete = resolve; tx.onerror = () => reject(tx.error);
       });
     } catch {}
+  }
+  let pptxParserPromise;
+  function loadPptxParser() {
+    if (!pptxParserPromise) {
+      pptxParserPromise = import("./pptx-parser.js").catch(error => {
+        pptxParserPromise = null;
+        throw error;
+      });
+    }
+    return pptxParserPromise;
+  }
+  async function parsePowerPoint(blob) {
+    const parser = await loadPptxParser();
+    return parser.parsePptx(blob);
+  }
+  function slideText(slide) {
+    return (slide.elements || []).flatMap(element =>
+      element.text?.paragraphs?.map(paragraph =>
+        (paragraph.runs || []).filter(run => !run.br).map(run => run.text || "").join("")
+      ) || []
+    ).map(line => line.trim()).filter(Boolean).join("\n");
+  }
+  function safeSlideColor(value) {
+    return /^#[0-9a-f]{3,8}$/i.test(String(value || "")) ? value : "transparent";
+  }
+  function applySlideFill(node, fill) {
+    if (!fill || fill.kind === "none") return;
+    if (fill.kind === "solid") node.style.background = safeSlideColor(fill.color);
+    else if (fill.kind === "grad") {
+      const stops = (fill.stops || []).map(stop => `${safeSlideColor(stop.color)} ${Math.max(0, Math.min(100, Number(stop.pos) || 0))}%`);
+      if (stops.length) node.style.background = `linear-gradient(${((Number(fill.angle) || 0) + 90) % 360}deg, ${stops.join(", ")})`;
+    } else if (fill.kind === "image" && fill.src) {
+      node.style.backgroundImage = `url("${String(fill.src).replace(/["\\\n\r]/g, "")}")`;
+      node.style.backgroundRepeat = fill.tile ? "repeat" : "no-repeat";
+      node.style.backgroundSize = fill.tile ? "auto" : "100% 100%";
+    }
+  }
+  function createSlideText(textBody) {
+    const root = document.createElement("div");
+    root.className = "pptx-text";
+    root.style.justifyContent = textBody.anchor === "middle" ? "center" : textBody.anchor === "bottom" ? "flex-end" : "flex-start";
+    root.style.padding = `${textBody.insets[0]}px ${textBody.insets[1]}px ${textBody.insets[2]}px ${textBody.insets[3]}px`;
+    root.style.whiteSpace = textBody.wrap ? "pre-wrap" : "pre";
+    if (textBody.vertical) root.style.writingMode = "vertical-rl";
+    (textBody.paragraphs || []).forEach(paragraph => {
+      const p = document.createElement("p");
+      const size = (paragraph.runs || []).reduce((max, run) => Math.max(max, Number(run.sizePt) || 0), 0) || Number(paragraph.emptySizePt) || 12;
+      p.style.textAlign = paragraph.align || "left";
+      p.style.marginLeft = `${Number(paragraph.marL) || 0}px`;
+      p.style.textIndent = `${Number(paragraph.indent) || 0}px`;
+      p.style.lineHeight = paragraph.lineSpacing ? `${Math.max(.7,Math.min(3.5,Number(paragraph.lineSpacing)*1.2))}` : "1.2";
+      p.style.marginTop = paragraph.spaceBefore ? `${paragraph.spaceBefore}pt` : "0";
+      p.style.marginBottom = paragraph.spaceAfter ? `${paragraph.spaceAfter}pt` : "0";
+      p.style.fontSize = `${size}pt`;
+      if (!paragraph.runs?.length) p.style.minHeight = `${(Number(paragraph.emptySizePt) || size) * 1.2}pt`;
+      if (paragraph.bullet) {
+        const bullet = document.createElement("span");
+        bullet.className = "pptx-bullet";
+        bullet.textContent = paragraph.bullet;
+        p.append(bullet);
+      }
+      (paragraph.runs || []).forEach(run => {
+        if (run.br) { p.append(document.createElement("br")); return; }
+        const span = document.createElement("span");
+        span.textContent = run.text || "";
+        span.style.fontSize = `${Math.max(1,Math.min(200,Number(run.sizePt)||size))}pt`;
+        span.style.fontWeight = run.bold ? "700" : "400";
+        if (run.italic) span.style.fontStyle = "italic";
+        if (run.underline) span.style.textDecoration = "underline";
+        const runColor = safeSlideColor(run.color);
+        span.style.color = runColor === "transparent" ? "#1c1622" : runColor;
+        const font = String(run.font || "").replace(/[^a-z0-9 _-]/gi, "").slice(0,80);
+        const fallback = /serif|garamond|times|georgia|cambria|book|palatino|baskerville/i.test(font) && !/sans/i.test(font)
+          ? 'Georgia, "Times New Roman", serif'
+          : /mono|courier|consol/i.test(font) ? "ui-monospace, monospace" : 'Calibri, Carlito, "Segoe UI", system-ui, sans-serif';
+        span.style.fontFamily = font ? `"${font}", ${fallback}` : fallback;
+        p.append(span);
+      });
+      root.append(p);
+    });
+    return root;
+  }
+  function createSlideShape(element) {
+    const box = document.createElement("div");
+    box.className = "pptx-element";
+    box.dataset.layer = element.layer || "slide";
+    Object.assign(box.style, {
+      left: `${element.x}px`, top: `${element.y}px`, width: `${element.w}px`, height: `${element.h}px`,
+      transform: element.rot || element.flipH || element.flipV
+        ? `rotate(${Number(element.rot) || 0}deg) scale(${element.flipH ? -1 : 1}, ${element.flipV ? -1 : 1})`
+        : ""
+    });
+    const geom = element.geom || { kind: "rect" };
+    const radius = geom.kind === "ellipse" ? "50%" : geom.kind === "roundRect" ? `${Number(geom.radius) || 0}px` : "";
+    const line = element.line;
+    if (geom.kind === "path") {
+      const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+      svg.classList.add("pptx-fill");
+      svg.setAttribute("viewBox", `0 0 ${Number(geom.vw) || 1} ${Number(geom.vh) || 1}`);
+      svg.setAttribute("preserveAspectRatio", "none");
+      const fillStyle = element.fill || { kind:"none" };
+      let fillValue = "none";
+      if (fillStyle.kind === "solid") fillValue = safeSlideColor(fillStyle.color);
+      else if (fillStyle.kind === "grad") {
+        const id = `gradient-${String(element.id || "shape").replace(/[^a-z0-9_-]/gi,"")}`;
+        const defs = document.createElementNS("http://www.w3.org/2000/svg", "defs");
+        const gradient = document.createElementNS("http://www.w3.org/2000/svg", "linearGradient");
+        gradient.id = id;
+        gradient.setAttribute("gradientTransform", `rotate(${Number(fillStyle.angle)||0} .5 .5)`);
+        (fillStyle.stops || []).forEach(stop => {
+          const point = document.createElementNS("http://www.w3.org/2000/svg", "stop");
+          point.setAttribute("offset", `${Math.max(0,Math.min(100,Number(stop.pos)||0))}%`);
+          point.setAttribute("stop-color", safeSlideColor(stop.color));
+          gradient.append(point);
+        });
+        defs.append(gradient); svg.append(defs); fillValue = `url(#${id})`;
+      } else if (fillStyle.kind === "image" && fillStyle.src) {
+        const id = `pattern-${String(element.id || "shape").replace(/[^a-z0-9_-]/gi,"")}`;
+        const defs = document.createElementNS("http://www.w3.org/2000/svg", "defs");
+        const pattern = document.createElementNS("http://www.w3.org/2000/svg", "pattern");
+        pattern.id = id; pattern.setAttribute("width","1"); pattern.setAttribute("height","1");
+        pattern.setAttribute("patternContentUnits","objectBoundingBox");
+        const image = document.createElementNS("http://www.w3.org/2000/svg", "image");
+        image.setAttribute("href", fillStyle.src); image.setAttribute("width","1"); image.setAttribute("height","1");
+        image.setAttribute("preserveAspectRatio","none");
+        pattern.append(image); defs.append(pattern); svg.append(defs); fillValue = `url(#${id})`;
+      }
+      const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+      path.setAttribute("d", String(geom.d || ""));
+      path.setAttribute("fill", fillValue);
+      path.setAttribute("stroke", line?.color ? safeSlideColor(line.color) : "none");
+      path.setAttribute("stroke-width", String(Math.max(0, Number(line?.width) || 0)));
+      if (line?.dash) path.setAttribute("stroke-dasharray", "6 4");
+      svg.append(path);
+      box.append(svg);
+    } else if (element.fill?.kind !== "none" || line) {
+      const fill = document.createElement("div");
+      fill.className = "pptx-fill";
+      applySlideFill(fill, element.fill);
+      if (radius) fill.style.borderRadius = radius;
+      if (line) fill.style.border = `${Math.max(0, Number(line.width) || 0)}px ${line.dash ? "dashed" : "solid"} ${safeSlideColor(line.color)}`;
+      box.append(fill);
+    }
+    if (element.image?.src) {
+      const wrap = document.createElement("div");
+      wrap.className = "pptx-fill pptx-image";
+      if (radius) wrap.style.borderRadius = radius;
+      const img = document.createElement("img");
+      img.src = element.image.src;
+      img.alt = "";
+      img.draggable = false;
+      const crop = element.image.crop || [0,0,0,0];
+      const left = Number(crop[0]) || 0, top = Number(crop[1]) || 0;
+      const width = Math.max(0.01, 1-left-(Number(crop[2])||0)), height = Math.max(0.01, 1-top-(Number(crop[3])||0));
+      Object.assign(img.style, {
+        position:"absolute", left:`${(-left/width)*100}%`, top:`${(-top/height)*100}%`,
+        width:`${100/width}%`, height:`${100/height}%`, maxWidth:"none"
+      });
+      wrap.append(img);
+      box.append(wrap);
+    }
+    if (element.text) {
+      const text = document.createElement("div");
+      text.className = "pptx-fill";
+      if (element.flipH || element.flipV) text.style.transform = `scale(${element.flipH ? -1 : 1}, ${element.flipV ? -1 : 1})`;
+      text.append(createSlideText(element.text));
+      box.append(text);
+    }
+    return box;
+  }
+  function renderPptxSlide(mount, file, slideNumber) {
+    const deck = file._deck, slide = deck?.slides?.[slideNumber];
+    if (!mount || !deck || !slide) return;
+    state.sourceResizeObserver?.disconnect();
+    const frame = document.createElement("div");
+    frame.className = "pptx-slide-frame";
+    frame.style.aspectRatio = String(deck.ratio || 16/9);
+    const stage = document.createElement("div");
+    stage.className = "pptx-stage";
+    stage.style.width = `${deck.width}px`;
+    stage.style.height = `${deck.height}px`;
+    applySlideFill(stage, slide.background);
+    (slide.elements || []).forEach(element => stage.append(createSlideShape(element)));
+    frame.append(stage);
+    mount.replaceChildren(frame);
+    const fit = () => {
+      const scale = frame.clientWidth / (Number(deck.width) || 1);
+      stage.style.transform = `scale(${scale})`;
+    };
+    requestAnimationFrame(fit);
+    if ("ResizeObserver" in window) {
+      state.sourceResizeObserver = new ResizeObserver(fit);
+      state.sourceResizeObserver.observe(frame);
+    }
   }
   const safeText = (value) => String(value ?? "").replace(/<\?xml[\s\S]*?\?>/gi, "").replace(/<\/?(?:w|a|r|p|m|xml):[^>]*>/gi, "").replace(/<[^>]*>/g, "").trim();
   const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"&#39;" })[c]);
@@ -199,6 +393,7 @@
   function openSet(id) {
     const found = state.sets.find(set => String(set.id) === String(id));
     if (!found) { toast("That study set is no longer in your library."); return; }
+    state.sourceResizeObserver?.disconnect(); state.sourceResizeObserver = null;
     state.sourceUrls.forEach(url => URL.revokeObjectURL(url)); state.sourceUrls = [];
     state.selected = found; state.mode = modeList(found)[0]?.[0] || "summary"; state.answers = {};
     state.sourceFiles = []; state.sourceLoaded = false; state.sourceIndex = 0; state.sourceSlide = 0;
@@ -215,6 +410,7 @@
     });
   }
   function sourcePane(set) {
+    state.sourceResizeObserver?.disconnect(); state.sourceResizeObserver = null;
     const source = safeText(set.sourceText || "");
     const previewable = state.sourceFiles;
     if (!state.sourceLoaded) {
@@ -236,15 +432,46 @@
       if (!url) { url = URL.createObjectURL(selected.blob); selected._objectUrl = url; state.sourceUrls.push(url); }
       preview = `<div class="source-preview"><iframe src="${url}#toolbar=1&navpanes=0" title="PDF preview: ${esc(selected.name)}"></iframe></div>`;
     } else {
-      const slides = selected.slides || [];
-      if (!slides.length) preview = '<div class="source-empty">No readable slides were found in this PowerPoint file.</div>';
-      else {
-        state.sourceSlide = Math.min(state.sourceSlide, slides.length-1);
-        const slide = slides[state.sourceSlide];
-        preview = `<div class="source-preview"><article class="slide-preview" aria-label="Extracted text from slide ${state.sourceSlide+1} of ${slides.length}"><h3>${esc(slide.title || `Slide ${state.sourceSlide+1}`)}</h3><div class="slide-preview-text">${esc(slide.text || "No text on this slide.")}</div></article></div><div class="slide-caption"><span>Slide text preview</span><span>Original layout and graphics are not reconstructed.</span></div><div class="source-actions"><button type="button" data-slide="prev" ${state.sourceSlide===0?"disabled":""} aria-label="Previous slide">Previous</button><span class="faint" aria-live="polite">Slide ${state.sourceSlide+1} of ${slides.length}</span><button type="button" data-slide="next" ${state.sourceSlide>=slides.length-1?"disabled":""} aria-label="Next slide">Next</button></div>`;
+      const textSlides = selected.slides || [];
+      const slideCount = selected._deck?.slides.length || textSlides.length;
+      if (selected._deckError) {
+        preview = `<div class="source-empty" role="status">${esc(selected._deckError)}</div>`;
+      } else if (!selected._deck) {
+        preview = '<div class="source-preview"><div class="source-empty" role="status">Opening the original slide layout…</div></div>';
+        if (!selected._deckLoading) {
+          selected._deckLoading = true;
+          parsePowerPoint(selected.blob).then(deck => {
+            selected._deckLoading = false;
+            if (state.selected?.id !== set.id || state.sourceFiles[state.sourceIndex] !== selected) {
+              deck.urls.forEach(url => URL.revokeObjectURL(url));
+              return;
+            }
+            selected._deck = deck;
+            state.sourceUrls.push(...deck.urls);
+            sourcePane(set);
+          }).catch(error => {
+            selected._deckLoading = false;
+            selected._deckError = error.message || "These slides could not be opened for preview.";
+            if (state.selected?.id === set.id && state.sourceFiles[state.sourceIndex] === selected) sourcePane(set);
+          });
+        }
+      } else if (!slideCount) {
+        preview = '<div class="source-empty">No slides were found in this PowerPoint file.</div>';
+      } else {
+        state.sourceSlide = Math.min(state.sourceSlide, slideCount - 1);
+        const slide = selected._deck.slides[state.sourceSlide];
+        const fonts = (selected._deck.fonts || []).filter(font => !/^(calibri|calibri light|arial|georgia|times new roman)$/i.test(font));
+        const notes = [
+          slide?.skipped ? `${slide.skipped} complex chart, table, diagram, or picture may be simplified.` : "",
+          fonts.length ? `Some fonts use a close substitute (${fonts.slice(0, 3).join(", ")}).` : ""
+        ].filter(Boolean).join(" ");
+        preview = `<div class="source-preview"><div id="pptx-slide-mount"></div></div><div class="slide-caption"><span>Slide layout reconstructed from the PowerPoint</span><span>${esc(notes || "Text, images, colors, and placement are retained where supported.")}</span></div><div class="source-actions"><button type="button" data-slide="prev" ${state.sourceSlide===0?"disabled":""} aria-label="Previous slide">Previous</button><span class="faint" aria-live="polite">Slide ${state.sourceSlide+1} of ${slideCount}</span><button type="button" data-slide="next" ${state.sourceSlide>=slideCount-1?"disabled":""} aria-label="Next slide">Next</button></div>`;
       }
     }
     $("#study-sources").innerHTML = `<div class="source-name">${esc(sourceName(set))}</div><div class="source-tools">${selector}</div>${preview}<details class="source-extracted"><summary>Read extracted source text</summary><div class="source-text">${esc(source || "Source text is not available in this saved set.")}</div></details>`;
+    if (selected._deck && /\.pptx$/i.test(selected.name)) {
+      renderPptxSlide($("#pptx-slide-mount"), selected, state.sourceSlide);
+    }
     $("#source-doc-select")?.addEventListener("change", event => { state.sourceIndex=Number(event.target.value); state.sourceSlide=0; sourcePane(set); });
     $$("[data-slide]", $("#study-sources")).forEach(button=>button.addEventListener("click",()=>{
       state.sourceSlide += button.dataset.slide==="next" ? 1 : -1; sourcePane(set);
@@ -411,72 +638,20 @@
     throw new Error(`${file.name} is not a supported text document.`);
   }
   async function readPowerPoint(file) {
+    let deck;
     try {
-      const module = await import("https://cdn.jsdelivr.net/npm/jszip@3.10.1/+esm");
-      const JSZip = module.default || module;
-      const zip = await JSZip.loadAsync(await file.arrayBuffer());
-      const presentationFile = zip.file("ppt/presentation.xml");
-      if (!presentationFile) throw new Error("The PowerPoint package has no presentation document.");
-      const parser = new DOMParser();
-      const parseXml = async part => {
-        const entry = zip.file(part);
-        if (!entry) return null;
-        const xml = parser.parseFromString(await entry.async("text"), "application/xml");
-        if (xml.querySelector("parsererror")) throw new Error("A slide could not be read.");
-        return xml;
-      };
-      const presentation = await parseXml("ppt/presentation.xml");
-      const relDoc = await parseXml("ppt/_rels/presentation.xml.rels");
-      const rels = new Map();
-      for (const node of [...(relDoc?.getElementsByTagName("*") || [])]) {
-        if ((node.localName || "").toLowerCase() !== "relationship") continue;
-        const id = node.getAttribute("Id"), target = node.getAttribute("Target");
-        if (id && target && node.getAttribute("TargetMode") !== "External") rels.set(id, target);
-      }
-      const resolveTarget = target => {
-        const parts = (target.startsWith("/") ? target.slice(1) : `ppt/${target}`).split("/");
-        const resolved = [];
-        for (const part of parts) { if (part === "..") resolved.pop(); else if (part && part !== ".") resolved.push(part); }
-        return resolved.join("/");
-      };
-      const ordered = [];
-      for (const node of [...(presentation?.getElementsByTagName("*") || [])]) {
-        if ((node.localName || "").toLowerCase() !== "sldid") continue;
-        const rid = node.getAttributeNS("http://schemas.openxmlformats.org/officeDocument/2006/relationships", "id") || node.getAttribute("r:id");
-        const target = rid && rels.get(rid);
-        if (target) ordered.push(resolveTarget(target));
-      }
-      if (!ordered.length) {
-        ordered.push(...Object.keys(zip.files).filter(path=>/^ppt\/slides\/slide\d+\.xml$/i.test(path))
-          .sort((a,b)=>Number(a.match(/slide(\d+)/i)?.[1])-Number(b.match(/slide(\d+)/i)?.[1])));
-      }
-      const slides = [];
-      for (const path of ordered) {
-        const xml = await parseXml(path);
-        if (!xml) continue;
-        const shapes = [...xml.getElementsByTagName("*")].filter(node=>(node.localName || "").toLowerCase()==="sp");
-        const blocks = [];
-        for (const shape of shapes) {
-          const paragraphs = [...shape.getElementsByTagName("*")].filter(node=>(node.localName || "").toLowerCase()==="p");
-          const lines = paragraphs.map(paragraph => [...paragraph.getElementsByTagName("*")]
-            .filter(node=>(node.localName || "").toLowerCase()==="t")
-            .map(node=>node.textContent || "").join("")).map(line=>line.trim()).filter(Boolean);
-          if (lines.length) blocks.push(lines.join("\n"));
-        }
-        // A few presentations put visible text in unsupported shape types; retain that readable text.
-        if (!blocks.length) {
-          const lines = [...xml.getElementsByTagName("*")].filter(node=>(node.localName || "").toLowerCase()==="t")
-            .map(node=>(node.textContent || "").trim()).filter(Boolean);
-          if (lines.length) blocks.push(lines.join("\n"));
-        }
-        const text = blocks.join("\n\n");
-        slides.push({ title:blocks[0]?.split("\n")[0] || `Slide ${slides.length+1}`, text });
-      }
-      if (!slides.length) throw new Error("No readable slide text was found.");
+      deck = await parsePowerPoint(file);
+      const slides = deck.slides.map((slide, index) => {
+        const text = slideText(slide);
+        return { title:text.split("\n")[0] || `Slide ${index+1}`, text };
+      });
+      if (!slides.some(slide => slide.text)) throw new Error("No readable slide text was found.");
       return { text:slides.map((slide,index)=>`Slide ${index+1}: ${slide.text}`).join("\n\n"), slides };
     } catch (error) {
       const reason = error instanceof Error && error.message ? ` ${error.message}` : "";
       throw new Error(`Could not read the slides in ${file.name}.${reason}`);
+    } finally {
+      deck?.urls?.forEach(url => URL.revokeObjectURL(url));
     }
   }
   const fileSize = (n) => n < 1048576 ? `${Math.max(1,Math.round(n/1024))} KB` : `${(n/1048576).toFixed(1)} MB`;

@@ -1,5 +1,5 @@
 kind = "web"
-previewPath = "/python-preview"
+previewPath = "/"
 title = "Jaguar"
 description = "An exam-prep workspace that turns course notes and uploaded documents into focused study guides, cram sheets, practice tests, and day-by-day revision plans."
 version = "1.0.0"
@@ -8,7 +8,7 @@ router = "path"
 
 [[services]]
 name = "web"
-paths = [ "/" ]
+paths = ["/sign-in", "/sign-up", "/user-portal", "/assets", "/src", "/@vite", "/@react-refresh", "/@id", "/@fs", "/@replit", "/node_modules/.vite", "/vite-hmr", "/logo.svg", "/favicon.ico", "/jaguar-outline.svg", "/jaguar-icon.svg"]
 localPort = 24663
 
 [services.development]
@@ -29,7 +29,7 @@ BASE_PATH = "/"
 
 [[services]]
 name = "python-preview"
-paths = ["/python-preview"]
+paths = ["/"]
 localPort = 8000
 
 [services.development]
@@ -41,12 +41,12 @@ run = "uv run --project ../.. python python_app/main.py"
 args = ["uv", "run", "--project", "../..", "python", "-m", "compileall", "-q", "python_app"]
 
 [services.production.run]
-args = ["uv", "run", "--project", ".", "python", "python_app/main.py"]
+args = ["uv", "run", "--project", "../..", "python", "python_app/main.py"]
 
 [services.production.run.env]
 PORT = "8000"
-BASE_PATH = "/python-preview"
+BASE_PATH = ""
 
 [services.env]
 PORT = "8000"
-BASE_PATH = "/python-preview"
+BASE_PATH = ""
