@@ -209,6 +209,45 @@ export type StudySet = StudySetInput & {
   createdAt: string;
 };
 
+export interface StudyHabitPreferencesInput {
+  reminderEnabled: boolean;
+  /**
+     * @nullable
+     * @pattern ^(?:[01][0-9]|2[0-3]):[0-5][0-9]$
+     */
+  reminderTime: string | null;
+  /**
+     * @minLength 1
+     * @maxLength 80
+     */
+  timeZone: string;
+}
+
+export interface StudyActivityInput {
+  /**
+     * @minLength 1
+     * @maxLength 80
+     */
+  timeZone: string;
+}
+
+export interface StudyHabitState {
+  /** @minimum 0 */
+  currentStreak: number;
+  /** @minimum 0 */
+  bestStreak: number;
+  studiedToday: boolean;
+  /**
+     * @nullable
+     * @pattern ^[0-9]{4}-[0-9]{2}-[0-9]{2}$
+     */
+  lastStudyDate: string | null;
+  reminderEnabled: boolean;
+  /** @nullable */
+  reminderTime: string | null;
+  timeZone: string;
+}
+
 export interface ApiError {
   error: string;
 }

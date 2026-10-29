@@ -107,3 +107,9 @@ Gemini's model listing is not proof that an account can generate with a model. O
 Natural-language-only JSON generation can omit requested questions and return theory subparts with letter keys instead of the required label/question/modelAnswer shape. Use structural response schemas plus runtime validation; a successful HTTP response alone is not successful generation. Avoid nested numeric array bounds in Gemini's response schema: express counts in descriptions and enforce them after parsing instead.
 
 **Why:** A live response contained 10 objective and 5 malformed theory questions despite a request for 50 objective and 7 theory questions. Full schemas with nested array/numeric bounds also returned opaque INVALID_ARGUMENT errors; removing those bounds allowed real complete exam generation. Excess questions can be trimmed, but missing questions must never be fabricated to pass validation.
+
+Study streaks count after five focused minutes in a study set; reminder preferences and streak days are account-synced. Without a connected push service, browser reminders only fire while Jaguar is open.
+
+**Why:** The user asked for daily streaks and reminders, chose delivery while Jaguar is closed, then chose to continue without connecting a push service.
+
+**How to apply:** Keep the five-minute threshold visible, and never claim closed-app reminders work until a reliable push service and scheduler are connected.

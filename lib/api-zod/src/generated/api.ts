@@ -369,3 +369,85 @@ export const DeleteStudySetParams = zod.object({
 export const DeleteStudySetResponse = zod.void()
 
 
+/**
+ * @summary Get reminder preferences and study streak
+ */
+export const getStudyHabitStateResponseCurrentStreakMin = 0;
+
+export const getStudyHabitStateResponseBestStreakMin = 0;
+
+export const getStudyHabitStateResponseLastStudyDateRegExp = new RegExp('^[0-9]{4}-[0-9]{2}-[0-9]{2}$');
+
+
+export const GetStudyHabitStateResponse = zod.object({
+  "currentStreak": zod.number().int().min(getStudyHabitStateResponseCurrentStreakMin),
+  "bestStreak": zod.number().int().min(getStudyHabitStateResponseBestStreakMin),
+  "studiedToday": zod.boolean(),
+  "lastStudyDate": zod.string().regex(getStudyHabitStateResponseLastStudyDateRegExp).nullable(),
+  "reminderEnabled": zod.boolean(),
+  "reminderTime": zod.string().nullable(),
+  "timeZone": zod.string()
+})
+
+
+/**
+ * @summary Update the daily reminder preferences
+ */
+export const updateStudyHabitPreferencesBodyReminderTimeRegExp = new RegExp('^(?:[01][0-9]|2[0-3]):[0-5][0-9]$');
+export const updateStudyHabitPreferencesBodyTimeZoneMax = 80;
+
+
+
+export const UpdateStudyHabitPreferencesBody = zod.object({
+  "reminderEnabled": zod.boolean(),
+  "reminderTime": zod.string().regex(updateStudyHabitPreferencesBodyReminderTimeRegExp).nullable(),
+  "timeZone": zod.string().min(1).max(updateStudyHabitPreferencesBodyTimeZoneMax)
+})
+
+export const updateStudyHabitPreferencesResponseCurrentStreakMin = 0;
+
+export const updateStudyHabitPreferencesResponseBestStreakMin = 0;
+
+export const updateStudyHabitPreferencesResponseLastStudyDateRegExp = new RegExp('^[0-9]{4}-[0-9]{2}-[0-9]{2}$');
+
+
+export const UpdateStudyHabitPreferencesResponse = zod.object({
+  "currentStreak": zod.number().int().min(updateStudyHabitPreferencesResponseCurrentStreakMin),
+  "bestStreak": zod.number().int().min(updateStudyHabitPreferencesResponseBestStreakMin),
+  "studiedToday": zod.boolean(),
+  "lastStudyDate": zod.string().regex(updateStudyHabitPreferencesResponseLastStudyDateRegExp).nullable(),
+  "reminderEnabled": zod.boolean(),
+  "reminderTime": zod.string().nullable(),
+  "timeZone": zod.string()
+})
+
+
+/**
+ * @summary Record one meaningful study day
+ */
+export const recordStudyActivityBodyTimeZoneMax = 80;
+
+
+
+export const RecordStudyActivityBody = zod.object({
+  "timeZone": zod.string().min(1).max(recordStudyActivityBodyTimeZoneMax)
+})
+
+export const recordStudyActivityResponseCurrentStreakMin = 0;
+
+export const recordStudyActivityResponseBestStreakMin = 0;
+
+export const recordStudyActivityResponseLastStudyDateRegExp = new RegExp('^[0-9]{4}-[0-9]{2}-[0-9]{2}$');
+
+
+export const RecordStudyActivityResponse = zod.object({
+  "currentStreak": zod.number().int().min(recordStudyActivityResponseCurrentStreakMin),
+  "bestStreak": zod.number().int().min(recordStudyActivityResponseBestStreakMin),
+  "studiedToday": zod.boolean(),
+  "lastStudyDate": zod.string().regex(recordStudyActivityResponseLastStudyDateRegExp).nullable(),
+  "reminderEnabled": zod.boolean(),
+  "reminderTime": zod.string().nullable(),
+  "timeZone": zod.string()
+})
+
+

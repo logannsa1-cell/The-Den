@@ -580,3 +580,35 @@ body::after { display: none; }
 .calm .theme-tile { min-height: 40px; }
 .calm .sample-tabs button { min-height: 44px; }
 .calm .sample-choices button { min-height: 44px; align-items: center; }
+
+/* Account-synced study streak and reminder controls */
+.study-habit-panel {
+  min-width: 0;
+  padding: 22px 0 24px;
+  border-bottom: 1px solid var(--line);
+}
+.study-habit-heading { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.study-flame { position: relative; display: inline-flex; flex: 0 0 28px; width: 28px; height: 30px; align-items: center; justify-content: center; }
+.study-flame-outer { width: 27px; height: 27px; fill: var(--accent); stroke: var(--accent); stroke-width: 1.6; }
+.study-flame-inner { position: absolute; left: 9px; top: 11px; width: 10px; height: 11px; fill: var(--bg); stroke: var(--bg); stroke-width: 2; }
+.study-habit-summary { min-width: 0; display: grid; gap: 3px; }
+.study-habit-summary h2 { margin: 0; font: 600 15px/1.25 var(--app-font-sans); letter-spacing: -.01em; }
+.study-habit-summary strong { color: var(--accent-2); font-size: 13px; font-weight: 600; }
+.study-habit-best { margin-left: auto; color: var(--muted); font-size: 11px; white-space: nowrap; }
+.study-habit-caption { margin: 10px 0 0; color: var(--muted); font-size: 11px; line-height: 1.5; }
+.study-reminder-form { display: grid; gap: 12px; margin-top: 16px; }
+.study-reminder-toggle { display: flex; align-items: center; gap: 9px; margin: 0; }
+.study-reminder-toggle input[type="checkbox"] { width: 15px; height: 15px; margin: 0; accent-color: var(--accent); }
+.study-reminder-toggle label, .study-reminder-time label { color: var(--text); font: 500 12px/1.4 var(--app-font-sans); }
+.study-reminder-controls { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: end; gap: 10px; }
+.study-reminder-time { display: grid; gap: 6px; margin: 0; }
+.study-reminder-time .field { width: 100%; min-height: 36px; max-width: 160px; }
+.study-reminder-save { min-height: 36px; padding: 0 14px; }
+.study-reminder-note { margin: 11px 0 0; color: var(--faint); font-size: 10px; line-height: 1.55; }
+.study-habit-message { margin: 8px 0 0; color: var(--accent-2); font-size: 11px; line-height: 1.45; }
+.study-habit-error { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 10px; color: #e6a0a0; font-size: 11px; }
+.study-habit-error .text-button { flex: 0 0 auto; }
+@media (max-width: 700px) {
+  .study-habit-panel { padding: 20px 0; }
+  .study-reminder-time .field { max-width: none; }
+}
