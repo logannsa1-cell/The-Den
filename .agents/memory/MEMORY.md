@@ -1,4 +1,4 @@
 - [Jaguar product direction](jaguar-product.md) — exact branding and note-generation expectations from the user.
 - [Mobile compatibility](mobile-compatibility.md) — Expo SDK alignment and the separate-origin limitation of automated Clerk sign-in.
 - [Published crash diagnostics](published-crash-diagnostics.md) — healthy server logs and a signed-out preview cannot establish signed-in recovery.
-- [Artifact Python workflows](artifact-python-workflows.md) — managed artifact commands start in the artifact directory, so project and source paths must be relative to it.
+- [Artifact Python workflows](artifact-python-workflows.md) — development starts in the artifact directory; production commands run from the workspace root.
