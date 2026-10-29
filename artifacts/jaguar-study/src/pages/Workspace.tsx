@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { useClerk, useUser } from '@clerk/react';
-import { AlertCircle, ArrowLeft, BookOpen, CheckCircle2, ChevronRight, Cloud, FolderOpen, LogOut, Plus, RotateCcw, Settings, SlidersHorizontal, Trash2 } from 'lucide-react';
+import { AlertCircle, ArrowLeft, BookOpen, CheckCircle2, ChevronRight, Cloud, FolderOpen, LogOut, Plus, RotateCcw, SlidersHorizontal, Trash2 } from 'lucide-react';
 import {
   getListStudySetsQueryKey, useDeleteStudySet, useGenerateStudyMaterials, useListStudySets, useUpsertStudySet,
   type StudyGeneration,
@@ -11,8 +11,6 @@ import { BrandLockup, RosetteCorners, ThemeSwitcher, basePath } from '@/componen
 import { ALL_MODES, ModeDialog, intIn, modeLabel } from '@/components/ModePicker';
 import { JaguarRunner } from '@/components/JaguarRunner';
 import { ExamSchedule } from '@/components/ExamSchedule';
-import { ProfileHeader } from '@/components/ProfileMedia';
-import { useProfileMedia } from '@/lib/profile-media';
 import { SourceUploader, combineSources, MAX_SOURCE_CHARS, type SourceEntry } from '@/components/SourceUploader';
 import { StudyOutput, setModes, setViews, studyViews, type OutputTab } from '@/components/StudyOutput';
 import { deleteSources, loadSources, saveSources, sourceKey, type StoredSource } from '@/lib/source-store';
@@ -65,14 +63,6 @@ export default function Workspace() {
   const [modeDialog, setModeDialog] = useState(false);
   const [questionCount, setQuestionCount] = useState('50');
   const [examMinutes, setExamMinutes] = useState('120');
-  const avatar = useProfileMedia(userId, 'avatar');
-  const [settingsOpen, setSettingsOpen] = useState(window.location.hash === '#settings');
-  useEffect(() => {
-    const update = () => setSettingsOpen(window.location.hash === '#settings');
-    window.addEventListener('hashchange', update);
-    return () => window.removeEventListener('hashchange', update);
-  }, []);
-  const banner = useProfileMedia(userId, 'banner');
   const readyCount = useRef(0);
   const [error, setError] = useState('');
   const [tried, setTried] = useState(false);
@@ -279,7 +269,7 @@ export default function Workspace() {
   const ready = !!active && !generate.isPending && !studyError;
   const views = ready && active ? setViews(active) : studyViews(studyModes);
   const currentView = ready ? (views.some((v) => v.id === studyTab) ? studyTab : views[0]?.id) : undefined;
-  const pickView = (id: OutputTab) => { if (!ready) return; if (settingsOpen) { setSettingsOpen(false); window.location.hash = ''; } setView('study'); setStudyTab(id); };
+  const pickView = (id: OutputTab) => { if (!ready) return; setView('study'); setStudyTab(id); };
   const modeLinks = () => views.map(({ id, label, Icon }) => {
     const on = view === 'study' && currentView === id;
     return (
@@ -288,7 +278,6 @@ export default function Workspace() {
     );
   });
 
-  const initial = (user?.firstName?.[0] ?? user?.emailAddresses[0]?.emailAddress[0] ?? 'J').toUpperCase();
   const savedSetRow = (set: StudySet) => {
     const remote = remoteIds.has(set.id);
     return (
@@ -311,22 +300,11 @@ export default function Workspace() {
   };
 
   return (
-    <div className={`app-shell${view === 'study' && !settingsOpen ? ' in-study' : ''}`}>
+    <div className={`app-shell${view === 'study' ? ' in-study' : ''}`}>
       <RosetteCorners />
       <aside className="sidebar" aria-label="Jaguar workspace">
         <BrandLockup size={31} />
-        <nav className="side-nav" aria-label="Sections" onClick={(event) => {
-          if (!settingsOpen) return;
-          const target = (event.target as HTMLElement).closest('button')?.dataset.testid;
-          if (!target) return;
-          setSettingsOpen(false);
-          window.location.hash = '';
-          window.setTimeout(() => {
-            if (target === 'nav-saved') setView('saved');
-            else if (target === 'nav-active') setView('study');
-            else window.scrollTo({ top: 0, behavior: 'smooth' });
-          }, 0);
-        }}>
+        <nav className="side-nav" aria-label="Sections">
           <button className={`nav-item${view === 'builder' ? ' active' : ''}`} type="button" onClick={() => { setView('builder'); window.scrollTo({ top: 0, behavior: 'smooth' }); }} data-testid="nav-create"><Plus size={16} /> New study set</button>
           <button className={`nav-item${view === 'saved' ? ' active' : ''}`} type="button" onClick={() => { setView('saved'); window.scrollTo({ top: 0, behavior: 'smooth' }); }} aria-current={view === 'saved' ? 'page' : undefined} data-testid="nav-saved"><FolderOpen size={16} /> Saved sets <span className="nav-count">{savedSets.length}</span></button>
           {(active || generate.isPending || studyError) && <button className={`nav-item${view === 'study' ? ' active' : ''}`} type="button" onClick={() => setView('study')} data-testid="nav-active"><BookOpen size={16} /> Open set</button>}
@@ -338,24 +316,16 @@ export default function Workspace() {
       <main className="main-area">
         <header className="topbar">
           <div className="mobile-brand"><BrandLockup size={30} /></div>
-          {view === 'study' && !settingsOpen && <button className="icon-button topbar-back" type="button" onClick={() => { setView('builder'); window.scrollTo({ top: 0, behavior: 'smooth' }); }} aria-label="Back to study sets" data-testid="button-back-to-sets"><ArrowLeft size={15} /></button>}
-          <div className="crumb">{settingsOpen ? 'Settings' : view === 'study' ? clean(active?.title ?? '') || 'Open set' : view === 'saved' ? 'Saved sets' : 'Study sets'}</div>
+          {view === 'study' && <button className="icon-button topbar-back" type="button" onClick={() => { setView('builder'); window.scrollTo({ top: 0, behavior: 'smooth' }); }} aria-label="Back to study sets" data-testid="button-back-to-sets"><ArrowLeft size={15} /></button>}
+          <div className="crumb">{view === 'study' ? clean(active?.title ?? '') || 'Open set' : view === 'saved' ? 'Saved sets' : 'Study sets'}</div>
           <div className="top-status">
             <span className="mobile-only"><ThemeSwitcher compact /></span>
             <span className="local-pill"><span className="status-dot" /> Account sync</span>
             <button className="quiet-button" type="button" onClick={() => void signOut({ redirectUrl: basePath || '/' })} data-testid="button-sign-out" aria-label="Sign out"><LogOut size={13} /><span className="hide-sm">Sign out</span></button>
-            <button className="quiet-button" type="button" onClick={() => { window.location.hash = 'settings'; window.scrollTo(0, 0); }} aria-current={settingsOpen ? 'page' : undefined} data-testid="button-settings"><Settings size={16} /> Settings</button>
           </div>
         </header>
 
-        {settingsOpen && <div className="workspace profile-settings-page" data-testid="page-settings">
-          <button className="quiet-button" type="button" onClick={() => { window.location.hash = ''; }} data-testid="button-back-study">Back to study</button>
-          <h1>Settings</h1>
-          <ProfileHeader initial={initial} name={user?.firstName ?? 'Your'} avatar={avatar} banner={banner} notify={setNotice}>
-            <h2>Your profile</h2><p className="welcome-copy">Manage your profile picture and banner.</p>
-          </ProfileHeader>
-        </div>}
-        <div className="workspace" hidden={settingsOpen || view !== 'study'} data-testid="page-study-view">
+        <div className="workspace" hidden={view !== 'study'} data-testid="page-study-view">
           <div className="study-view">
             <nav className="mobile-mode-nav" aria-label="Study view">
               <button className="nav-item" type="button" onClick={backToBuilder} data-testid="button-back-builder"><ArrowLeft size={14} /> Back</button>
@@ -393,7 +363,7 @@ export default function Workspace() {
             </div>
           </div>
         </div>
-        <div className="workspace builder-workspace" hidden={settingsOpen || view !== 'builder'}>
+        <div className="workspace builder-workspace" hidden={view !== 'builder'}>
           <section className="builder-welcome">
             <h1 id="welcome-title" data-testid="text-workspace-heading">Get ready for <em className="editorial-accent">exam day.</em></h1>
             <p className="welcome-copy">Upload your notes and turn them into study materials.</p>
@@ -435,7 +405,7 @@ export default function Workspace() {
           </aside>
           </div>
         </div>
-        <div className="workspace library-workspace" hidden={settingsOpen || view !== 'saved'} data-testid="page-saved-sets">
+        <div className="workspace library-workspace" hidden={view !== 'saved'} data-testid="page-saved-sets">
           <header className="library-heading">
             <div>
               <h1 id="library-heading">Saved sets</h1>

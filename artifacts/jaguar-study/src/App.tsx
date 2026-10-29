@@ -10,8 +10,9 @@ import { shadcn } from '@clerk/themes';
 import { Link, Redirect, Route, Switch, useLocation, Router as WouterRouter } from 'wouter';
 import Workspace from '@/pages/Workspace';
 import LandingPage from '@/pages/Landing';
-import { BrandLockup, EMBLEM, RosetteCorners, ThemeSwitcher, basePath } from '@/components/Brand';
+import { BrandLockup, Emblem, RosetteCorners, ThemeSwitcher, basePath } from '@/components/Brand';
 import { ThemeProvider, useTheme, type ThemeSpec } from '@/lib/theme';
+import { jaguarEmblemDataUri } from '@/lib/jaguar-mark';
 
 const queryClient = new QueryClient();
 const clerkPubKey = publishableKeyFromHost(window.location.hostname, import.meta.env.VITE_CLERK_PUBLISHABLE_KEY);
@@ -37,7 +38,7 @@ function AuthShell({ title, line, children }: { title: ReactNode; line: string; 
       <RosetteCorners />
       <div className="auth-aside">
         <div className="auth-top"><Link href="/" className="landing-brand" data-testid="link-auth-home"><BrandLockup size={38} /></Link><ThemeSwitcher compact /></div>
-        <div><img src={EMBLEM} alt="" className="auth-emblem" /><h1>{title}</h1><p>{line}</p></div>
+        <div><Emblem size={260} className="auth-emblem" /><h1>{title}</h1><p>{line}</p></div>
       </div>
       <div className="auth-card">{children}</div>
     </div>
@@ -74,7 +75,7 @@ function clerkAppearance(t: ThemeSpec) {
     options: {
       logoPlacement: 'inside' as const,
       logoLinkUrl: basePath || '/',
-      logoImageUrl: `${window.location.origin}${EMBLEM}`,
+      logoImageUrl: jaguarEmblemDataUri(t.accent),
       socialButtonsPlacement: 'top' as const,
       socialButtonsVariant: 'blockButton' as const,
     },

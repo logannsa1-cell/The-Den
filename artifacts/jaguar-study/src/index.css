@@ -14,8 +14,6 @@
 .display-math { display: block; overflow-x: auto; padding: .35rem 0; }
 
 .workspace[hidden] { display: none; }
-.profile-settings-page .media-editor { position: relative; inset: auto; margin: 24px 0; width: min(100%, 480px); }
-.profile-settings-page > h1 { margin: 24px 0; }
 img[src*="jaguar-outline.svg"]:not(.corner-jaguar) { background-color: #0b0b0d; border-radius: 24%; }
 
 @theme inline {
@@ -97,10 +95,10 @@ h1, h2, h3, h4, p { margin-top: 0; }
   -webkit-mask-image: radial-gradient(circle at var(--mx) var(--my), #000 0, transparent 70%); mask-image: radial-gradient(circle at var(--mx) var(--my), #000 0, transparent 70%); }
 .rosettes-tl { top: -40px; left: -40px; --mx: 0%; --my: 0%; }
 .rosettes-br { right: -40px; bottom: -40px; --mx: 100%; --my: 100%; transform: rotate(18deg); }
-.corner-jaguar { position: absolute; right: -60px; bottom: -50px; width: 300px; opacity: .07; filter: saturate(.6); transform: rotate(-8deg); }
+.corner-jaguar { position: absolute; right: -60px; bottom: -50px; width: 300px; opacity: .07; background: transparent; filter: saturate(.6); transform: rotate(-8deg); }
 
 /* ---------- Brand ---------- */
-.emblem { display: block; object-fit: contain; border-radius: 24%; box-shadow: none; }
+.emblem { display: block; object-fit: contain; border-radius: 24%; background: #0b0b0d; box-shadow: none; }
 .brand-lockup { display: inline-flex; align-items: center; gap: 11px; }
 .brand-name { display: block; font: 800 22px/1 var(--app-font-display); letter-spacing: -.04em; color: var(--text); }
 .brand-caption { display: block; margin-top: 3px; font: 9px var(--app-font-mono); text-transform: uppercase; letter-spacing: .16em; color: var(--muted); }
@@ -550,28 +548,8 @@ input[type='date']::-webkit-calendar-picker-indicator { filter: invert(.75); }
 .modal-head { display: flex; justify-content: space-between; gap: 12px; }
 .modal-head h2 { margin: 6px 0 0; font: 700 22px var(--app-font-display); letter-spacing: -.03em; }
 
-/* ---------- Profile ---------- */
-.profile-hero { position: relative; margin-bottom: 30px; }
-.banner { position: relative; height: 150px; border: 1px solid var(--line); border-radius: 22px; background: radial-gradient(circle at 20% 30%, var(--accent-soft), transparent 60%), linear-gradient(120deg, var(--surface-2), var(--bg-2)); background-size: cover; background-position: center; }
-.banner-edit { position: absolute; right: 12px; top: 12px; display: inline-flex; align-items: center; gap: 6px; padding: 7px 11px; border: 1px solid var(--line-2); border-radius: 99px; background: color-mix(in srgb, var(--bg) 75%, transparent); font-size: 11px; backdrop-filter: blur(6px); }
-.banner-edit:hover { border-color: var(--accent); }
-.profile-row { display: flex; align-items: flex-end; gap: 18px; margin: -44px 0 0 22px; position: relative; }
-.profile-avatar { position: relative; flex: none; width: 96px; height: 96px; padding: 0; border: 3px solid var(--bg); border-radius: 50%; background: var(--surface-2); color: var(--accent-2); font: 700 34px var(--app-font-display); overflow: visible; }
-.profile-avatar img { width: 100%; height: 100%; border-radius: 50%; object-fit: cover; }
-.profile-avatar i { position: absolute; right: 0; bottom: 2px; display: grid; place-items: center; width: 26px; height: 26px; border-radius: 50%; background: var(--accent); color: var(--accent-ink); }
-.profile-copy { padding-bottom: 4px; min-width: 0; }
-.profile-copy h1 { margin: 0 0 6px; font: 800 clamp(32px, 5vw, 64px)/.95 var(--app-font-display); letter-spacing: -.05em; }
 .avatar { overflow: hidden; }
 .avatar img { width: 100%; height: 100%; object-fit: cover; }
-.media-editor { position: absolute; z-index: 20; left: 22px; top: 60px; width: min(340px, calc(100% - 44px)); display: grid; gap: 10px; padding: 16px; border: 1px solid var(--line-2); border-radius: 18px; background: var(--surface-2); box-shadow: 0 30px 60px -20px #000; animation: pop .2s var(--ease); }
-.media-editor-head { display: flex; justify-content: space-between; align-items: center; font-size: 13px; }
-.media-preview { display: grid; place-items: center; overflow: hidden; border: 1px dashed var(--line-2); background: var(--bg); color: var(--faint); font-size: 12px; }
-.media-preview.avatar { width: 110px; height: 110px; border-radius: 50%; justify-self: center; }
-.media-preview.banner { height: 90px; border-radius: 12px; }
-.media-preview img { width: 100%; height: 100%; object-fit: cover; }
-.device-note { margin: 0; font-size: 11px; color: var(--muted); line-height: 1.5; }
-.media-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
-.danger-text:hover { color: var(--bad); }
 
 /* ---------- Schedule ---------- */
 .schedule-panel { margin-top: 16px; padding: 22px; }
