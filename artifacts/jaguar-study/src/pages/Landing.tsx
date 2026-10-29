@@ -53,7 +53,7 @@ export default function Landing() {
       </nav>
 
       <section className="calm-hero">
-        <h1 data-testid="text-landing-heading">Use your notes to study well</h1>
+        <h1 data-testid="text-landing-heading">Use your notes to study <em className="editorial-accent">well</em></h1>
         <p>Add a PDF or slide deck. Read a summary or lesson, then try questions with the source open beside it.</p>
         <div className="hero-actions">
           <Link href="/sign-up" className="landing-cta" data-testid="link-start-studying">Create account <ArrowRight size={15} /></Link>

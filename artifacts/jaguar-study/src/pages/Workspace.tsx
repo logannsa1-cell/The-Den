@@ -395,7 +395,7 @@ export default function Workspace() {
         </div>
         <div className="workspace builder-workspace" hidden={settingsOpen || view !== 'builder'}>
           <section className="builder-welcome">
-            <h1 id="welcome-title" data-testid="text-workspace-heading">Let’s get ready.</h1>
+            <h1 id="welcome-title" data-testid="text-workspace-heading">Get ready for <em className="editorial-accent">exam day.</em></h1>
             <p className="welcome-copy">Upload your notes and turn them into study materials.</p>
           </section>
 
